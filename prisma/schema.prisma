@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String       @id @default(uuid()) @db.Uuid
+  username   String
+  password   String
+  email      String       @unique
+  followers  Follow[]     @relation("followers")
+  following  Follow[]     @relation("following")
+  posts      Post[]
+  likedPosts PostLike[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  Collection Collection[]
+  Comment    Comment[]
+}
+
+model Follow {
+  id         String   @id @default(uuid()) @db.Uuid
+  followerId String   @db.Uuid
+  followedId String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  //RELATIONS
+  follower User @relation("followers", fields: [followerId], references: [id])
+  followed User @relation("following", fields: [followedId], references: [id])
+}
+
+model Collection {
+  id             String           @id @default(uuid()) @db.Uuid
+  owner          User             @relation(fields: [ownerId], references: [id])
+  ownerId        String           @db.Uuid
+  name           String
+  description    String
+  CollectionItem CollectionItem[]
+  Post           Post[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model CollectionItem {
+  id           String     @id @default(uuid()) @db.Uuid
+  collectionId String     @db.Uuid
+  collection   Collection @relation(fields: [collectionId], references: [id])
+  mediaId      String     @db.Uuid
+  media        Media      @relation(fields: [mediaId], references: [id])
+  createdAt    DateTime   @default(now())
+}
+
+enum MediaType {
+  ANIME
+  MOVIE
+  TV
+}
+
+model Media {
+  id           String    @id @default(uuid()) @db.Uuid
+  type         MediaType
+  infoPageLink String
+  coverImage   String
+  posterImage  String
+  title        String
+  description  String
+  year         String
+  rating       Float
+  status       String?
+  createdAt    DateTime  @default(now())
+
+  //list of all collectionsItems and posts that reference this media
+  collectionItems CollectionItem[]
+  Post            Post[]
+
+  //to avoid duplicate medias in this table (I included 'type' because anime movies can 
+  //also be seen in tmdb movies, and regular animes can also be seen in tmdb tv)`
+  @@unique([title, year, type])
+}
+
+model Post {
+  id           String      @id @default(uuid()) @db.Uuid
+  ownerId      String      @db.Uuid
+  owner        User        @relation(fields: [ownerId], references: [id])
+  post         String?
+  comments     Comment[]
+  likes        PostLike[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  //fields for OPTIONAL REFERENCES
+  //a post can also contain a reference to a media, or a reference to a collection.
+  //ex: user wants to share about the movie Inception (2010), 
+  //or user wants to share their personal collection of horror movies
+  mediaId      String?     @db.Uuid
+  media        Media?      @relation(fields: [mediaId], references: [id])
+  collectionId String?     @db.Uuid
+  collection   Collection? @relation(fields: [collectionId], references: [id])
+}
+
+model PostLike {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  postId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @db.Uuid
+  post      Post     @relation(fields: [postId], references: [id])
+  authorId  String   @db.Uuid
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
