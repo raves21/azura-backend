@@ -8,18 +8,18 @@ datasource db {
 }
 
 model User {
-  id         String       @id @default(uuid()) @db.Uuid
-  username   String
-  password   String
-  email      String       @unique
-  followers  Follow[]     @relation("followers")
-  following  Follow[]     @relation("following")
-  posts      Post[]
-  likedPosts PostLike[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  Collection Collection[]
-  Comment    Comment[]
+  id          String       @id @default(uuid()) @db.Uuid
+  username    String
+  password    String
+  email       String       @unique
+  followers   Follow[]     @relation("followers")
+  following   Follow[]     @relation("following")
+  posts       Post[]
+  likedPosts  PostLike[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  collections Collection[]
+  comments    Comment[]
 }
 
 model Follow {
@@ -34,15 +34,15 @@ model Follow {
 }
 
 model Collection {
-  id             String           @id @default(uuid()) @db.Uuid
-  owner          User             @relation(fields: [ownerId], references: [id])
-  ownerId        String           @db.Uuid
-  name           String
-  description    String
-  CollectionItem CollectionItem[]
-  Post           Post[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id              String           @id @default(uuid()) @db.Uuid
+  owner           User             @relation(fields: [ownerId], references: [id])
+  ownerId         String           @db.Uuid
+  name            String
+  description     String
+  collectionItems CollectionItem[]
+  posts           Post[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model CollectionItem {
@@ -75,7 +75,7 @@ model Media {
 
   //list of all collectionsItems and posts that reference this media
   collectionItems CollectionItem[]
-  Post            Post[]
+  posts           Post[]
 
   //to avoid duplicate medias in this table (I included 'type' because anime movies can 
   //also be seen in tmdb movies, and regular animes can also be seen in tmdb tv)`
