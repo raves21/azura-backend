@@ -1,0 +1,13 @@
+
+GET http://localhost:8080/api/users
+
+
+###
+
+POST http://localhost:8080/api/users
+
+{
+    "username": "wadadadang",
+    "email": "skibidi@toilet.com",
+    "password": "skibidi"
+}
