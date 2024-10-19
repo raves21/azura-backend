@@ -9,4 +9,6 @@ router
   .get("/profile", userController.getCurrentUserInfo)
   .get("/sessions", userController.getUserSessions);
 
+router.post("/follow/:userId", userController.followUser);
+
 export default router;

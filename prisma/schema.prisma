@@ -41,6 +41,8 @@ model Follow {
   //RELATIONS
   follower User @relation("followers", fields: [followerId], references: [id])
   followed User @relation("following", fields: [followedId], references: [id])
+
+  @@unique([followedId, followerId])
 }
 
 model Collection {

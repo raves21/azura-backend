@@ -1,6 +1,7 @@
 import { Response, Request } from "express-serve-static-core";
 import { PrismaClient } from "@prisma/client";
-import { RequestWithJWTPayload } from "../middleware/verifyJWT";
+import { RequestWithJWTPayload } from "../utils/types";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const prisma = new PrismaClient();
 
@@ -71,5 +72,39 @@ export default class UserController {
         sessionId: currentUserInfoFromCookies?.sessionId,
       },
     });
+  }
+
+  public async followUser(req: RequestWithJWTPayload, res: Response) {
+    const { userId: userToFollow } = req.params;
+    const currentUser = req.user;
+
+    if (!currentUser) {
+      res.status(400).json({
+        message: "Bad request. Request did not come with payload.",
+      });
+      return;
+    }
+
+    try {
+      //TODO: check to see if userToFollow has privateAccount, and if he does,
+      //TODO: then append the currentUser to the follow requests.
+      await prisma.follow.create({
+        data: {
+          followerId: currentUser.userId,
+          followedId: userToFollow,
+        },
+      });
+      res.status(201).json({
+        message: `Success, you have successfully followed user ${userToFollow}`,
+      });
+    } catch (error) {
+      console.log("FOLLOW ERROR", error);
+      res.status(500).json({
+        message:
+          error instanceof PrismaClientKnownRequestError
+            ? `Follow user failed. You cannot follow the same user twice.`
+            : "An unknown error occured",
+      });
+    }
   }
 }

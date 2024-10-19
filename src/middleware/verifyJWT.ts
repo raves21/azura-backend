@@ -1,16 +1,6 @@
-import { verify, JwtPayload } from "jsonwebtoken";
-import { Request, Response, NextFunction } from "express";
-require("dotenv").config();
-
-export type CustomJWTPayload = JwtPayload & {
-  userId: string;
-  sessionId: string;
-  email: string;
-};
-
-export type RequestWithJWTPayload = Request & {
-  user?: CustomJWTPayload;
-};
+import { verify } from "jsonwebtoken";
+import { Response, NextFunction } from "express";
+import { RequestWithJWTPayload, CustomJWTPayload } from "../utils/types";
 
 export function verifyJWT(
   req: RequestWithJWTPayload,
@@ -19,7 +9,7 @@ export function verifyJWT(
 ) {
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
-    res.status(401).json("Unauthorized. No auth header.");
+    res.status(401).json("Unauthorized. No jwt in authorization header.");
     return;
   }
 

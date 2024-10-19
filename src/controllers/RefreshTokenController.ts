@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { verify, sign } from "jsonwebtoken";
-import { CustomJWTPayload } from "../middleware/verifyJWT";
+import { CustomJWTPayload } from "../utils/types";
 import { TokenExpiredError } from "jsonwebtoken";
 
 const prisma = new PrismaClient();
@@ -11,7 +11,7 @@ export default class RefreshTokenController {
     const cookies = req.cookies;
 
     if (!cookies?.refreshToken) {
-      res.status(401).json("No cookies given!");
+      res.status(401).json("No refresh token in cookies!");
       return;
     }
 

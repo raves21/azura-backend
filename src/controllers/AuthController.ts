@@ -31,60 +31,62 @@ export default class AuthController {
     }
     //evaluate password
     const matchedPassword = await bcrypt.compare(password, foundUser.password);
-    if (matchedPassword) {
-      //create refreshToken
-      const refreshToken = sign(
-        {
-          userId: foundUser.id,
-          email: foundUser.email,
-        },
-        process.env.REFRESH_TOKEN_SECRET as string,
-        { expiresIn: "3m" }
-      );
 
-      //saving user's session in the UserSession table, along with their refreshToken
-      const newlyCreatedUserSession = await prisma.userSession.create({
-        data: {
-          userId: foundUser.id,
-          deviceName: `unknown device`,
-          refreshToken,
-        },
-      });
-
-      console.log("LOGIN. GIVING JWT THIS PAYLOAD", {
-        userId: foundUser.id,
-        sessionId: newlyCreatedUserSession.sessionId,
-        email: foundUser.email,
-      });
-      //create accessToken, including sessionId in its payload
-      const accessToken = sign(
-        {
-          userId: foundUser.id,
-          sessionId: newlyCreatedUserSession.sessionId,
-          email: foundUser.email,
-        },
-        process.env.ACCESS_TOKEN_SECRET as string,
-        { expiresIn: "2m" }
-      );
-
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, //1 day
-        //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
-      });
-      res.status(200).json({
-        message: `You are now logged in as ${foundUser.username}`,
-        data: {
-          user: foundUser,
-          accessToken,
-        },
-      });
-    } else {
-      //if passwords dont match
+    //if passwords dont match throw error.
+    if (!matchedPassword) {
       res.status(403).json({
         message: "Invalid credentials.",
       });
+      return;
     }
+
+    //if passwords DO match, then create refreshToken
+    const refreshToken = sign(
+      {
+        userId: foundUser.id,
+        email: foundUser.email,
+      },
+      process.env.REFRESH_TOKEN_SECRET as string,
+      { expiresIn: "3m" }
+    );
+
+    //save user's session in the UserSession table, along with their refreshToken
+    const newlyCreatedUserSession = await prisma.userSession.create({
+      data: {
+        userId: foundUser.id,
+        deviceName: `unknown device`,
+        refreshToken,
+      },
+    });
+
+    console.log("LOGIN. GIVING JWT THIS PAYLOAD", {
+      userId: foundUser.id,
+      sessionId: newlyCreatedUserSession.sessionId,
+      email: foundUser.email,
+    });
+    //create accessToken, including sessionId in its payload
+    const accessToken = sign(
+      {
+        userId: foundUser.id,
+        sessionId: newlyCreatedUserSession.sessionId,
+        email: foundUser.email,
+      },
+      process.env.ACCESS_TOKEN_SECRET as string,
+      { expiresIn: "2m" }
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, //1 day
+      //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
+    });
+    res.status(200).json({
+      message: `You are now logged in as ${foundUser.username}`,
+      data: {
+        user: foundUser,
+        accessToken,
+      },
+    });
   }
 
   public async signUp(req: Request, res: Response) {

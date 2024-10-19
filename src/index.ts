@@ -21,9 +21,11 @@ app.get("/", async (req, res) => {
 
 // Auth route
 app.use("/api/auth", authRouter);
+
+//Refresh route
 app.use("/api/refresh", refreshRouter);
 
-// Apply JWT verification middleware
+//* Apply JWT verification middleware
 app.use(verifyJWT);
 
 // Users route (protected by verifyJWT)
