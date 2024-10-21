@@ -14,6 +14,8 @@ export function verifyJWT(
   }
 
   const accessToken = authHeader.split(" ")[1]; //Bearer {access token}
+
+  //verify if access token is still valid
   verify(
     accessToken,
     process.env.ACCESS_TOKEN_SECRET as string,
@@ -23,7 +25,6 @@ export function verifyJWT(
         return;
       }
       const payload = decoded as CustomJWTPayload;
-      console.log("PAYLOAD OF VERIFYJWT", payload);
       req.user = payload;
       next();
     }

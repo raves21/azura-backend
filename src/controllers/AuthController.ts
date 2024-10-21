@@ -59,11 +59,6 @@ export default class AuthController {
       },
     });
 
-    console.log("LOGIN. GIVING JWT THIS PAYLOAD", {
-      userId: foundUser.id,
-      sessionId: newlyCreatedUserSession.sessionId,
-      email: foundUser.email,
-    });
     //create accessToken, including sessionId in its payload
     const accessToken = sign(
       {
@@ -156,23 +151,5 @@ export default class AuthController {
       httpOnly: true,
     });
     res.status(200).json("Found user session. Successfully logged out.");
-  }
-
-  public async logoutOtherUser(req: Request, res: Response) {
-    const { sessionId } = req.params;
-    try {
-      //Delete the row with the sessionId in the UserSession table
-      await prisma.userSession.delete({
-        where: {
-          sessionId,
-        },
-      });
-      res
-        .status(200)
-        .json(`User with sessionId ${sessionId} logged out successfully.`);
-    } catch (err) {
-      //this means user with that sessionId is not found in the table
-      res.status(404).json(`Logout failed. User not found.`);
-    }
   }
 }

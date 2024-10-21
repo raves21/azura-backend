@@ -64,7 +64,6 @@ export default class RefreshTokenController {
           return;
         }
 
-        console.log("PAYLOAD OF REFRESH", payload);
         //issue a new access token
         const newAccessToken = sign(
           {
