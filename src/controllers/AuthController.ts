@@ -2,17 +2,21 @@ import { Response, Request } from "express";
 import bcrypt from "bcrypt";
 import { PrismaClient } from "@prisma/client";
 import { sign } from "jsonwebtoken";
+import AppError from "../utils/types/errors";
+import { asyncHandler } from "../middleware/asyncHandler";
 
 const prisma = new PrismaClient();
 
 export default class AuthController {
-  public async login(req: Request, res: Response) {
+  public login = asyncHandler(async (req: Request, res: Response) => {
     const { email, password } = req.body;
     if (!email || !password) {
-      res.status(400).json({
-        message: "Login Invalid. Please provide all needed credentials.",
-      });
-      return;
+      throw new AppError(
+        400,
+        "ValidationError",
+        "Login Invalid. Please provide all needed credentials.",
+        true
+      );
     }
 
     //find the user by email (email is unique)
@@ -24,20 +28,19 @@ export default class AuthController {
 
     //if user not found, throw error.
     if (!foundUser) {
-      res.status(401).json({
-        message: "Unauthorized.",
-      });
-      return;
+      throw new AppError(401, "Unathorized", "User not found.", true);
     }
     //evaluate password
     const matchedPassword = await bcrypt.compare(password, foundUser.password);
 
     //if passwords dont match throw error.
     if (!matchedPassword) {
-      res.status(403).json({
-        message: "Invalid credentials.",
-      });
-      return;
+      throw new AppError(
+        403,
+        "ValidationError",
+        "Incorrect Email or Password",
+        true
+      );
     }
 
     //if passwords DO match, then create refreshToken
@@ -59,11 +62,6 @@ export default class AuthController {
       },
     });
 
-    console.log("LOGIN. GIVING JWT THIS PAYLOAD", {
-      userId: foundUser.id,
-      sessionId: newlyCreatedUserSession.sessionId,
-      email: foundUser.email,
-    });
     //create accessToken, including sessionId in its payload
     const accessToken = sign(
       {
@@ -87,42 +85,40 @@ export default class AuthController {
         accessToken,
       },
     });
-  }
+  });
 
-  public async signUp(req: Request, res: Response) {
+  public signUp = asyncHandler(async (req: Request, res: Response) => {
     const { username, email, password } = req.body;
-    if (!username || !email || !password)
-      res.status(400).json({
-        message: "Signup Invalid. Please provide all the needed credentials.",
-      });
-
-    try {
-      //encrypt the password
-      const encryptedPassword = await bcrypt.hash(password, 10);
-
-      //store the new user in the db
-      const newUser = {
-        email,
-        password: encryptedPassword,
-        username,
-      };
-
-      await prisma.user.create({
-        data: newUser,
-      });
-
-      res.status(201).json({
-        message: "success, new user created",
-        data: newUser,
-      });
-    } catch (err) {
-      res.status(500).json({
-        error: err instanceof Error ? err.message : "an unknown error occured.",
-      });
+    if (!username || !email || !password) {
+      throw new AppError(
+        400,
+        "ValidationError",
+        "Signup invalid. Please provide all the needed credentials.",
+        true
+      );
     }
-  }
 
-  public async logoutSelf(req: Request, res: Response) {
+    //encrypt the password
+    const encryptedPassword = await bcrypt.hash(password, 10);
+
+    //store the new user in the db
+    const newUser = {
+      email,
+      password: encryptedPassword,
+      username,
+    };
+
+    await prisma.user.create({
+      data: newUser,
+    });
+
+    res.status(201).json({
+      message: "success, new user created",
+      data: newUser,
+    });
+  });
+
+  public logoutSelf = asyncHandler(async (req: Request, res: Response) => {
     //*NOTE: On client, also delete accessToken or set to null or something
 
     //NOTE: this function has no error handling if cookies.refreshToken
@@ -140,6 +136,7 @@ export default class AuthController {
       },
     });
 
+    //user session was already deleted in the UserSession table (omae wa mo logged out)
     if (!foundUserSession) {
       res.status(200).json("User session not found. Successfully logged out.");
       return;
@@ -156,23 +153,5 @@ export default class AuthController {
       httpOnly: true,
     });
     res.status(200).json("Found user session. Successfully logged out.");
-  }
-
-  public async logoutOtherUser(req: Request, res: Response) {
-    const { sessionId } = req.params;
-    try {
-      //Delete the row with the sessionId in the UserSession table
-      await prisma.userSession.delete({
-        where: {
-          sessionId,
-        },
-      });
-      res
-        .status(200)
-        .json(`User with sessionId ${sessionId} logged out successfully.`);
-    } catch (err) {
-      //this means user with that sessionId is not found in the table
-      res.status(404).json(`Logout failed. User not found.`);
-    }
-  }
+  });
 }

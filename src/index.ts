@@ -1,8 +1,10 @@
 import express, { Express } from "express";
-import userRouter from "./routes/user";
+import usersRouter from "./routes/users";
 import authRouter from "./routes/auth";
 import refreshRouter from "./routes/refresh";
+import sessionsRouter from "./routes/sessions";
 import { verifyJWT } from "./middleware/verifyJWT";
+import { errorHandler } from "./middleware/errorHandler";
 
 const app: Express = express();
 const port = 8080;
@@ -29,7 +31,13 @@ app.use("/api/refresh", refreshRouter);
 app.use(verifyJWT);
 
 // Users route (protected by verifyJWT)
-app.use("/api/user", userRouter);
+app.use("/api/users", usersRouter);
+
+// Sessions route (protected by verifyJWT)
+app.use("/api/sessions", sessionsRouter);
+
+//middleware for handling errors
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`app now running on port localhost:${port}`);
