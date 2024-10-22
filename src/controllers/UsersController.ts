@@ -1,146 +1,125 @@
 import { Response, Request } from "express-serve-static-core";
 import { PrismaClient } from "@prisma/client";
-import { RequestWithJWTPayload } from "../utils/types";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { asyncHandler } from "../middleware/asyncHandler";
+import AppError from "../utils/types/errors";
 
 const prisma = new PrismaClient();
 
 export default class UsersController {
   public async getAllUsers(req: Request, res: Response) {
-    const allUsers = await prisma.user.findMany();
+    const { page, perPage } = req.query;
+    const ascending =
+      req.query.ascending && req.query.ascending == "true" ? true : false;
+
+    const _page = Number(page) || 1;
+    const _perPage = Number(perPage) || 10;
+    const order = ascending ? "asc" : "desc";
+    const skip = (_page - 1) * _perPage;
+    const totalUserCount = await prisma.user.count();
+    const totalPages = Math.ceil(totalUserCount / _perPage);
+
+    const allUsers = await prisma.user.findMany({
+      skip,
+      take: _perPage,
+      orderBy: {
+        createdAt: order,
+      },
+    });
     res.status(200).json({
       message: "success",
+      page: _page,
+      perPage: _perPage,
+      total: totalUserCount,
+      totalPages,
       data: allUsers,
     });
   }
 
-  public async getSelfInfo(req: RequestWithJWTPayload, res: Response) {
+  public getSelfInfo = asyncHandler(async (req: Request, res: Response) => {
     const currentUser = req.user;
 
-    if (!currentUser) {
-      res.status(400).json({
-        message: "Bad request. Request did not come with payload.",
-      });
-      return;
-    }
-
-    console.log("GET SELF INFO CURRENT USER ID", currentUser.userId);
-
-    try {
-      const currentUserInfo = await prisma.user.findFirst({
-        where: {
-          id: currentUser.userId,
-        },
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              followers: true,
-              following: true,
-            },
+    const currentUserInfo = await prisma.user.findFirst({
+      where: {
+        id: currentUser.userId,
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            followers: true,
+            following: true,
           },
         },
-      });
-      res.status(200).json({
-        message: "success",
-        data: {
-          ...currentUserInfo,
-          sessionId: currentUser.sessionId,
-        },
-      });
-    } catch (error) {
-      console.log("GETSELFINFO ERROR", error);
-      res.status(500).json({
-        message:
-          error instanceof Error
-            ? `BRUH ${error.message}`
-            : "An unknown error occured",
-      });
-    }
-  }
+      },
+    });
+    res.status(200).json({
+      message: "success",
+      data: {
+        ...currentUserInfo,
+        sessionId: currentUser.sessionId,
+      },
+    });
+  });
 
-  public async getUserInfo(req: RequestWithJWTPayload, res: Response) {
+  public getUserInfo = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const currentUser = req.user;
 
-    if (!currentUser) {
-      res.status(400).json({
-        message: "Bad request. Request does not come with payload.",
-      });
-      return;
-    }
-
-    try {
-      const foundUser = await prisma.user.findFirst({
-        where: {
-          id,
-        },
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              followers: true,
-              following: true,
-            },
+    const foundUser = await prisma.user.findFirst({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            followers: true,
+            following: true,
           },
         },
-      });
+      },
+    });
 
-      if (!foundUser) {
-        res.status(404).json({
-          message: "User not found.",
-        });
-        return;
-      }
-
-      const followsCurrentUser = await prisma.follow.findFirst({
-        where: {
-          followerId: foundUser.id,
-          followedId: currentUser.userId,
-        },
-      });
-
-      const followedByCurrentUser = await prisma.follow.findFirst({
-        where: {
-          followerId: currentUser.id,
-          followedId: foundUser.id,
-        },
-      });
-
-      res.status(200).json({
-        message: `Success. User ${foundUser.id} found.`,
-        data: {
-          ...foundUser,
-          followsYou: followsCurrentUser ? true : false,
-          followedByYou: followedByCurrentUser ? true : false,
-        },
-      });
-    } catch (error) {
-      res.status(500).json({
-        message:
-          error instanceof Error ? error.message : "An unknown error occured.",
-      });
+    if (!foundUser) {
+      throw new AppError(404, "NotFoundError", "User not found.", true);
     }
-  }
 
-  public async followUser(req: RequestWithJWTPayload, res: Response) {
+    const followsCurrentUser = await prisma.follow.findFirst({
+      where: {
+        followerId: foundUser.id,
+        followedId: currentUser.userId,
+      },
+    });
+
+    const followedByCurrentUser = await prisma.follow.findFirst({
+      where: {
+        followerId: currentUser.userId,
+        followedId: foundUser.id,
+      },
+    });
+
+    res.status(200).json({
+      message: `Success. User ${foundUser.id} found.`,
+      data: {
+        ...foundUser,
+        followsYou: followsCurrentUser ? true : false,
+        followedByYou: followedByCurrentUser ? true : false,
+      },
+    });
+  });
+
+  public followUser = asyncHandler(async (req: Request, res: Response) => {
     const { id: userToFollow } = req.params;
     const currentUser = req.user;
-
-    if (!currentUser) {
-      res.status(400).json({
-        message: "Bad request. Request did not come with payload.",
-      });
-      return;
-    }
 
     try {
       await prisma.follow.create({
@@ -154,59 +133,172 @@ export default class UsersController {
       });
     } catch (error) {
       console.log("FOLLOW ERROR", error);
-      res.status(500).json({
-        message:
-          error instanceof PrismaClientKnownRequestError
-            ? `Follow user failed. You are already following this user.`
-            : "An unknown error occured",
-      });
+      if (error instanceof PrismaClientKnownRequestError) {
+        res.status(500).json({
+          message: "Follow user failed. You are already following this user.",
+        });
+      } else {
+        throw error;
+      }
     }
-  }
+  });
 
-  public async unfollowUser(req: RequestWithJWTPayload, res: Response) {
+  public unfollowUser = asyncHandler(async (req: Request, res: Response) => {
     const currentUser = req.user;
     const { id: userToUnfollow } = req.params;
 
-    if (!currentUser) {
-      res.status(400).json({
-        message: "Bad request. Request did not come with jwt payload.",
-      });
-      return;
+    //check if the relationship between currentUser and userToUnfollow exists
+    const foundRelationship = await prisma.follow.findFirst({
+      where: {
+        followerId: currentUser.userId,
+        followedId: userToUnfollow,
+      },
+    });
+
+    if (!foundRelationship) {
+      throw new AppError(
+        404,
+        "Relationship not found.",
+        `Relationship between ${currentUser.userId} and ${userToUnfollow} not found.`,
+        true
+      );
     }
 
-    try {
-      //check if the relationship between currentUser and userToUnfollow exists
-      const foundRelationship = await prisma.follow.findFirst({
-        where: {
+    //delete the relationship
+    await prisma.follow.delete({
+      where: {
+        followerId_followedId: {
           followerId: currentUser.userId,
           followedId: userToUnfollow,
         },
-      });
+      },
+    });
 
-      if (!foundRelationship) {
-        res.status(404).json({
-          message: `Relationship between ${currentUser.userId} and ${userToUnfollow} not found.`,
-        });
-        return;
-      }
+    res.status(200).json({
+      message: `Successfully unfollowed user ${userToUnfollow}`,
+    });
+  });
+  public getCurrentUserFollowingList = asyncHandler(
+    async (req: Request, res: Response) => {
+      const currentUser = req.user;
 
-      //delete the relationship
-      await prisma.follow.delete({
+      //TODO: add pagination
+      const currentUserFollowingList = await prisma.user.findFirst({
         where: {
-          followerId_followedId: {
-            followerId: currentUser.userId,
-            followedId: userToUnfollow,
+          id: currentUser.userId,
+        },
+        select: {
+          following: {
+            select: {
+              followed: {
+                select: {
+                  id: true,
+                  username: true,
+                  email: true,
+                },
+              },
+              createdAt: true,
+            },
           },
         },
       });
-
       res.status(200).json({
-        message: `Successfully unfollowed user ${userToUnfollow}`,
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: error instanceof Error ? error.message : "An unknown occured.",
+        message: "success",
+        data: currentUserFollowingList?.following.map((data) => data.followed),
       });
     }
-  }
+  );
+
+  public getCurrentUserFollowerList = asyncHandler(
+    async (req: Request, res: Response) => {
+      const currentUser = req.user;
+
+      //TODO: add pagination
+      const currentUserFollowerList = await prisma.user.findFirst({
+        where: {
+          id: currentUser.userId,
+        },
+        select: {
+          followers: {
+            select: {
+              follower: {
+                select: {
+                  id: true,
+                  username: true,
+                  email: true,
+                },
+              },
+              createdAt: true,
+            },
+          },
+        },
+      });
+      res.status(200).json({
+        message: "success",
+        data: currentUserFollowerList?.followers.map((data) => data.follower),
+      });
+    }
+  );
+
+  public getUserFollowingList = asyncHandler(
+    async (req: Request, res: Response) => {
+      const { id } = req.params;
+
+      //TODO: add pagination
+      const userFollowingList = await prisma.user.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          following: {
+            select: {
+              followed: {
+                select: {
+                  id: true,
+                  username: true,
+                  email: true,
+                },
+              },
+              createdAt: true,
+            },
+          },
+        },
+      });
+      res.status(200).json({
+        message: "success",
+        data: userFollowingList?.following.map((data) => data.followed),
+      });
+    }
+  );
+
+  public getUserFollowerList = asyncHandler(
+    async (req: Request, res: Response) => {
+      const { id } = req.params;
+
+      //TODO: add pagination
+      const userFollowerList = await prisma.user.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          followers: {
+            select: {
+              follower: {
+                select: {
+                  id: true,
+                  username: true,
+                  email: true,
+                },
+              },
+              createdAt: true,
+            },
+          },
+        },
+      });
+      res.status(200).json({
+        message: "success",
+        data: userFollowerList?.followers.map((data) => data.follower),
+      });
+    }
+  );
 }

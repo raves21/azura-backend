@@ -1,16 +1,17 @@
 import { verify } from "jsonwebtoken";
-import { Response, NextFunction } from "express";
-import { RequestWithJWTPayload, CustomJWTPayload } from "../utils/types";
+import { Response, NextFunction, Request } from "express";
+import { CustomJWTPayload } from "../utils/types/jwt";
+import AppError from "../utils/types/errors";
 
-export function verifyJWT(
-  req: RequestWithJWTPayload,
-  res: Response,
-  next: NextFunction
-) {
+export function verifyJWT(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
-    res.status(401).json("Unauthorized. No jwt in authorization header.");
-    return;
+    throw new AppError(
+      401,
+      "Unauthorized.",
+      "Unauthorized. No jwt in authorization header.",
+      true
+    );
   }
 
   const accessToken = authHeader.split(" ")[1]; //Bearer {access token}
@@ -21,8 +22,7 @@ export function verifyJWT(
     process.env.ACCESS_TOKEN_SECRET as string,
     (err, decoded) => {
       if (err) {
-        res.status(403).json("Invalid token.");
-        return;
+        throw new AppError(403, "InvalidTokenError", "Invalid token.", true);
       }
       const payload = decoded as CustomJWTPayload;
       req.user = payload;
