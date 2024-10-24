@@ -23,15 +23,6 @@ model User {
   userSessions UserSession[]
 }
 
-model UserSession {
-  sessionId    String   @id @default(uuid()) @db.Uuid
-  userId       String   @db.Uuid
-  user         User     @relation(fields: [userId], references: [id])
-  refreshToken String   @unique
-  deviceName   String
-  createdAt    DateTime @default(now())
-}
-
 model Follow {
   followerId String   @db.Uuid
   followedId String   @db.Uuid
@@ -45,12 +36,28 @@ model Follow {
   @@unique([followerId, followedId])
 }
 
+model UserSession {
+  sessionId    String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+  refreshToken String   @unique
+  deviceName   String
+  createdAt    DateTime @default(now())
+}
+
+enum Privacy {
+  FRIENDS_ONLY
+  PUBLIC
+  ONLY_ME
+}
+
 model Collection {
   id              String           @id @default(uuid()) @db.Uuid
   owner           User             @relation(fields: [ownerId], references: [id])
   ownerId         String           @db.Uuid
   name            String
   description     String
+  privacy         Privacy
   collectionItems CollectionItem[]
   posts           Post[]
   createdAt       DateTime         @default(now())
@@ -61,9 +68,13 @@ model CollectionItem {
   id           String     @id @default(uuid()) @db.Uuid
   collectionId String     @db.Uuid
   collection   Collection @relation(fields: [collectionId], references: [id])
-  mediaId      String     @db.Uuid
+  mediaId      String
   media        Media      @relation(fields: [mediaId], references: [id])
   createdAt    DateTime   @default(now())
+
+  //ensures that only one instance of an anime/tv/movie in a collection
+  //ex: a collection cant have two Inception (2010). Only one.
+  @@unique([collectionId, mediaId])
 }
 
 enum MediaType {
@@ -73,25 +84,21 @@ enum MediaType {
 }
 
 model Media {
-  id           String    @id @default(uuid()) @db.Uuid
-  type         MediaType
-  infoPageLink String
-  coverImage   String
-  posterImage  String
-  title        String
-  description  String
-  year         String
-  rating       Float
-  status       String?
-  createdAt    DateTime  @default(now())
+  //id should be provided by frontend (anilistId of the anime, or tmdbId of the movie/tv)
+  id          String    @id
+  type        MediaType
+  coverImage  String
+  posterImage String
+  title       String
+  description String
+  year        String
+  rating      String
+  status      String?
+  createdAt   DateTime  @default(now())
 
   //list of all collectionsItems and posts that reference this media
   collectionItems CollectionItem[]
   posts           Post[]
-
-  //to avoid duplicate medias in this table (I included 'type' because anime movies can 
-  //also be seen in tmdb movies, and regular animes can also be seen in tmdb tv)`
-  @@unique([title, year, type])
 }
 
 model Post {
@@ -107,7 +114,7 @@ model Post {
   //a post can also contain a reference to a media, or a reference to a collection.
   //ex: user wants to share about the movie Inception (2010), 
   //or user wants to share their personal collection of horror movies
-  mediaId      String?     @db.Uuid
+  mediaId      String?
   media        Media?      @relation(fields: [mediaId], references: [id])
   collectionId String?     @db.Uuid
   collection   Collection? @relation(fields: [collectionId], references: [id])

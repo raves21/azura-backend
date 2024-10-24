@@ -36,35 +36,37 @@ export default class UsersController {
     });
   }
 
-  public getSelfInfo = asyncHandler(async (req: Request, res: Response) => {
-    const currentUser = req.user;
+  public getCurrentUserInfo = asyncHandler(
+    async (req: Request, res: Response) => {
+      const currentUser = req.user;
 
-    const currentUserInfo = await prisma.user.findFirst({
-      where: {
-        id: currentUser.userId,
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            followers: true,
-            following: true,
+      const currentUserInfo = await prisma.user.findFirst({
+        where: {
+          id: currentUser.userId,
+        },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+            },
           },
         },
-      },
-    });
-    res.status(200).json({
-      message: "success",
-      data: {
-        ...currentUserInfo,
-        sessionId: currentUser.sessionId,
-      },
-    });
-  });
+      });
+      res.status(200).json({
+        message: "success",
+        data: {
+          ...currentUserInfo,
+          sessionId: currentUser.sessionId,
+        },
+      });
+    }
+  );
 
   public getUserInfo = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -132,7 +134,6 @@ export default class UsersController {
         message: `Success, you have successfully followed user ${userToFollow}`,
       });
     } catch (error) {
-      console.log("FOLLOW ERROR", error);
       if (error instanceof PrismaClientKnownRequestError) {
         res.status(500).json({
           message: "Follow user failed. You are already following this user.",
@@ -183,28 +184,23 @@ export default class UsersController {
       const currentUser = req.user;
 
       //TODO: add pagination
-      const currentUserFollowingList = await prisma.user.findFirst({
+      const currentUserFollowingList = await prisma.follow.findMany({
         where: {
-          id: currentUser.userId,
+          followerId: currentUser.userId,
         },
         select: {
-          following: {
+          followed: {
             select: {
-              followed: {
-                select: {
-                  id: true,
-                  username: true,
-                  email: true,
-                },
-              },
-              createdAt: true,
+              id: true,
+              username: true,
+              email: true,
             },
           },
         },
       });
       res.status(200).json({
         message: "success",
-        data: currentUserFollowingList?.following.map((data) => data.followed),
+        data: currentUserFollowingList.map((item) => item.followed),
       });
     }
   );
@@ -214,28 +210,23 @@ export default class UsersController {
       const currentUser = req.user;
 
       //TODO: add pagination
-      const currentUserFollowerList = await prisma.user.findFirst({
+      const currentUserFollowerList = await prisma.follow.findMany({
         where: {
-          id: currentUser.userId,
+          followedId: currentUser.userId,
         },
         select: {
-          followers: {
+          follower: {
             select: {
-              follower: {
-                select: {
-                  id: true,
-                  username: true,
-                  email: true,
-                },
-              },
-              createdAt: true,
+              id: true,
+              username: true,
+              email: true,
             },
           },
         },
       });
       res.status(200).json({
         message: "success",
-        data: currentUserFollowerList?.followers.map((data) => data.follower),
+        data: currentUserFollowerList.map((item) => item.follower),
       });
     }
   );
@@ -245,28 +236,23 @@ export default class UsersController {
       const { id } = req.params;
 
       //TODO: add pagination
-      const userFollowingList = await prisma.user.findFirst({
+      const userFollowingList = await prisma.follow.findMany({
         where: {
-          id,
+          followerId: id,
         },
         select: {
-          following: {
+          followed: {
             select: {
-              followed: {
-                select: {
-                  id: true,
-                  username: true,
-                  email: true,
-                },
-              },
-              createdAt: true,
+              id: true,
+              username: true,
+              email: true,
             },
           },
         },
       });
       res.status(200).json({
         message: "success",
-        data: userFollowingList?.following.map((data) => data.followed),
+        data: userFollowingList.map((item) => item.followed),
       });
     }
   );
@@ -276,28 +262,23 @@ export default class UsersController {
       const { id } = req.params;
 
       //TODO: add pagination
-      const userFollowerList = await prisma.user.findFirst({
+      const userFollowerList = await prisma.follow.findMany({
         where: {
-          id,
+          followedId: id,
         },
         select: {
-          followers: {
+          follower: {
             select: {
-              follower: {
-                select: {
-                  id: true,
-                  username: true,
-                  email: true,
-                },
-              },
-              createdAt: true,
+              id: true,
+              username: true,
+              email: true,
             },
           },
         },
       });
       res.status(200).json({
         message: "success",
-        data: userFollowerList?.followers.map((data) => data.follower),
+        data: userFollowerList.map((item) => item.follower),
       });
     }
   );

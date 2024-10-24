@@ -36,7 +36,7 @@ export default class AuthController {
     //if passwords dont match throw error.
     if (!matchedPassword) {
       throw new AppError(
-        403,
+        400,
         "ValidationError",
         "Incorrect Email or Password",
         true
@@ -50,7 +50,7 @@ export default class AuthController {
         email: foundUser.email,
       },
       process.env.REFRESH_TOKEN_SECRET as string,
-      { expiresIn: "3m" }
+      { expiresIn: "1d" }
     );
 
     //save user's session in the UserSession table, along with their refreshToken
@@ -70,7 +70,7 @@ export default class AuthController {
         email: foundUser.email,
       },
       process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: "2m" }
+      { expiresIn: "30m" }
     );
 
     res.cookie("refreshToken", refreshToken, {
@@ -145,7 +145,7 @@ export default class AuthController {
     //Delete that userSession using the foundUserSession's sessionId (since that is the primary key)
     await prisma.userSession.delete({
       where: {
-        sessionId: foundUserSession?.sessionId,
+        sessionId: foundUserSession.sessionId,
       },
     });
     //and also clear the cookie
