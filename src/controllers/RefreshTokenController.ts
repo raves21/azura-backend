@@ -82,7 +82,7 @@ export default class RefreshTokenController {
                 email: foundUser.email,
               },
               process.env.ACCESS_TOKEN_SECRET as string,
-              { expiresIn: "1m" }
+              { expiresIn: "30m" }
             );
             res.json({
               message: "U are granted a new access token!",

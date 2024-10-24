@@ -5,15 +5,16 @@ const router = express.Router();
 const usersController = new UsersController();
 
 router
+  //get
   .get("/", usersController.getAllUsers)
-  .get("/me", usersController.getSelfInfo)
+  .get("/me", usersController.getCurrentUserInfo)
   .get("/:id", usersController.getUserInfo)
   .get("/me/following", usersController.getCurrentUserFollowingList)
   .get("/me/followers", usersController.getCurrentUserFollowerList)
   .get("/:id/following", usersController.getUserFollowingList)
-  .get("/:id/followers", usersController.getUserFollowerList);
+  .get("/:id/followers", usersController.getUserFollowerList)
 
-router
+  //post
   .post("/:id/follow", usersController.followUser)
   .post("/:id/unfollow", usersController.unfollowUser);
 

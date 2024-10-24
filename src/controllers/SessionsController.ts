@@ -23,6 +23,9 @@ export default class SessionsController {
     //get all user sessions, and mark the current session as isCurrentSession: true
     const allUserSessions = (
       await prisma.userSession.findMany({
+        where: {
+          userId: currentUser.userId,
+        },
         select: {
           userId: true,
           sessionId: true,

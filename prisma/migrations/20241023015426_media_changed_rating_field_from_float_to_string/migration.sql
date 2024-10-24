@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Media" ALTER COLUMN "rating" SET DATA TYPE TEXT;
