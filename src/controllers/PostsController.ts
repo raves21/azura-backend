@@ -13,11 +13,11 @@ const prisma = new PrismaClient();
 export default class PostsController {
   public getCurrentUserPosts = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
 
       const currentUserPosts = await prisma.post.findMany({
         where: {
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
         },
         orderBy: {
           createdAt: "desc",
@@ -100,11 +100,11 @@ export default class PostsController {
 
   public getUserPosts = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const currentUser = req.user;
+    const payload = req.jwtPayload;
 
     //check if currentUser is friends with owner
     const isCurrentUserFriendsWithOwner = await areTheyFriends(
-      currentUser.userId,
+      payload.userId,
       id
     );
 
@@ -186,7 +186,7 @@ export default class PostsController {
   public getPostInfo = asyncHandler(async (req: Request, res: Response) => {
     //post id
     const { id } = req.params;
-    const currentUser = req.user;
+    const payload = req.jwtPayload;
 
     const foundPost = await prisma.post.findFirst({
       where: {
@@ -255,7 +255,7 @@ export default class PostsController {
     };
 
     await checkResourcePrivacyAndUserOwnership({
-      currentUserId: currentUser.userId,
+      currentUserId: payload.userId,
       ownerId: foundPost.owner.id,
       privacy: foundPost.privacy,
       res,
@@ -264,7 +264,7 @@ export default class PostsController {
   });
 
   public createPost = asyncHandler(async (req: Request, res: Response) => {
-    const currentUser = req.user;
+    const payload = req.jwtPayload;
     const { content, privacy, media, collectionId } = req.body;
 
     //check if media exists in req.body
@@ -296,7 +296,7 @@ export default class PostsController {
             content,
             privacy,
             mediaId: newMedia.id,
-            ownerId: currentUser.userId,
+            ownerId: payload.userId,
           },
         });
 
@@ -316,7 +316,7 @@ export default class PostsController {
           content,
           privacy,
           mediaId: foundMedia.id,
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
         },
       });
       res.status(201).json({
@@ -331,7 +331,7 @@ export default class PostsController {
       //use the collectionId to create the new post
       const newPostWithCollection = await prisma.post.create({
         data: {
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
           content,
           privacy,
           collectionId,
@@ -349,7 +349,7 @@ export default class PostsController {
 
     const newPostWithoutAttachments = await prisma.post.create({
       data: {
-        ownerId: currentUser.userId,
+        ownerId: payload.userId,
         content,
         privacy,
       },
@@ -363,13 +363,13 @@ export default class PostsController {
   });
 
   public deletePost = asyncHandler(async (req: Request, res: Response) => {
-    const currentUser = req.user;
+    const payload = req.jwtPayload;
     const { id } = req.params;
 
     const deletedPost = await prisma.post.delete({
       where: {
         id,
-        ownerId: currentUser.userId,
+        ownerId: payload.userId,
       },
     });
 
@@ -380,7 +380,7 @@ export default class PostsController {
   });
 
   public updatePost = asyncHandler(async (req: Request, res: Response) => {
-    const currentUser = req.user;
+    const payload = req.jwtPayload;
     const { id } = req.params;
     //! NEEDS REFACTOR: make proper validation for req.body
     const { content, privacy, media, collectionId } = req.body;
@@ -417,7 +417,7 @@ export default class PostsController {
             content,
             privacy,
             mediaId: newMedia.id,
-            ownerId: currentUser.userId,
+            ownerId: payload.userId,
           },
         });
         res.status(200).json({
@@ -439,7 +439,7 @@ export default class PostsController {
           content,
           privacy,
           mediaId: foundMedia.id,
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
         },
       });
       res.status(201).json({
@@ -456,7 +456,7 @@ export default class PostsController {
           id,
         },
         data: {
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
           content,
           privacy,
           collectionId,
@@ -476,7 +476,7 @@ export default class PostsController {
         id,
       },
       data: {
-        ownerId: currentUser.userId,
+        ownerId: payload.userId,
         content,
         privacy,
       },
@@ -490,7 +490,7 @@ export default class PostsController {
   });
 
   public getPostComments = asyncHandler(async (req: Request, res: Response) => {
-    const currentUser = req.user;
+    const payload = req.jwtPayload;
     const { id } = req.params;
 
     //TODO: ADD PAGINATION
@@ -522,21 +522,21 @@ export default class PostsController {
         content: comment.content,
         author: comment.author,
         isOwnedByCurrentUser:
-          comment.author.id === currentUser.userId ? true : false,
+          comment.author.id === payload.userId ? true : false,
       })),
     });
   });
 
   public createPostComment = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
       //postId
       const { id } = req.params;
       const { content } = req.body;
 
       const newComment = await prisma.comment.create({
         data: {
-          authorId: currentUser.userId,
+          authorId: payload.userId,
           postId: id,
           content,
         },
@@ -553,13 +553,13 @@ export default class PostsController {
     async (req: Request, res: Response) => {
       const { postId, commentId } = req.params;
       const { content } = req.body;
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
 
       const updatedComment = await prisma.comment.update({
         where: {
           id: commentId,
           postId,
-          authorId: currentUser.userId,
+          authorId: payload.userId,
         },
         data: {
           content,
@@ -576,7 +576,7 @@ export default class PostsController {
   public deletePostComment = asyncHandler(
     async (req: Request, res: Response) => {
       const { postId, commentId } = req.params;
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
 
       const foundPostOwner = await prisma.post.findFirst({
         where: {
@@ -591,7 +591,7 @@ export default class PostsController {
         throw new AppError(404, "NotFound", "Post not found.", true);
       }
 
-      if (foundPostOwner.ownerId !== currentUser.userId) {
+      if (foundPostOwner.ownerId !== payload.userId) {
         throw new AppError(
           403,
           "Unauthorized",
@@ -643,12 +643,12 @@ export default class PostsController {
   });
 
   public likePost = asyncHandler(async (req: Request, res: Response) => {
-    const currentUser = req.user;
+    const payload = req.jwtPayload;
     const { id } = req.params;
 
     await prisma.postLike.create({
       data: {
-        userId: currentUser.userId,
+        userId: payload.userId,
         postId: id,
       },
     });
@@ -659,13 +659,13 @@ export default class PostsController {
   });
 
   public unlikePost = asyncHandler(async (req: Request, res: Response) => {
-    const currentUser = req.user;
+    const payload = req.jwtPayload;
     const { id } = req.params;
 
     await prisma.postLike.delete({
       where: {
         userId_postId: {
-          userId: currentUser.userId,
+          userId: payload.userId,
           postId: id,
         },
       },

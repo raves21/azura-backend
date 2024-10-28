@@ -2,16 +2,15 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const prisma = new PrismaClient();
 
 export default class SessionsController {
   public getSessions = asyncHandler(async (req: Request, res: Response) => {
     //extract the user/userinfo from the payload (given by verifyJWT)
-    const currentUser = req.user;
+    const payload = req.jwtPayload;
 
-    if (!currentUser) {
+    if (!payload) {
       throw new AppError(
         400,
         "Bad request",
@@ -24,7 +23,7 @@ export default class SessionsController {
     const allUserSessions = (
       await prisma.userSession.findMany({
         where: {
-          userId: currentUser.userId,
+          userId: payload.userId,
         },
         select: {
           userId: true,
@@ -34,7 +33,7 @@ export default class SessionsController {
         },
       })
     ).map((userSession) =>
-      userSession.sessionId === currentUser.sessionId
+      userSession.sessionId === payload.sessionId
         ? {
             ...userSession,
             isCurrentSession: true,
@@ -54,28 +53,14 @@ export default class SessionsController {
   public logoutSession = asyncHandler(async (req: Request, res: Response) => {
     const { sessionId } = req.params;
 
-    try {
-      //Delete the row with the sessionId in the UserSession table
-      await prisma.userSession.delete({
-        where: {
-          sessionId,
-        },
-      });
-      res
-        .status(200)
-        .json(`Session with id ${sessionId} logged out successfully.`);
-    } catch (err) {
-      if (err instanceof PrismaClientKnownRequestError) {
-        //this means user with that sessionId is not found in the table
-        throw new AppError(
-          404,
-          "NotFoundError",
-          "Logout failed. User session not found.",
-          true
-        );
-      } else {
-        throw err;
-      }
-    }
+    //Delete the row with the sessionId in the UserSession table
+    await prisma.userSession.delete({
+      where: {
+        sessionId,
+      },
+    });
+    res
+      .status(200)
+      .json(`Session with id ${sessionId} logged out successfully.`);
   });
 }

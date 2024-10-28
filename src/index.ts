@@ -8,6 +8,7 @@ import cronRouter from "./routes/cron";
 import postsRouter from "./routes/posts";
 import { verifyJWT } from "./middleware/verifyJWT";
 import { errorHandler } from "./middleware/errorHandler";
+import { verifySession } from "./middleware/verifySession";
 
 const app: Express = express();
 const port = 8080;
@@ -35,6 +36,8 @@ app.use("/cron", cronRouter);
 
 //* Apply JWT verification middleware
 app.use(verifyJWT);
+
+app.use(verifySession);
 
 // Users route (protected by verifyJWT)
 app.use("/api/users", usersRouter);

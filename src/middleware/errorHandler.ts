@@ -39,7 +39,7 @@ export const errorHandler = (
     response.message = "Your JWT is invalid.";
   } else if (error instanceof TokenExpiredError) {
     response.httpCode = 401;
-    response.message = "Your refresh token is expired.";
+    response.message = error.message;
   } else {
     response.message = error.message;
     response.name = error.name;
