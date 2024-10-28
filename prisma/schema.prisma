@@ -105,7 +105,8 @@ model Post {
   id           String      @id @default(uuid()) @db.Uuid
   ownerId      String      @db.Uuid
   owner        User        @relation(fields: [ownerId], references: [id])
-  post         String?
+  content      String?
+  privacy      Privacy
   comments     Comment[]
   likes        PostLike[]
   createdAt    DateTime    @default(now())
@@ -121,16 +122,18 @@ model Post {
 }
 
 model PostLike {
-  id        String   @id @default(uuid()) @db.Uuid
   userId    String   @db.Uuid
   postId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id])
   post      Post     @relation(fields: [postId], references: [id])
   createdAt DateTime @default(now())
+
+  @@id([userId, postId])
 }
 
 model Comment {
   id        String   @id @default(uuid()) @db.Uuid
+  content   String
   postId    String   @db.Uuid
   post      Post     @relation(fields: [postId], references: [id])
   authorId  String   @db.Uuid
