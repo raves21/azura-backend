@@ -32,7 +32,7 @@ export const errorHandler = (
     response.message = error.message;
   } else if (error instanceof PrismaClientKnownRequestError) {
     response.httpCode = 400;
-    response.message = `Database Operation failed.`;
+    response.message = error.message;
     response.errors = error;
   } else if (error instanceof JsonWebTokenError) {
     response.httpCode = 401;
