@@ -3,13 +3,19 @@ import { Response, NextFunction, Request } from "express";
 import { CustomJWTPayload } from "../utils/types/jwt";
 import AppError from "../utils/types/errors";
 
-export function verifyJWT(req: Request, res: Response, next: NextFunction) {
+export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
+  const cookies = req.cookies;
+
+  if (!cookies?.refreshToken) {
+    throw new AppError(401, "Unauthorized.", "No JWT in cookies!", true);
+  }
+
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
     throw new AppError(
       401,
       "Unauthorized.",
-      "Unauthorized. No jwt in authorization header.",
+      "Unauthorized. No token in authorization header.",
       true
     );
   }
@@ -25,8 +31,8 @@ export function verifyJWT(req: Request, res: Response, next: NextFunction) {
         throw new AppError(403, "InvalidTokenError", "Invalid token.", true);
       }
       const payload = decoded as CustomJWTPayload;
-      req.user = payload;
+      req.jwtPayload = payload;
       next();
     }
   );
-}
+};

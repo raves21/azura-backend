@@ -10,6 +10,8 @@ const prisma = new PrismaClient();
 export default class AuthController {
   public login = asyncHandler(async (req: Request, res: Response) => {
     const { email, password } = req.body;
+    const sessionLimit = 2;
+
     if (!email || !password) {
       throw new AppError(
         400,
@@ -24,12 +26,39 @@ export default class AuthController {
       where: {
         email,
       },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        password: true,
+        userSessions: {
+          select: {
+            userId: true,
+            deviceName: true,
+            sessionId: true,
+            createdAt: true,
+          },
+        },
+        createdAt: true,
+      },
     });
 
     //if user not found, throw error.
     if (!foundUser) {
       throw new AppError(401, "Unathorized", "User not found.", true);
     }
+
+    //check if user session has reached session limit
+    const currentUserSessions = foundUser.userSessions;
+    if (currentUserSessions.length >= sessionLimit) {
+      res.status(200).json({
+        message: "Maximum session limit reached.",
+        isDetachedMode: true,
+        sessions: currentUserSessions,
+      });
+      return;
+    }
+
     //evaluate password
     const matchedPassword = await bcrypt.compare(password, foundUser.password);
 
@@ -81,7 +110,13 @@ export default class AuthController {
     res.status(200).json({
       message: `You are now logged in as ${foundUser.username}`,
       data: {
-        user: foundUser,
+        user: {
+          id: foundUser.id,
+          username: foundUser.username,
+          email: foundUser.email,
+          createdAt: foundUser.createdAt,
+        },
+        isDetachedMode: false,
         accessToken,
       },
     });
@@ -118,40 +153,59 @@ export default class AuthController {
     });
   });
 
-  public logoutSelf = asyncHandler(async (req: Request, res: Response) => {
-    //*NOTE: On client, also delete accessToken or set to null or something
+  public logoutCurrentSession = asyncHandler(
+    async (req: Request, res: Response) => {
+      //*NOTE: On client, also delete accessToken or set to null or something
 
-    //NOTE: this function has no error handling if cookies.refreshToken
-    //does not exist, because it will always exist (all user actions has cookies attached).
-    //And even if refreshToken in cookies is expired, we can still use that to
-    //query the UserSession table to find our session and delete it.
+      //NOTE: this function has no error handling if cookies.refreshToken
+      //does not exist, because it will always exist (all user actions has cookies attached).
+      //And even if refreshToken in cookies is expired, we can still use that to
+      //query the UserSession table to find our session and delete it.
 
-    const cookies = req.cookies;
-    const refreshTokenFromCookies = cookies.refreshToken;
+      const cookies = req.cookies;
+      const refreshTokenFromCookies = cookies.refreshToken;
 
-    //find the userSession that has that refreshToken
-    const foundUserSession = await prisma.userSession.findFirst({
-      where: {
-        refreshToken: refreshTokenFromCookies,
-      },
-    });
+      //find the userSession that has that refreshToken
+      const foundUserSession = await prisma.userSession.findFirst({
+        where: {
+          refreshToken: refreshTokenFromCookies,
+        },
+      });
 
-    //user session was already deleted in the UserSession table (omae wa mo logged out)
-    if (!foundUserSession) {
-      res.status(200).json("User session not found. Successfully logged out.");
-      return;
+      //user session was already deleted in the UserSession table (omae wa mo logged out)
+      if (!foundUserSession) {
+        res
+          .status(200)
+          .json("User session not found. Successfully logged out.");
+        return;
+      }
+
+      //Delete that userSession using the foundUserSession's sessionId (since that is the primary key)
+      await prisma.userSession.delete({
+        where: {
+          sessionId: foundUserSession.sessionId,
+        },
+      });
+      //and also clear the cookie
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
+      });
+      res.status(200).json("Found user session. Successfully logged out.");
     }
+  );
 
-    //Delete that userSession using the foundUserSession's sessionId (since that is the primary key)
+  public logoutSession = asyncHandler(async (req: Request, res: Response) => {
+    const { sessionId } = req.params;
+
+    //Delete the row with the sessionId in the UserSession table
     await prisma.userSession.delete({
       where: {
-        sessionId: foundUserSession.sessionId,
+        sessionId,
       },
     });
-    //and also clear the cookie
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-    });
-    res.status(200).json("Found user session. Successfully logged out.");
+    res
+      .status(200)
+      .json(`Session with id ${sessionId} logged out successfully.`);
   });
 }

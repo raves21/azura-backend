@@ -38,7 +38,7 @@ export default class UsersController {
 
   public getCurrentUserInfo = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const currentUser = req.jwtPayload;
 
       const currentUserInfo = await prisma.user.findFirst({
         where: {
@@ -70,7 +70,7 @@ export default class UsersController {
 
   public getUserInfo = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const currentUser = req.user;
+    const currentUser = req.jwtPayload;
 
     const foundUser = await prisma.user.findFirst({
       where: {
@@ -121,7 +121,7 @@ export default class UsersController {
 
   public followUser = asyncHandler(async (req: Request, res: Response) => {
     const { id: userToFollow } = req.params;
-    const currentUser = req.user;
+    const currentUser = req.jwtPayload;
 
     try {
       await prisma.follow.create({
@@ -145,7 +145,7 @@ export default class UsersController {
   });
 
   public unfollowUser = asyncHandler(async (req: Request, res: Response) => {
-    const currentUser = req.user;
+    const currentUser = req.jwtPayload;
     const { id: userToUnfollow } = req.params;
 
     //check if the relationship between currentUser and userToUnfollow exists
@@ -181,7 +181,7 @@ export default class UsersController {
   });
   public getCurrentUserFollowingList = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const currentUser = req.jwtPayload;
 
       //TODO: add pagination
       const currentUserFollowingList = await prisma.follow.findMany({
@@ -207,7 +207,7 @@ export default class UsersController {
 
   public getCurrentUserFollowerList = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const currentUser = req.jwtPayload;
 
       //TODO: add pagination
       const currentUserFollowerList = await prisma.follow.findMany({

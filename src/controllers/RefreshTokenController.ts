@@ -12,6 +12,7 @@ export default class RefreshTokenController {
   public grantNewAccessToken = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
       const cookies = req.cookies;
+      const currentUserPayload = req.jwtPayload;
 
       if (!cookies?.refreshToken) {
         throw new AppError(401, "Unauthorized.", "No JWT in cookies!", true);
@@ -56,11 +57,9 @@ export default class RefreshTokenController {
                     sessionId: foundUserSession.sessionId,
                   },
                 });
-                throw new AppError(
-                  403,
-                  "Forbidden",
-                  "Refresh token expired. Grant new access token failed. Please login again.",
-                  true
+                throw new TokenExpiredError(
+                  "Your session has expired.",
+                  currentUserPayload.exp
                 );
               } else if (foundUser.id !== payload.userId) {
                 throw new AppError(

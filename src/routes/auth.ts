@@ -7,6 +7,7 @@ const authController = new AuthController();
 router
   .post("/login", authController.login)
   .post("/signup", authController.signUp)
-  .post("/logout", authController.logoutSelf);
+  .post("/logout", authController.logoutCurrentSession)
+  .post("/detached/:sessionId/logout", authController.logoutSession);
 
 export default router;

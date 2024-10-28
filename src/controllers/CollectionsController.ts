@@ -13,13 +13,13 @@ const prisma = new PrismaClient();
 export default class CollectionsController {
   public getCurrentUserCollections = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
 
       //TODO: ADD PAGINATION
 
       const currentUserCollections = await prisma.collection.findMany({
         where: {
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
         },
         orderBy: {
           updatedAt: "desc",
@@ -36,11 +36,11 @@ export default class CollectionsController {
   public getUserCollections = asyncHandler(
     async (req: Request, res: Response) => {
       const { id } = req.params;
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
 
       //check if currentUser is friends with collection owner
       const isCurrentUserFriendsWithOwner = await areTheyFriends(
-        currentUser.userId as string,
+        payload.userId as string,
         id
       );
 
@@ -70,11 +70,11 @@ export default class CollectionsController {
   public createCollection = asyncHandler(
     async (req: Request, res: Response) => {
       const { name, description, privacy } = req.body;
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
 
       const newCollection = await prisma.collection.create({
         data: {
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
           name,
           description,
           privacy,
@@ -90,13 +90,13 @@ export default class CollectionsController {
 
   public deleteCollection = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
       const { id } = req.params;
 
       const deletedCollection = await prisma.collection.delete({
         where: {
           id,
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
         },
       });
       res.status(200).json({
@@ -211,13 +211,13 @@ export default class CollectionsController {
       //array of collectionItemIds
       const { collectionItemsToDelete } = req.body;
       const { id: collectionId } = req.params;
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
 
       //check if collection exists, and if owner owns the collection
       const foundCollection = await prisma.collection.findFirst({
         where: {
           id: collectionId,
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
         },
       });
 
@@ -245,7 +245,7 @@ export default class CollectionsController {
     async (req: Request, res: Response) => {
       //collection id
       const { id } = req.params;
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
 
       const foundCollection = await prisma.collection.findFirst({
         where: {
@@ -287,7 +287,7 @@ export default class CollectionsController {
       };
 
       await checkResourcePrivacyAndUserOwnership({
-        currentUserId: currentUser.userId,
+        currentUserId: payload.userId,
         ownerId: foundCollection.ownerId,
         privacy: foundCollection.privacy,
         successData,
@@ -298,7 +298,7 @@ export default class CollectionsController {
 
   public getCollectionItemInfo = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
       const { collectionId, id } = req.params;
 
       const foundCollectionItem = await prisma.collectionItem.findFirst({
@@ -322,7 +322,7 @@ export default class CollectionsController {
       }
 
       await checkResourcePrivacyAndUserOwnership({
-        currentUserId: currentUser.userId,
+        currentUserId: payload.userId,
         ownerId: foundCollectionItem.collection.ownerId,
         privacy: foundCollectionItem.collection.privacy,
         res,
@@ -337,14 +337,14 @@ export default class CollectionsController {
 
   public updateCollection = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
       const { id } = req.params;
       const { name, description, privacy } = req.body;
 
       const updatedCollection = await prisma.collection.update({
         where: {
           id,
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
         },
         data: {
           name,
@@ -361,13 +361,13 @@ export default class CollectionsController {
 
   public checkMediaExistenceInCollections = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.user;
+      const payload = req.jwtPayload;
       const { mediaId } = req.params;
 
       //retrieve all user's collections
       const currentUserCollections = await prisma.collection.findMany({
         where: {
-          ownerId: currentUser.userId,
+          ownerId: payload.userId,
         },
         select: {
           id: true,
