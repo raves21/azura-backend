@@ -5,14 +5,13 @@ import refreshRouter from "./routes/refresh";
 import sessionsRouter from "./routes/sessions";
 import collectionsRouter from "./routes/collections";
 import cronRouter from "./routes/cron";
+import postsRouter from "./routes/posts";
 import { verifyJWT } from "./middleware/verifyJWT";
 import { errorHandler } from "./middleware/errorHandler";
-import { MediaType, PrismaClient } from "@prisma/client";
 
 const app: Express = express();
 const port = 8080;
 const cookieParser = require("cookie-parser");
-const prisma = new PrismaClient();
 
 //middleware for json
 app.use(express.json());
@@ -45,6 +44,9 @@ app.use("/api/sessions", sessionsRouter);
 
 // Collections route (protected by verifyJWT)
 app.use("/api/collections", collectionsRouter);
+
+// Posts route (protected by verifyJWT)
+app.use("/api/posts", postsRouter);
 
 //middleware for handling errors
 app.use(errorHandler);

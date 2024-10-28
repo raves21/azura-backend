@@ -1,10 +1,11 @@
 import { Response, Request } from "express-serve-static-core";
-import { PrismaClient } from "@prisma/client";
+import { Media, PrismaClient } from "@prisma/client";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
 import {
   checkResourcePrivacyAndUserOwnership,
   areTheyFriends,
+  updateExistingMedia,
 } from "../utils/functions/reusablePrismaFunctions";
 
 const prisma = new PrismaClient();
@@ -149,31 +150,20 @@ export default class CollectionsController {
         //*if foundMedia details are not the same with the req.body, update the foundMedia with the one from
         //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
         //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
-        if (
-          foundMedia.title !== title ||
-          foundMedia.year !== year ||
-          foundMedia.description !== description ||
-          foundMedia.coverImage !== coverImage ||
-          foundMedia.posterImage !== posterImage ||
-          foundMedia.rating !== rating ||
-          foundMedia.status !== status
-        ) {
-          await prisma.media.update({
-            where: {
-              id: foundMedia.id,
-            },
-            data: {
-              title,
-              year,
-              description,
-              coverImage,
-              posterImage,
-              rating,
-              status,
-            },
-          });
-        }
-
+        //! NEEDS REFACTOR: make proper validation for req.body
+        const media: Media = {
+          id: foundMedia.id,
+          title,
+          year,
+          description,
+          coverImage,
+          posterImage,
+          rating,
+          status,
+          type: foundMedia.type,
+          createdAt: foundMedia.createdAt,
+        };
+        await updateExistingMedia(foundMedia, media);
         //proceed to creating the collection item
         const newCollectionItem = await prisma.collectionItem.create({
           data: {
