@@ -12,7 +12,6 @@ export default class RefreshTokenController {
   public grantNewAccessToken = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
       const cookies = req.cookies;
-      const currentUserPayload = req.jwtPayload;
 
       if (!cookies?.refreshToken) {
         throw new AppError(401, "Unauthorized.", "No JWT in cookies!", true);
@@ -34,7 +33,7 @@ export default class RefreshTokenController {
       //(logging out means the session is deleted in the UserSession table)
       if (!foundUserSession) {
         throw new AppError(
-          403,
+          401,
           "NotFoundError",
           "Failed granting new access token. User session not found.",
           true
@@ -59,7 +58,7 @@ export default class RefreshTokenController {
                 });
                 throw new TokenExpiredError(
                   "Your session has expired.",
-                  currentUserPayload.exp
+                  new Date()
                 );
               } else if (foundUser.id !== payload.userId) {
                 throw new AppError(
