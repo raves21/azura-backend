@@ -385,12 +385,9 @@ export default class CollectionsController {
         data: currentUserCollections.map((collection) => ({
           id: collection.id,
           name: collection.name,
-          doesGivenMediaExist:
-            collection.collectionItems.filter(
-              (collectionItem) => collectionItem.mediaId === mediaId.toString()
-            ).length === 0
-              ? false
-              : true,
+          doesGivenMediaExist: collection.collectionItems
+            .map((collectionItem) => collectionItem.mediaId)
+            .includes(mediaId.toString()),
         })),
       });
     }
