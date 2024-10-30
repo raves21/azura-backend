@@ -33,8 +33,8 @@ model Follow {
   createdAt  DateTime @default(now())
 
   //RELATIONS
-  follower User @relation("followers", fields: [followerId], references: [id])
-  followed User @relation("following", fields: [followedId], references: [id])
+  follower User @relation("followers", fields: [followerId], references: [id], onDelete: Cascade)
+  followed User @relation("following", fields: [followedId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followedId])
   @@unique([followerId, followedId])
@@ -43,7 +43,7 @@ model Follow {
 model UserSession {
   sessionId    String   @id @default(uuid()) @db.Uuid
   userId       String   @db.Uuid
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   refreshToken String   @unique
   deviceName   String
   createdAt    DateTime @default(now())
@@ -58,7 +58,7 @@ enum Privacy {
 model Collection {
   id              String           @id @default(uuid()) @db.Uuid
   photo           String?
-  owner           User             @relation(fields: [ownerId], references: [id])
+  owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId         String           @db.Uuid
   name            String
   description     String
@@ -72,7 +72,7 @@ model Collection {
 model CollectionItem {
   id           String     @id @default(uuid()) @db.Uuid
   collectionId String     @db.Uuid
-  collection   Collection @relation(fields: [collectionId], references: [id])
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   mediaId      String
   media        Media      @relation(fields: [mediaId], references: [id])
   createdAt    DateTime   @default(now())
@@ -109,7 +109,7 @@ model Media {
 model Post {
   id           String      @id @default(uuid()) @db.Uuid
   ownerId      String      @db.Uuid
-  owner        User        @relation(fields: [ownerId], references: [id])
+  owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   content      String?
   privacy      Privacy
   comments     Comment[]
@@ -123,14 +123,14 @@ model Post {
   mediaId      String?
   media        Media?      @relation(fields: [mediaId], references: [id])
   collectionId String?     @db.Uuid
-  collection   Collection? @relation(fields: [collectionId], references: [id])
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 }
 
 model PostLike {
   userId    String   @db.Uuid
   postId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@id([userId, postId])
@@ -140,9 +140,9 @@ model Comment {
   id        String   @id @default(uuid()) @db.Uuid
   content   String
   postId    String   @db.Uuid
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   authorId  String   @db.Uuid
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
