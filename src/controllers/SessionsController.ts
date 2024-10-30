@@ -10,15 +10,6 @@ export default class SessionsController {
     //extract the user/userinfo from the payload (given by verifyJWT)
     const payload = req.jwtPayload;
 
-    if (!payload) {
-      throw new AppError(
-        400,
-        "Bad request",
-        "Bad request. Request did not come with payload.",
-        true
-      );
-    }
-
     //get all user sessions, and mark the current session as isCurrentSession: true
     const allUserSessions = (
       await prisma.userSession.findMany({
@@ -32,17 +23,11 @@ export default class SessionsController {
           createdAt: true,
         },
       })
-    ).map((userSession) =>
-      userSession.sessionId === payload.sessionId
-        ? {
-            ...userSession,
-            isCurrentSession: true,
-          }
-        : {
-            ...userSession,
-            isCurrentSession: false,
-          }
-    );
+    ).map((userSession) => ({
+      ...userSession,
+      isCurrentSession:
+        userSession.sessionId === payload.sessionId ? true : false,
+    }));
 
     res.status(200).json({
       message: "success",

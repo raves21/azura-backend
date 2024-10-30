@@ -10,6 +10,10 @@ router
   .get("/user/:id", collectionsController.getUserCollections)
   .get("/:id", collectionsController.getCollectionInfo)
   .get(
+    "/:collectionId/collection-items",
+    collectionsController.getCollectionCollectionItems
+  )
+  .get(
     "/:collectionId/collection-items/:id",
     collectionsController.getCollectionItemInfo
   )

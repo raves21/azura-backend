@@ -8,16 +8,14 @@ const prisma = new PrismaClient();
 
 export default class UsersController {
   public async getAllUsers(req: Request, res: Response) {
-    const { page, perPage } = req.query;
-    const ascending =
-      req.query.ascending && req.query.ascending == "true" ? true : false;
+    const { page, perPage, ascending } = req.query;
 
+    const order = ascending == "true" ? "asc" : "desc";
     const _page = Number(page) || 1;
     const _perPage = Number(perPage) || 10;
-    const order = ascending ? "asc" : "desc";
     const skip = (_page - 1) * _perPage;
-    const totalUserCount = await prisma.user.count();
-    const totalPages = Math.ceil(totalUserCount / _perPage);
+    const totalResults = await prisma.user.count();
+    const totalPages = Math.ceil(totalResults / _perPage);
 
     const allUsers = await prisma.user.findMany({
       skip,
@@ -30,7 +28,7 @@ export default class UsersController {
       message: "success",
       page: _page,
       perPage: _perPage,
-      total: totalUserCount,
+      totalResults,
       totalPages,
       data: allUsers,
     });
@@ -38,16 +36,18 @@ export default class UsersController {
 
   public getCurrentUserInfo = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.jwtPayload;
+      const payload = req.jwtPayload;
 
       const currentUserInfo = await prisma.user.findFirst({
         where: {
-          id: currentUser.userId,
+          id: payload.userId,
         },
         select: {
           id: true,
           username: true,
           email: true,
+          avatar: true,
+          banner: true,
           createdAt: true,
           updatedAt: true,
           _count: {
@@ -62,7 +62,7 @@ export default class UsersController {
         message: "success",
         data: {
           ...currentUserInfo,
-          sessionId: currentUser.sessionId,
+          sessionId: payload.sessionId,
         },
       });
     }
@@ -70,7 +70,7 @@ export default class UsersController {
 
   public getUserInfo = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const currentUser = req.jwtPayload;
+    const payload = req.jwtPayload;
 
     const foundUser = await prisma.user.findFirst({
       where: {
@@ -80,6 +80,8 @@ export default class UsersController {
         id: true,
         username: true,
         email: true,
+        avatar: true,
+        banner: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -98,13 +100,13 @@ export default class UsersController {
     const followsCurrentUser = await prisma.follow.findFirst({
       where: {
         followerId: foundUser.id,
-        followedId: currentUser.userId,
+        followedId: payload.userId,
       },
     });
 
     const followedByCurrentUser = await prisma.follow.findFirst({
       where: {
-        followerId: currentUser.userId,
+        followerId: payload.userId,
         followedId: foundUser.id,
       },
     });
@@ -121,12 +123,12 @@ export default class UsersController {
 
   public followUser = asyncHandler(async (req: Request, res: Response) => {
     const { id: userToFollow } = req.params;
-    const currentUser = req.jwtPayload;
+    const payload = req.jwtPayload;
 
     try {
       await prisma.follow.create({
         data: {
-          followerId: currentUser.userId,
+          followerId: payload.userId,
           followedId: userToFollow,
         },
       });
@@ -145,13 +147,13 @@ export default class UsersController {
   });
 
   public unfollowUser = asyncHandler(async (req: Request, res: Response) => {
-    const currentUser = req.jwtPayload;
+    const payload = req.jwtPayload;
     const { id: userToUnfollow } = req.params;
 
     //check if the relationship between currentUser and userToUnfollow exists
     const foundRelationship = await prisma.follow.findFirst({
       where: {
-        followerId: currentUser.userId,
+        followerId: payload.userId,
         followedId: userToUnfollow,
       },
     });
@@ -160,7 +162,7 @@ export default class UsersController {
       throw new AppError(
         404,
         "Relationship not found.",
-        `Relationship between ${currentUser.userId} and ${userToUnfollow} not found.`,
+        `Relationship between ${payload.userId} and ${userToUnfollow} not found.`,
         true
       );
     }
@@ -169,7 +171,7 @@ export default class UsersController {
     await prisma.follow.delete({
       where: {
         followerId_followedId: {
-          followerId: currentUser.userId,
+          followerId: payload.userId,
           followedId: userToUnfollow,
         },
       },
@@ -181,12 +183,30 @@ export default class UsersController {
   });
   public getCurrentUserFollowingList = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.jwtPayload;
+      const payload = req.jwtPayload;
+
+      const { page, perPage, ascending } = req.query;
+
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
+      const totalResults = await prisma.follow.count({
+        where: {
+          followerId: payload.userId,
+        },
+      });
+      const totalPages = Math.ceil(totalResults / _perPage);
 
       //TODO: add pagination
       const currentUserFollowingList = await prisma.follow.findMany({
         where: {
-          followerId: currentUser.userId,
+          followerId: payload.userId,
+        },
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
         },
         select: {
           followed: {
@@ -200,6 +220,10 @@ export default class UsersController {
       });
       res.status(200).json({
         message: "success",
+        page: _page,
+        perPage: _perPage,
+        totalPages,
+        totalResults,
         data: currentUserFollowingList.map((item) => item.followed),
       });
     }
@@ -207,12 +231,31 @@ export default class UsersController {
 
   public getCurrentUserFollowerList = asyncHandler(
     async (req: Request, res: Response) => {
-      const currentUser = req.jwtPayload;
+      const payload = req.jwtPayload;
 
+      const { page, perPage, ascending } = req.query;
+
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
+
+      const totalResults = await prisma.follow.count({
+        where: {
+          followedId: payload.userId,
+        },
+      });
+
+      const totalPages = Math.ceil(totalResults / _perPage);
       //TODO: add pagination
       const currentUserFollowerList = await prisma.follow.findMany({
         where: {
-          followedId: currentUser.userId,
+          followedId: payload.userId,
+        },
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
         },
         select: {
           follower: {
@@ -220,12 +263,17 @@ export default class UsersController {
               id: true,
               username: true,
               email: true,
+              avatar: true,
             },
           },
         },
       });
       res.status(200).json({
         message: "success",
+        page: _page,
+        perPage: _perPage,
+        totalPages,
+        totalResults,
         data: currentUserFollowerList.map((item) => item.follower),
       });
     }
@@ -235,10 +283,28 @@ export default class UsersController {
     async (req: Request, res: Response) => {
       const { id } = req.params;
 
+      const { page, perPage, ascending } = req.query;
+
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
+      const totalResults = await prisma.follow.count({
+        where: {
+          followerId: id,
+        },
+      });
+      const totalPages = Math.ceil(totalResults / _perPage);
+
       //TODO: add pagination
       const userFollowingList = await prisma.follow.findMany({
         where: {
           followerId: id,
+        },
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
         },
         select: {
           followed: {
@@ -246,12 +312,17 @@ export default class UsersController {
               id: true,
               username: true,
               email: true,
+              avatar: true,
             },
           },
         },
       });
       res.status(200).json({
         message: "success",
+        page: _page,
+        perPage: _perPage,
+        totalPages,
+        totalResults,
         data: userFollowingList.map((item) => item.followed),
       });
     }
@@ -260,11 +331,28 @@ export default class UsersController {
   public getUserFollowerList = asyncHandler(
     async (req: Request, res: Response) => {
       const { id } = req.params;
+      const { page, perPage, ascending } = req.query;
+
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
+      const totalResults = await prisma.follow.count({
+        where: {
+          followedId: id,
+        },
+      });
+      const totalPages = Math.ceil(totalResults / _perPage);
 
       //TODO: add pagination
       const userFollowerList = await prisma.follow.findMany({
         where: {
           followedId: id,
+        },
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
         },
         select: {
           follower: {
@@ -272,12 +360,17 @@ export default class UsersController {
               id: true,
               username: true,
               email: true,
+              avatar: true,
             },
           },
         },
       });
       res.status(200).json({
         message: "success",
+        page: _page,
+        perPage: _perPage,
+        totalPages,
+        totalResults,
         data: userFollowerList.map((item) => item.follower),
       });
     }

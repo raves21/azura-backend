@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -16,6 +17,8 @@ model User {
   following    Follow[]      @relation("following")
   posts        Post[]
   likedPosts   PostLike[]
+  avatar       String?
+  banner       String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   collections  Collection[]
@@ -53,6 +56,7 @@ enum Privacy {
 
 model Collection {
   id              String           @id @default(uuid()) @db.Uuid
+  photo           String?
   owner           User             @relation(fields: [ownerId], references: [id])
   ownerId         String           @db.Uuid
   name            String
