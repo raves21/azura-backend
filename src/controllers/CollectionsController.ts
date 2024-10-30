@@ -15,20 +15,59 @@ export default class CollectionsController {
     async (req: Request, res: Response) => {
       const payload = req.jwtPayload;
 
-      //TODO: ADD PAGINATION
+      const { page, perPage, ascending } = req.query;
 
-      const currentUserCollections = await prisma.collection.findMany({
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
+      const totalResults = await prisma.collection.count({
         where: {
           ownerId: payload.userId,
         },
+      });
+      const totalPages = Math.ceil(totalResults / _perPage);
+
+      //TODO: ADD PAGINATION
+
+      const currentUserCollections = await prisma.collection.findMany({
+        skip,
+        take: _perPage,
         orderBy: {
-          updatedAt: "desc",
+          createdAt: order,
+        },
+        where: {
+          ownerId: payload.userId,
+        },
+        include: {
+          collectionItems: {
+            take: 3,
+            select: {
+              media: {
+                select: {
+                  posterImage: true,
+                },
+              },
+            },
+          },
         },
       });
 
       res.status(200).json({
         message: "success",
-        data: currentUserCollections,
+        page: _page,
+        perPage: _perPage,
+        totalPages,
+        totalResults,
+        data: currentUserCollections.map((collection) => ({
+          id: collection.id,
+          name: collection.name,
+          photo: collection.photo,
+          privacy: collection.privacy,
+          previewPosters: collection.collectionItems.map(
+            (collectionItem) => collectionItem.media.posterImage
+          ),
+        })),
       });
     }
   );
@@ -38,15 +77,19 @@ export default class CollectionsController {
       const { id } = req.params;
       const payload = req.jwtPayload;
 
+      const { page, perPage, ascending } = req.query;
+
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
+
       //check if currentUser is friends with collection owner
       const isCurrentUserFriendsWithOwner = await areTheyFriends(
         payload.userId as string,
         id
       );
-
-      //TODO: ADD PAGINATION
-      //retrieve collections that have privacy PUBLIC and FRIENDS_ONLY
-      const userCollections = await prisma.collection.findMany({
+      const totalResults = await prisma.collection.count({
         where: {
           ownerId: id,
           privacy: {
@@ -55,14 +98,54 @@ export default class CollectionsController {
               : ["PUBLIC"],
           },
         },
+      });
+      const totalPages = Math.ceil(totalResults / _perPage);
+
+      //TODO: ADD PAGINATION
+      //retrieve collections that have privacy PUBLIC and FRIENDS_ONLY
+      const userCollections = await prisma.collection.findMany({
+        skip,
+        take: _perPage,
         orderBy: {
-          updatedAt: "desc",
+          createdAt: order,
+        },
+        where: {
+          ownerId: id,
+          privacy: {
+            in: isCurrentUserFriendsWithOwner
+              ? ["FRIENDS_ONLY", "PUBLIC"]
+              : ["PUBLIC"],
+          },
+        },
+        include: {
+          collectionItems: {
+            take: 3,
+            select: {
+              media: {
+                select: {
+                  posterImage: true,
+                },
+              },
+            },
+          },
         },
       });
 
       res.status(200).json({
         message: "success",
-        data: userCollections,
+        page: _page,
+        perPage: _perPage,
+        totalPages,
+        totalResults,
+        data: userCollections.map((collection) => ({
+          id: collection.id,
+          name: collection.name,
+          photo: collection.photo,
+          privacy: collection.privacy,
+          previewPosters: collection.collectionItems.map(
+            (collectionItem) => collectionItem.media.posterImage
+          ),
+        })),
       });
     }
   );
@@ -258,12 +341,6 @@ export default class CollectionsController {
               username: true,
             },
           },
-          collectionItems: true,
-          // collectionItems: {
-          //   include: {
-          //     media: true,
-          //   },
-          // },
           _count: {
             select: {
               collectionItems: true,
@@ -283,7 +360,6 @@ export default class CollectionsController {
         privacy: foundCollection?.privacy,
         owner: foundCollection?.owner,
         totalCollectionItems: foundCollection?._count.collectionItems,
-        collectionItems: foundCollection?.collectionItems,
       };
 
       await checkResourcePrivacyAndUserOwnership({
@@ -292,6 +368,49 @@ export default class CollectionsController {
         privacy: foundCollection.privacy,
         successData,
         res,
+      });
+    }
+  );
+
+  public getCollectionCollectionItems = asyncHandler(
+    async (req: Request, res: Response) => {
+      const { id } = req.params;
+
+      const { page, perPage, ascending } = req.query;
+
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
+      const totalResults = await prisma.collectionItem.count({
+        where: {
+          collectionId: id,
+        },
+      });
+      const totalPages = Math.ceil(totalResults / _perPage);
+
+      const collectionItems = await prisma.collectionItem.findMany({
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
+        },
+        where: {
+          collectionId: id,
+        },
+        select: {
+          collectionId: true,
+          media: true,
+        },
+      });
+
+      res.json({
+        message: "success",
+        page: _page,
+        perPage: _perPage,
+        totalPages,
+        totalResults,
+        data: collectionItems,
       });
     }
   );
