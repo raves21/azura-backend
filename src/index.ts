@@ -7,6 +7,7 @@ import collectionsRouter from "./routes/collections";
 import cronRouter from "./routes/cron";
 import postsRouter from "./routes/posts";
 import feedRouter from "./routes/feed";
+import searchRouter from "./routes/search";
 import { verifyJWT } from "./middleware/verifyJWT";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -51,6 +52,9 @@ app.use("/api/posts", postsRouter);
 
 // Feed route (protected by verifyJWT)
 app.use("/api/feed", feedRouter);
+
+// Search route (protected by verifyJWT)
+app.use("/api/search", searchRouter);
 
 //middleware for handling errors
 app.use(errorHandler);
