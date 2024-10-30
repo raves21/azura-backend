@@ -21,12 +21,6 @@ export default class PostsController {
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
-      const totalResults = await prisma.post.count({
-        where: {
-          ownerId: payload.userId,
-        },
-      });
-      const totalPages = Math.ceil(totalResults / _perPage);
 
       const currentUserPosts = await prisma.post.findMany({
         where: {
@@ -88,8 +82,6 @@ export default class PostsController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: currentUserPosts.map((post) => ({
           id: post.id,
           content: post.content,
@@ -127,12 +119,6 @@ export default class PostsController {
     const _page = Number(page) || 1;
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
-    const totalResults = await prisma.post.count({
-      where: {
-        ownerId: id,
-      },
-    });
-    const totalPages = Math.ceil(totalResults / _perPage);
 
     //check if currentUser is friends with owner
     const isCurrentUserFriendsWithOwner = await areTheyFriends(
@@ -193,8 +179,6 @@ export default class PostsController {
       message: "success",
       page: _page,
       perPage: _perPage,
-      totalPages,
-      totalResults,
       data: userPosts.map((post) => ({
         id: post.id,
         content: post.content,
@@ -537,14 +521,7 @@ export default class PostsController {
     const _page = Number(page) || 1;
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
-    const totalResults = await prisma.comment.count({
-      where: {
-        postId: id,
-      },
-    });
-    const totalPages = Math.ceil(totalResults / _perPage);
 
-    //TODO: ADD PAGINATION
     const postComments = await prisma.comment.findMany({
       skip,
       take: _perPage,
@@ -571,8 +548,6 @@ export default class PostsController {
       message: "success",
       page: _page,
       perPage: _perPage,
-      totalPages,
-      totalResults,
       data: postComments.map((comment) => ({
         id: comment.id,
         postId: comment.postId,
@@ -683,14 +658,7 @@ export default class PostsController {
     const _page = Number(page) || 1;
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
-    const totalResults = await prisma.postLike.count({
-      where: {
-        postId: id,
-      },
-    });
-    const totalPages = Math.ceil(totalResults / _perPage);
 
-    //TODO: ADD PAGINATION
     const postLikes = await prisma.postLike.findMany({
       skip,
       take: _perPage,
@@ -715,8 +683,6 @@ export default class PostsController {
       message: "success",
       page: _page,
       perPage: _perPage,
-      totalPages,
-      totalResults,
       data: postLikes,
     });
   });

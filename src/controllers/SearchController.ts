@@ -19,45 +19,6 @@ export default class SearchController {
     const _page = Number(page) || 1;
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
-    const totalResults = await prisma.post.count({
-      where: {
-        content: {
-          search: query.toString(),
-        },
-        OR: [
-          //all public posts
-          {
-            privacy: "PUBLIC",
-          },
-
-          //all friends-only posts from the current user
-          {
-            ownerId: payload.userId,
-            privacy: {
-              in: ["FRIENDS_ONLY"],
-            },
-          },
-
-          //all friends-only posts from the current user's friends
-          {
-            privacy: "FRIENDS_ONLY",
-            owner: {
-              followers: {
-                some: {
-                  followedId: payload.userId,
-                },
-              },
-              following: {
-                some: {
-                  followerId: payload.userId,
-                },
-              },
-            },
-          },
-        ],
-      },
-    });
-    const totalPages = Math.ceil(totalResults / _perPage);
 
     const searchPosts = await prisma.post.findMany({
       skip,
@@ -148,8 +109,6 @@ export default class SearchController {
       message: "success",
       page: _page,
       perPage: _perPage,
-      totalPages,
-      totalResults,
       data: searchPosts.map((post) => ({
         id: post.id,
         content: post.content,
@@ -178,15 +137,13 @@ export default class SearchController {
     const _page = Number(page) || 1;
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
-    const totalResults = await prisma.user.count({
-      where: {
-        username: {
-          search: query.toString(),
-        },
-      },
-    });
-    const totalPages = Math.ceil(totalResults / _perPage);
+
     const searchUsers = await prisma.user.findMany({
+      skip,
+      take: _perPage,
+      orderBy: {
+        createdAt: order,
+      },
       where: {
         username: {
           search: query.toString(),
@@ -202,6 +159,8 @@ export default class SearchController {
 
     res.status(200).json({
       message: "success",
+      page: _page,
+      perPage: _perPage,
       data: searchUsers,
     });
   });
@@ -220,39 +179,6 @@ export default class SearchController {
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
-      const totalResults = await prisma.collection.count({
-        where: {
-          name: {
-            search: query.toString(),
-          },
-          OR: [
-            //all public collections
-            {
-              privacy: "PUBLIC",
-            },
-
-            //all friends-only collections from the current user's friends
-            {
-              privacy: "FRIENDS_ONLY",
-              owner: {
-                followers: {
-                  some: {
-                    followedId: payload.userId,
-                  },
-                },
-                following: {
-                  some: {
-                    followerId: payload.userId,
-                  },
-                },
-              },
-            },
-          ],
-        },
-      });
-      const totalPages = Math.ceil(totalResults / _perPage);
-
-      //TODO: ADD PAGINATION
       //retrieve collections that have privacy PUBLIC and FRIENDS_ONLY
       const searchCollections = await prisma.collection.findMany({
         skip,
@@ -313,8 +239,6 @@ export default class SearchController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: searchCollections.map((collection) => ({
           id: collection.id,
           name: collection.name,

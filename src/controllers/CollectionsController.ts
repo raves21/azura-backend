@@ -21,14 +21,6 @@ export default class CollectionsController {
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
-      const totalResults = await prisma.collection.count({
-        where: {
-          ownerId: payload.userId,
-        },
-      });
-      const totalPages = Math.ceil(totalResults / _perPage);
-
-      //TODO: ADD PAGINATION
 
       const currentUserCollections = await prisma.collection.findMany({
         skip,
@@ -57,8 +49,6 @@ export default class CollectionsController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: currentUserCollections.map((collection) => ({
           id: collection.id,
           name: collection.name,
@@ -89,19 +79,7 @@ export default class CollectionsController {
         payload.userId as string,
         id
       );
-      const totalResults = await prisma.collection.count({
-        where: {
-          ownerId: id,
-          privacy: {
-            in: isCurrentUserFriendsWithOwner
-              ? ["FRIENDS_ONLY", "PUBLIC"]
-              : ["PUBLIC"],
-          },
-        },
-      });
-      const totalPages = Math.ceil(totalResults / _perPage);
 
-      //TODO: ADD PAGINATION
       //retrieve collections that have privacy PUBLIC and FRIENDS_ONLY
       const userCollections = await prisma.collection.findMany({
         skip,
@@ -135,8 +113,6 @@ export default class CollectionsController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: userCollections.map((collection) => ({
           id: collection.id,
           name: collection.name,
@@ -382,12 +358,6 @@ export default class CollectionsController {
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
-      const totalResults = await prisma.collectionItem.count({
-        where: {
-          collectionId: id,
-        },
-      });
-      const totalPages = Math.ceil(totalResults / _perPage);
 
       const collectionItems = await prisma.collectionItem.findMany({
         skip,
@@ -408,8 +378,6 @@ export default class CollectionsController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: collectionItems,
       });
     }

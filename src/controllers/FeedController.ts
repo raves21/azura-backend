@@ -14,42 +14,6 @@ export default class FeedController {
     const _page = Number(page) || 1;
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
-    const totalResults = await prisma.post.count({
-      where: {
-        OR: [
-          //all public posts
-          {
-            privacy: "PUBLIC",
-          },
-
-          //all friends-only posts from the current user
-          {
-            ownerId: payload.userId,
-            privacy: {
-              in: ["FRIENDS_ONLY"],
-            },
-          },
-
-          //all friends-only posts from the current user's friends
-          {
-            privacy: "FRIENDS_ONLY",
-            owner: {
-              followers: {
-                some: {
-                  followedId: payload.userId,
-                },
-              },
-              following: {
-                some: {
-                  followerId: payload.userId,
-                },
-              },
-            },
-          },
-        ],
-      },
-    });
-    const totalPages = Math.ceil(totalResults / _perPage);
 
     const forYouPosts = await prisma.post.findMany({
       skip,
@@ -137,8 +101,6 @@ export default class FeedController {
       message: "success",
       page: _page,
       perPage: _perPage,
-      totalPages,
-      totalResults,
       data: forYouPosts.map((post) => ({
         id: post.id,
         content: post.content,
@@ -165,41 +127,6 @@ export default class FeedController {
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
-      const totalResults = await prisma.post.count({
-        where: {
-          OR: [
-            //all friends-only posts from the current user's friends
-            {
-              privacy: "FRIENDS_ONLY",
-              owner: {
-                followers: {
-                  some: {
-                    followedId: payload.userId,
-                  },
-                },
-                following: {
-                  some: {
-                    followerId: payload.userId,
-                  },
-                },
-              },
-            },
-            //all public posts from users that the current user follow
-            //this includes all public posts from the current user's friends
-            {
-              privacy: "PUBLIC",
-              owner: {
-                following: {
-                  some: {
-                    followerId: payload.userId,
-                  },
-                },
-              },
-            },
-          ],
-        },
-      });
-      const totalPages = Math.ceil(totalResults / _perPage);
 
       const followingPosts = await prisma.post.findMany({
         skip,
@@ -286,8 +213,6 @@ export default class FeedController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: followingPosts.map((post) => ({
           id: post.id,
           content: post.content,

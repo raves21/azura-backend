@@ -14,8 +14,6 @@ export default class UsersController {
     const _page = Number(page) || 1;
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
-    const totalResults = await prisma.user.count();
-    const totalPages = Math.ceil(totalResults / _perPage);
 
     const allUsers = await prisma.user.findMany({
       skip,
@@ -28,8 +26,6 @@ export default class UsersController {
       message: "success",
       page: _page,
       perPage: _perPage,
-      totalResults,
-      totalPages,
       data: allUsers,
     });
   }
@@ -193,14 +189,7 @@ export default class UsersController {
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
-      const totalResults = await prisma.follow.count({
-        where: {
-          followerId: payload.userId,
-        },
-      });
-      const totalPages = Math.ceil(totalResults / _perPage);
 
-      //TODO: add pagination
       const currentUserFollowingList = await prisma.follow.findMany({
         where: {
           followerId: payload.userId,
@@ -226,8 +215,6 @@ export default class UsersController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: currentUserFollowingList.map((item) => item.followed),
       });
     }
@@ -244,14 +231,6 @@ export default class UsersController {
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
-      const totalResults = await prisma.follow.count({
-        where: {
-          followedId: payload.userId,
-        },
-      });
-
-      const totalPages = Math.ceil(totalResults / _perPage);
-      //TODO: add pagination
       const currentUserFollowerList = await prisma.follow.findMany({
         where: {
           followedId: payload.userId,
@@ -277,8 +256,6 @@ export default class UsersController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: currentUserFollowerList.map((item) => item.follower),
       });
     }
@@ -294,14 +271,7 @@ export default class UsersController {
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
-      const totalResults = await prisma.follow.count({
-        where: {
-          followerId: id,
-        },
-      });
-      const totalPages = Math.ceil(totalResults / _perPage);
 
-      //TODO: add pagination
       const userFollowingList = await prisma.follow.findMany({
         where: {
           followerId: id,
@@ -327,8 +297,6 @@ export default class UsersController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: userFollowingList.map((item) => item.followed),
       });
     }
@@ -343,14 +311,7 @@ export default class UsersController {
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
-      const totalResults = await prisma.follow.count({
-        where: {
-          followedId: id,
-        },
-      });
-      const totalPages = Math.ceil(totalResults / _perPage);
 
-      //TODO: add pagination
       const userFollowerList = await prisma.follow.findMany({
         where: {
           followedId: id,
@@ -376,8 +337,6 @@ export default class UsersController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        totalPages,
-        totalResults,
         data: userFollowerList.map((item) => item.follower),
       });
     }
