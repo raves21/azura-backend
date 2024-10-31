@@ -8,6 +8,7 @@ router
   .post("/login", authController.login)
   .post("/signup", authController.signUp)
   .post("/logout", authController.logoutCurrentSession)
-  .post("/detached/:sessionId/logout", authController.logoutSession);
+  .post("/detached/:sessionId/logout", authController.logoutSession)
+  .get("/verify-handle", authController.verifyHandle);
 
 export default router;
