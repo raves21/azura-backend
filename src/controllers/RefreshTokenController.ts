@@ -33,7 +33,7 @@ export default class RefreshTokenController {
       //(logging out means the session is deleted in the UserSession table)
       if (!foundUserSession) {
         throw new AppError(
-          401,
+          404,
           "NotFoundError",
           "Failed granting new access token. User session not found.",
           true
@@ -78,6 +78,7 @@ export default class RefreshTokenController {
                 userId: foundUser.id,
                 sessionId: foundUserSession.sessionId,
                 email: foundUser.email,
+                handle: foundUser.handle,
               },
               process.env.ACCESS_TOKEN_SECRET as string,
               { expiresIn: "30m" }

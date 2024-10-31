@@ -12,7 +12,7 @@ export default class SearchController {
     const { page, perPage, ascending, query } = req.query;
 
     if (!query) {
-      throw new AppError(422, "InvalidData", "No query provided.", true);
+      throw new AppError(422, "Invalid Format.", "No query provided.", true);
     }
 
     const order = ascending == "true" ? "asc" : "desc";
@@ -86,6 +86,8 @@ export default class SearchController {
             id: true,
             username: true,
             avatar: true,
+            handle: true,
+            createdAt: true,
           },
         },
         likes: {
@@ -130,7 +132,7 @@ export default class SearchController {
     const { page, perPage, ascending, query } = req.query;
 
     if (!query) {
-      throw new AppError(422, "InvalidData", "No query provided.", true);
+      throw new AppError(422, "Invalid Format.", "No query provided.", true);
     }
 
     const order = ascending == "true" ? "asc" : "desc";
@@ -154,6 +156,12 @@ export default class SearchController {
         username: true,
         avatar: true,
         bio: true,
+        handle: true,
+        following: {
+          select: {
+            followerId: true,
+          },
+        },
       },
     });
 
@@ -161,7 +169,18 @@ export default class SearchController {
       message: "success",
       page: _page,
       perPage: _perPage,
-      data: searchUsers,
+      data: searchUsers.map((user) => ({
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar,
+        bio: user.bio,
+        handle: user.handle,
+        isFollowedByCurrentUser: user.following
+          .map((follow) => follow.followerId)
+          .includes(payload.userId)
+          ? true
+          : false,
+      })),
     });
   });
 
@@ -171,7 +190,7 @@ export default class SearchController {
       const { page, perPage, ascending, query } = req.query;
 
       if (!query) {
-        throw new AppError(422, "InvalidData", "No query provided.", true);
+        throw new AppError(422, "Invalid Format", "No query provided.", true);
       }
 
       const order = ascending == "true" ? "asc" : "desc";
@@ -230,6 +249,7 @@ export default class SearchController {
               id: true,
               username: true,
               avatar: true,
+              handle: true,
             },
           },
         },

@@ -14,8 +14,8 @@ export default class AuthController {
 
     if (!email || !password) {
       throw new AppError(
-        400,
-        "ValidationError",
+        422,
+        "Invalid Format.",
         "Login Invalid. Please provide all needed credentials.",
         true
       );
@@ -31,6 +31,8 @@ export default class AuthController {
         username: true,
         email: true,
         password: true,
+        handle: true,
+        avatar: true,
         userSessions: {
           select: {
             userId: true,
@@ -54,7 +56,14 @@ export default class AuthController {
       res.status(200).json({
         message: "Maximum session limit reached.",
         isDetachedMode: true,
-        sessions: currentUserSessions,
+        data: {
+          id: foundUser.id,
+          username: foundUser.username,
+          email: foundUser.email,
+          handle: foundUser.handle,
+          avatar: foundUser.avatar,
+          sessions: currentUserSessions,
+        },
       });
       return;
     }
@@ -65,8 +74,8 @@ export default class AuthController {
     //if passwords dont match throw error.
     if (!matchedPassword) {
       throw new AppError(
-        400,
-        "ValidationError",
+        422,
+        "Invalid Format.",
         "Incorrect Email or Password",
         true
       );
@@ -77,6 +86,7 @@ export default class AuthController {
       {
         userId: foundUser.id,
         email: foundUser.email,
+        handle: foundUser.handle,
       },
       process.env.REFRESH_TOKEN_SECRET as string,
       { expiresIn: "1d" }
@@ -97,6 +107,7 @@ export default class AuthController {
         userId: foundUser.id,
         sessionId: newlyCreatedUserSession.sessionId,
         email: foundUser.email,
+        handle: foundUser.handle,
       },
       process.env.ACCESS_TOKEN_SECRET as string,
       { expiresIn: "30m" }
@@ -114,6 +125,8 @@ export default class AuthController {
           id: foundUser.id,
           username: foundUser.username,
           email: foundUser.email,
+          handle: foundUser.handle,
+          avatar: foundUser.avatar,
           createdAt: foundUser.createdAt,
         },
         isDetachedMode: false,
@@ -123,12 +136,44 @@ export default class AuthController {
   });
 
   public signUp = asyncHandler(async (req: Request, res: Response) => {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) {
+    const { username, email, password, handle } = req.body;
+    if (!username || !email || !password || !handle) {
       throw new AppError(
-        400,
-        "ValidationError",
+        422,
+        "Invalid Format.",
         "Signup invalid. Please provide all the needed credentials.",
+        true
+      );
+    }
+
+    //check for duplicate email in the db
+    const foundEmailDupe = await prisma.user.findFirst({
+      where: {
+        email,
+      },
+    });
+
+    if (foundEmailDupe) {
+      throw new AppError(
+        409,
+        "Conflict",
+        "This email is already associated with another account.",
+        true
+      );
+    }
+
+    //check for duplicate handle in the db
+    const foundHandleDupe = await prisma.user.findFirst({
+      where: {
+        handle,
+      },
+    });
+
+    if (foundHandleDupe) {
+      throw new AppError(
+        409,
+        "Conflict",
+        "This handle is already associated with another account.",
         true
       );
     }
@@ -139,12 +184,15 @@ export default class AuthController {
     //store the new user in the db
     const newUser = {
       email,
-      password: encryptedPassword,
       username,
+      handle,
     };
 
     await prisma.user.create({
-      data: newUser,
+      data: {
+        ...newUser,
+        password: encryptedPassword,
+      },
     });
 
     res.status(201).json({

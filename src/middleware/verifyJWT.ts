@@ -18,7 +18,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
     throw new AppError(
       401,
       "Unauthorized.",
-      "Unauthorized. No token in authorization header.",
+      "Unauthorized. No token in header.",
       true
     );
   }

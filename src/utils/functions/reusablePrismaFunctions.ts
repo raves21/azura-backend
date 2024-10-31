@@ -76,8 +76,9 @@ export const updateExistingMedia = async (
   mediaWithNewValues: Media
 ) => {
   //*if foundMedia details are not the same with the req.body, update the foundMedia with the one from
-  //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
-  //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
+  //*the req.body. This is to ensure that all collectionItems and posts referencing that media will
+  //*show the latestversion of that Media (because sometimes the 3rd party api changes the details
+  //*of the anime/movie/tv)
   if (
     foundMedia.title !== mediaWithNewValues.title ||
     foundMedia.year !== mediaWithNewValues.year ||

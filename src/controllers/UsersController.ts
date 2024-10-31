@@ -9,6 +9,7 @@ const prisma = new PrismaClient();
 export default class UsersController {
   public async getAllUsers(req: Request, res: Response) {
     const { page, perPage, ascending } = req.query;
+    const payload = req.jwtPayload;
 
     const order = ascending == "true" ? "asc" : "desc";
     const _page = Number(page) || 1;
@@ -21,12 +22,35 @@ export default class UsersController {
       orderBy: {
         createdAt: order,
       },
+      select: {
+        id: true,
+        username: true,
+        avatar: true,
+        email: true,
+        handle: true,
+        bio: true,
+        following: {
+          select: {
+            followerId: true,
+          },
+        },
+      },
     });
     res.status(200).json({
       message: "success",
       page: _page,
       perPage: _perPage,
-      data: allUsers,
+      data: allUsers.map((user) => ({
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar,
+        email: user.email,
+        handle: user.handle,
+        bio: user.bio,
+        isFollowedByCurrentUser: user.following
+          .map((follow) => follow.followerId)
+          .includes(payload.userId),
+      })),
     });
   }
 
@@ -34,7 +58,7 @@ export default class UsersController {
     async (req: Request, res: Response) => {
       const payload = req.jwtPayload;
 
-      const currentUserInfo = await prisma.user.findFirst({
+      const currentUser = await prisma.user.findFirst({
         where: {
           id: payload.userId,
         },
@@ -44,6 +68,7 @@ export default class UsersController {
           email: true,
           avatar: true,
           banner: true,
+          handle: true,
           bio: true,
           createdAt: true,
           updatedAt: true,
@@ -55,10 +80,23 @@ export default class UsersController {
           },
         },
       });
+
+      if (!currentUser) {
+        throw new AppError(404, "NotFoundError", "User not found.", true);
+      }
+
       res.status(200).json({
         message: "success",
         data: {
-          ...currentUserInfo,
+          id: currentUser.id,
+          username: currentUser.username,
+          avatar: currentUser.avatar,
+          banner: currentUser.banner,
+          bio: currentUser.bio,
+          handle: currentUser.handle,
+          createdAt: currentUser.createdAt,
+          totalFollowers: currentUser._count.followers,
+          totalFollowing: currentUser._count.following,
           sessionId: payload.sessionId,
         },
       });
@@ -76,10 +114,10 @@ export default class UsersController {
       select: {
         id: true,
         username: true,
-        email: true,
         avatar: true,
         banner: true,
         bio: true,
+        handle: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -112,7 +150,15 @@ export default class UsersController {
     res.status(200).json({
       message: `Success. User ${foundUser.id} found.`,
       data: {
-        ...foundUser,
+        id: foundUser.id,
+        username: foundUser.username,
+        avatar: foundUser.avatar,
+        banner: foundUser.banner,
+        bio: foundUser.bio,
+        handle: foundUser.handle,
+        createdAt: foundUser.createdAt,
+        totalFollowers: foundUser._count.followers,
+        totalFollowing: foundUser._count.following,
         followsYou: followsCurrentUser ? true : false,
         followedByYou: followedByCurrentUser ? true : false,
       },
@@ -206,6 +252,7 @@ export default class UsersController {
               username: true,
               email: true,
               avatar: true,
+              handle: true,
               bio: true,
             },
           },
@@ -215,7 +262,14 @@ export default class UsersController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        data: currentUserFollowingList.map((item) => item.followed),
+        data: currentUserFollowingList.map((item) => ({
+          id: item.followed.id,
+          username: item.followed.username,
+          handle: item.followed.username,
+          bio: item.followed.bio,
+          avatar: item.followed.avatar,
+          isFollowedByCurrentUser: true,
+        })),
       });
     }
   );
@@ -246,8 +300,14 @@ export default class UsersController {
               id: true,
               username: true,
               email: true,
+              handle: true,
               avatar: true,
               bio: true,
+              following: {
+                select: {
+                  followerId: true,
+                },
+              },
             },
           },
         },
@@ -256,7 +316,17 @@ export default class UsersController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        data: currentUserFollowerList.map((item) => item.follower),
+        data: currentUserFollowerList.map((item) => ({
+          id: item.follower.id,
+          username: item.follower.username,
+          email: item.follower.email,
+          handle: item.follower.handle,
+          bio: item.follower.bio,
+          avatar: item.follower.avatar,
+          isFollowedByCurrentUser: item.follower.following
+            .map((follow) => follow.followerId)
+            .includes(payload.userId),
+        })),
       });
     }
   );
@@ -264,7 +334,7 @@ export default class UsersController {
   public getUserFollowingList = asyncHandler(
     async (req: Request, res: Response) => {
       const { id } = req.params;
-
+      const payload = req.jwtPayload;
       const { page, perPage, ascending } = req.query;
 
       const order = ascending == "true" ? "asc" : "desc";
@@ -288,7 +358,13 @@ export default class UsersController {
               username: true,
               email: true,
               avatar: true,
+              handle: true,
               bio: true,
+              following: {
+                select: {
+                  followerId: true,
+                },
+              },
             },
           },
         },
@@ -297,7 +373,17 @@ export default class UsersController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        data: userFollowingList.map((item) => item.followed),
+        data: userFollowingList.map((item) => ({
+          id: item.followed.id,
+          username: item.followed.username,
+          handle: item.followed.handle,
+          email: item.followed.email,
+          bio: item.followed.bio,
+          avatar: item.followed.avatar,
+          isFollowedByCurrentUser: item.followed.following
+            .map((follow) => follow.followerId)
+            .includes(payload.userId),
+        })),
       });
     }
   );
@@ -306,7 +392,7 @@ export default class UsersController {
     async (req: Request, res: Response) => {
       const { id } = req.params;
       const { page, perPage, ascending } = req.query;
-
+      const payload = req.jwtPayload;
       const order = ascending == "true" ? "asc" : "desc";
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
@@ -328,7 +414,13 @@ export default class UsersController {
               username: true,
               email: true,
               avatar: true,
+              handle: true,
               bio: true,
+              following: {
+                select: {
+                  followerId: true,
+                },
+              },
             },
           },
         },
@@ -337,7 +429,17 @@ export default class UsersController {
         message: "success",
         page: _page,
         perPage: _perPage,
-        data: userFollowerList.map((item) => item.follower),
+        data: userFollowerList.map((item) => ({
+          id: item.follower.id,
+          username: item.follower.username,
+          handle: item.follower.handle,
+          email: item.follower.email,
+          bio: item.follower.bio,
+          avatar: item.follower.avatar,
+          isFollowedByCurrentUser: item.follower.following
+            .map((follow) => follow.followerId)
+            .includes(payload.userId),
+        })),
       });
     }
   );
