@@ -191,8 +191,8 @@ export default class CollectionsController {
         !rating
       ) {
         throw new AppError(
-          400,
-          "ValidationError",
+          422,
+          "Invalid Format.",
           "Please provide all needed credentials.",
           true
         );
@@ -315,6 +315,7 @@ export default class CollectionsController {
             select: {
               id: true,
               username: true,
+              handle: true,
             },
           },
           _count: {

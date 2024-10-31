@@ -67,6 +67,7 @@ export default class PostsController {
             select: {
               id: true,
               username: true,
+              handle: true,
             },
           },
           _count: {
@@ -88,10 +89,7 @@ export default class PostsController {
           privacy: post.privacy,
           totalLikes: post._count.likes,
           totalComments: post._count.comments,
-          owner: {
-            id: post.owner.id,
-            username: post.owner.username,
-          },
+          owner: post.owner,
           media: post.media,
           collection: post.collection
             ? {
@@ -164,6 +162,7 @@ export default class PostsController {
           select: {
             id: true,
             username: true,
+            handle: true,
           },
         },
         _count: {
@@ -185,10 +184,7 @@ export default class PostsController {
         privacy: post.privacy,
         totalLikes: post._count.likes,
         totalComments: post._count.comments,
-        owner: {
-          id: post.owner.id,
-          username: post.owner.username,
-        },
+        owner: post.owner,
         media: post.media,
         collection: post.collection
           ? {
@@ -237,6 +233,7 @@ export default class PostsController {
           select: {
             id: true,
             username: true,
+            handle: true,
           },
         },
         _count: {
@@ -258,10 +255,7 @@ export default class PostsController {
       privacy: foundPost.privacy,
       totalLikes: foundPost._count.likes,
       totalComments: foundPost._count.comments,
-      owner: {
-        id: foundPost.owner.id,
-        username: foundPost.owner.username,
-      },
+      owner: foundPost.owner,
       media: foundPost.media,
       collection: foundPost.collection
         ? {
@@ -273,6 +267,7 @@ export default class PostsController {
             ),
           }
         : null,
+      isOwnedByCurrentUser: foundPost.owner.id === payload.userId,
       createdAt: foundPost.createdAt,
     };
 
@@ -535,10 +530,12 @@ export default class PostsController {
         id: true,
         postId: true,
         content: true,
+        createdAt: true,
         author: {
           select: {
             id: true,
             username: true,
+            handle: true,
           },
         },
       },
@@ -553,7 +550,8 @@ export default class PostsController {
         postId: comment.postId,
         content: comment.content,
         author: comment.author,
-        isOwnedByCurrentUser:
+        createdAt: comment.createdAt,
+        isCurrentUserAuthor:
           comment.author.id === payload.userId ? true : false,
       })),
     });
@@ -651,7 +649,7 @@ export default class PostsController {
 
   public getPostLikes = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-
+    const payload = req.jwtPayload;
     const { page, perPage, ascending } = req.query;
 
     const order = ascending == "true" ? "asc" : "desc";
@@ -674,6 +672,13 @@ export default class PostsController {
           select: {
             id: true,
             username: true,
+            avatar: true,
+            handle: true,
+            following: {
+              select: {
+                followerId: true,
+              },
+            },
           },
         },
       },
@@ -683,7 +688,18 @@ export default class PostsController {
       message: "success",
       page: _page,
       perPage: _perPage,
-      data: postLikes,
+      data: postLikes.map((postLike) => ({
+        postId: postLike.postId,
+        user: {
+          id: postLike.user.id,
+          username: postLike.user.username,
+          avatar: postLike.user.avatar,
+          handle: postLike.user.handle,
+          isFollowedByCurrentUser: postLike.user.following
+            .map((follow) => follow.followerId)
+            .includes(payload.userId),
+        },
+      })),
     });
   });
 

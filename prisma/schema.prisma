@@ -13,6 +13,7 @@ model User {
   username     String
   password     String
   email        String        @unique
+  handle       String        @unique
   followers    Follow[]      @relation("followers")
   following    Follow[]      @relation("following")
   posts        Post[]

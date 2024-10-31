@@ -31,9 +31,7 @@ export default class FeedController {
           //all friends-only posts from the current user
           {
             ownerId: payload.userId,
-            privacy: {
-              in: ["FRIENDS_ONLY"],
-            },
+            privacy: "FRIENDS_ONLY",
           },
 
           //all friends-only posts from the current user's friends
@@ -78,6 +76,7 @@ export default class FeedController {
             id: true,
             username: true,
             avatar: true,
+            handle: true,
           },
         },
         likes: {
@@ -113,6 +112,7 @@ export default class FeedController {
           .includes(payload.userId.toString()),
         media: post.media,
         collection: post.collection,
+        createdAt: post.createdAt,
       })),
     });
   });
@@ -190,6 +190,7 @@ export default class FeedController {
               id: true,
               username: true,
               avatar: true,
+              handle: true,
             },
           },
           likes: {
@@ -225,6 +226,7 @@ export default class FeedController {
             .includes(payload.userId.toString()),
           media: post.media,
           collection: post.collection,
+          createdAt: post.createdAt,
         })),
       });
     }
