@@ -256,4 +256,28 @@ export default class AuthController {
       .status(200)
       .json(`Session with id ${sessionId} logged out successfully.`);
   });
+
+  public verifyHandle = asyncHandler(async (req: Request, res: Response) => {
+    const { handle } = req.query;
+
+    if (!handle) {
+      throw new AppError(422, "Invalid Format", "Handle not provided.", true);
+    }
+
+    const foundHandle = await prisma.user.findFirst({
+      where: {
+        handle: handle.toString(),
+      },
+    });
+
+    if (foundHandle) {
+      res.status(200).json({
+        isHandleValid: false,
+      });
+    }
+
+    res.status(200).json({
+      isHandleValid: true,
+    });
+  });
 }
