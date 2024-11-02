@@ -8,7 +8,7 @@ router
   //get
   .get("/", usersController.getAllUsers)
   .get("/me", usersController.getCurrentUserInfo)
-  .get("/:id", usersController.getUserInfo)
+  .get("/:handle", usersController.getUserInfo)
   .get("/me/following", usersController.getCurrentUserFollowingList)
   .get("/me/followers", usersController.getCurrentUserFollowerList)
   .get("/:id/following", usersController.getUserFollowingList)

@@ -64,7 +64,7 @@ export default class CollectionsController {
 
   public getUserCollections = asyncHandler(
     async (req: Request, res: Response) => {
-      const { id } = req.params;
+      const { handle } = req.params;
       const payload = req.jwtPayload;
 
       const { page, perPage, ascending } = req.query;
@@ -74,10 +74,20 @@ export default class CollectionsController {
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
+      const foundOwner = await prisma.user.findFirst({
+        where: {
+          handle,
+        },
+      });
+
+      if (!foundOwner) {
+        throw new AppError(404, "NotFound", "Collection not found.", true);
+      }
+
       //check if currentUser is friends with collection owner
       const isCurrentUserFriendsWithOwner = await areTheyFriends(
         payload.userId as string,
-        id
+        foundOwner.id
       );
 
       //retrieve collections that have privacy PUBLIC and FRIENDS_ONLY
@@ -88,7 +98,7 @@ export default class CollectionsController {
           createdAt: order,
         },
         where: {
-          ownerId: id,
+          ownerId: foundOwner.id,
           privacy: {
             in: isCurrentUserFriendsWithOwner
               ? ["FRIENDS_ONLY", "PUBLIC"]

@@ -7,7 +7,7 @@ const collectionsController = new CollectionsController();
 router
   //get
   .get("/user/me", collectionsController.getCurrentUserCollections)
-  .get("/user/:id", collectionsController.getUserCollections)
+  .get("/user/:handle", collectionsController.getUserCollections)
   .get("/:id", collectionsController.getCollectionInfo)
   .get(
     "/:collectionId/collection-items",

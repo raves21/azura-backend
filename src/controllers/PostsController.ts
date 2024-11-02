@@ -5,6 +5,7 @@ import {
   areTheyFriends,
   checkResourcePrivacyAndUserOwnership,
   updateExistingMedia,
+  upsertNotification,
 } from "../utils/functions/reusablePrismaFunctions";
 import AppError from "../utils/types/errors";
 
@@ -108,7 +109,7 @@ export default class PostsController {
   );
 
   public getUserPosts = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { handle } = req.params;
     const payload = req.jwtPayload;
 
     const { page, perPage, ascending } = req.query;
@@ -118,16 +119,26 @@ export default class PostsController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
+    const foundOwner = await prisma.user.findFirst({
+      where: {
+        handle,
+      },
+    });
+
+    if (!foundOwner) {
+      throw new AppError(404, "NotFound", "User not found.", true);
+    }
+
     //check if currentUser is friends with owner
     const isCurrentUserFriendsWithOwner = await areTheyFriends(
       payload.userId,
-      id
+      foundOwner.id
     );
 
     //retrieve posts that have privacy FRIENDS_ONLY and PUBLIC
     const userPosts = await prisma.post.findMany({
       where: {
-        ownerId: id,
+        ownerId: foundOwner.id,
         privacy: {
           in: isCurrentUserFriendsWithOwner
             ? ["FRIENDS_ONLY", "PUBLIC"]
@@ -570,6 +581,20 @@ export default class PostsController {
           postId: id,
           content,
         },
+        select: {
+          post: {
+            select: {
+              ownerId: true,
+            },
+          },
+        },
+      });
+
+      await upsertNotification({
+        recipientId: newComment.post.ownerId,
+        actorId: payload.userId,
+        postId: id,
+        type: "COMMENT",
       });
 
       res.status(201).json({
@@ -707,11 +732,25 @@ export default class PostsController {
     const payload = req.jwtPayload;
     const { id } = req.params;
 
-    await prisma.postLike.create({
+    const newPostLike = await prisma.postLike.create({
       data: {
         userId: payload.userId,
         postId: id,
       },
+      select: {
+        post: {
+          select: {
+            ownerId: true,
+          },
+        },
+      },
+    });
+
+    await upsertNotification({
+      recipientId: newPostLike.post.ownerId,
+      actorId: payload.userId,
+      postId: id,
+      type: "LIKE",
     });
 
     res.status(200).json({

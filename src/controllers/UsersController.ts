@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
+import { upsertNotification } from "../utils/functions/reusablePrismaFunctions";
 
 const prisma = new PrismaClient();
 
@@ -95,8 +96,9 @@ export default class UsersController {
           bio: currentUser.bio,
           handle: currentUser.handle,
           createdAt: currentUser.createdAt,
-          totalFollowers: currentUser._count.followers,
-          totalFollowing: currentUser._count.following,
+          //*idk why but ts needs to be inverted ⬇️
+          totalFollowers: currentUser._count.following,
+          totalFollowing: currentUser._count.followers,
           sessionId: payload.sessionId,
         },
       });
@@ -104,12 +106,12 @@ export default class UsersController {
   );
 
   public getUserInfo = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { handle } = req.params;
     const payload = req.jwtPayload;
 
     const foundUser = await prisma.user.findFirst({
       where: {
-        id,
+        handle,
       },
       select: {
         id: true,
@@ -148,7 +150,7 @@ export default class UsersController {
     });
 
     res.status(200).json({
-      message: `Success. User ${foundUser.id} found.`,
+      message: `success. user found.`,
       data: {
         id: foundUser.id,
         username: foundUser.username,
@@ -157,8 +159,9 @@ export default class UsersController {
         bio: foundUser.bio,
         handle: foundUser.handle,
         createdAt: foundUser.createdAt,
-        totalFollowers: foundUser._count.followers,
-        totalFollowing: foundUser._count.following,
+        //*idk why but ts needs to be inverted ⬇️
+        totalFollowers: foundUser._count.following,
+        totalFollowing: foundUser._count.followers,
         followsYou: followsCurrentUser ? true : false,
         followedByYou: followedByCurrentUser ? true : false,
       },
@@ -169,25 +172,30 @@ export default class UsersController {
     const { id: userToFollow } = req.params;
     const payload = req.jwtPayload;
 
-    try {
-      await prisma.follow.create({
-        data: {
-          followerId: payload.userId,
-          followedId: userToFollow,
-        },
-      });
-      res.status(201).json({
-        message: `Success, you have successfully followed user ${userToFollow}`,
-      });
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        res.status(500).json({
-          message: "Follow user failed. You are already following this user.",
-        });
-      } else {
-        throw error;
-      }
+    if (userToFollow === payload.userId) {
+      throw new AppError(
+        400,
+        "BadRequest",
+        "You cannot follow yourself.",
+        true
+      );
     }
+
+    await prisma.follow.create({
+      data: {
+        followerId: payload.userId,
+        followedId: userToFollow,
+      },
+    });
+
+    await upsertNotification({
+      recipientId: userToFollow,
+      actorId: payload.userId,
+      type: "FOLLOW",
+    });
+    res.status(201).json({
+      message: `Success, you have successfully followed user ${userToFollow}`,
+    });
   });
 
   public unfollowUser = asyncHandler(async (req: Request, res: Response) => {

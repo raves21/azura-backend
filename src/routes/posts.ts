@@ -7,7 +7,7 @@ const postsController = new PostsController();
 router
   //get
   .get("/user/me", postsController.getCurrentUserPosts)
-  .get("/user/:id", postsController.getUserPosts)
+  .get("/user/:handle", postsController.getUserPosts)
   .get("/:id", postsController.getPostInfo)
   .get("/:id/comments", postsController.getPostComments)
   .get("/:id/likes", postsController.getPostLikes)

@@ -9,23 +9,56 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(uuid()) @db.Uuid
-  username     String
-  password     String
-  email        String        @unique
-  handle       String        @unique
-  followers    Follow[]      @relation("followers")
-  following    Follow[]      @relation("following")
-  posts        Post[]
-  likedPosts   PostLike[]
-  avatar       String?
-  banner       String?
-  bio          String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  collections  Collection[]
-  comments     Comment[]
-  userSessions UserSession[]
+  id                 String              @id @default(uuid()) @db.Uuid
+  username           String
+  password           String
+  email              String              @unique
+  handle             String              @unique
+  followers          Follow[]            @relation("followers")
+  following          Follow[]            @relation("following")
+  posts              Post[]
+  likedPosts         PostLike[]
+  avatar             String?
+  banner             String?
+  bio                String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  collections        Collection[]
+  comments           Comment[]
+  userSessions       UserSession[]
+  notifications      Notification[]
+  notificationActors NotificationActor[]
+
+  @@index([username, handle])
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+}
+
+model NotificationActor {
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  notificationId String       @db.Uuid
+  actor          User         @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId        String       @db.Uuid
+  createdAt      DateTime     @default(now())
+
+  @@id([notificationId, actorId])
+}
+
+model Notification {
+  id          String              @id @default(uuid()) @db.Uuid
+  recipient   User                @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId String              @db.Uuid
+  actors      NotificationActor[]
+  type        NotificationType
+  post        Post?               @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      String?             @db.Uuid
+  isRead      Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime
 }
 
 model Follow {
@@ -68,6 +101,8 @@ model Collection {
   posts           Post[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  @@index([name])
 }
 
 model CollectionItem {
@@ -105,26 +140,31 @@ model Media {
   //list of all collectionsItems and posts that reference this media
   collectionItems CollectionItem[]
   posts           Post[]
+
+  @@index([title])
 }
 
 model Post {
-  id           String      @id @default(uuid()) @db.Uuid
-  ownerId      String      @db.Uuid
-  owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  id           String         @id @default(uuid()) @db.Uuid
+  ownerId      String         @db.Uuid
+  owner        User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   content      String?
   privacy      Privacy
   comments     Comment[]
   likes        PostLike[]
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   //fields for OPTIONAL REFERENCES
   //a post can also contain a reference to a media, or a reference to a collection.
   //ex: user wants to share about the movie Inception (2010), 
   //or user wants to share their personal collection of horror movies
   mediaId      String?
-  media        Media?      @relation(fields: [mediaId], references: [id])
-  collectionId String?     @db.Uuid
-  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  media        Media?         @relation(fields: [mediaId], references: [id])
+  collectionId String?        @db.Uuid
+  collection   Collection?    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  Notification Notification[]
+
+  @@index([content])
 }
 
 model PostLike {
