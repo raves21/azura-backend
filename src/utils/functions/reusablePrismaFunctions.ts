@@ -1,4 +1,4 @@
-import { Media, PrismaClient, Privacy } from "@prisma/client";
+import { Media, NotificationType, PrismaClient, Privacy } from "@prisma/client";
 import { Response } from "express";
 import AppError from "../types/errors";
 
@@ -102,5 +102,115 @@ export const updateExistingMedia = async (
         status: mediaWithNewValues.status,
       },
     });
+  }
+};
+
+type UpsertNotificationArgs = {
+  recipientId: string;
+  actorId: string;
+  type: NotificationType;
+  postId?: string | null;
+};
+
+export const upsertNotification = async ({
+  recipientId,
+  actorId,
+  type,
+  postId,
+}: UpsertNotificationArgs) => {
+  //dont do anything if actor is the user himself
+  if (actorId === recipientId) return;
+
+  if (type === "FOLLOW") {
+    //if type is FOLLOW, check if a notification with the given recipient, type,
+    //with the actor in its list of actors already exists
+    const existingNotification = await prisma.notification.findFirst({
+      where: {
+        recipientId,
+        type,
+        actors: {
+          some: {
+            actorId,
+          },
+        },
+      },
+    });
+
+    //if a follow notification that has the actor in it already exists, dont do anything.
+    //this is to prevent follow spammers from clogging up the user's notifs.
+    if (existingNotification) return;
+
+    //if it does not exist, create it.
+    await prisma.notification.create({
+      data: {
+        type: "FOLLOW",
+        recipientId,
+        actors: {
+          create: {
+            actorId,
+          },
+        },
+        updatedAt: new Date(),
+      },
+    });
+    return;
+  } else {
+    //if type is COMMENT or LIKE, check if notif with the same recipientId, postId, and type already exists.
+    const existingNotification = await prisma.notification.findFirst({
+      where: {
+        recipientId,
+        postId,
+        type,
+      },
+    });
+
+    if (existingNotification) {
+      //if notif exists, check if the actor already exists in its list of actors.
+      const existingActor = await prisma.notificationActor.findFirst({
+        where: {
+          notificationId: existingNotification.id,
+          actorId,
+        },
+      });
+
+      if (!existingActor) {
+        //only if the actor does not already exist in its list of actors will we
+        //create the actor, and update the notification's isRead and updatedAt.
+        //this will prevent comment and like spammers from clogging up the user's
+        //notifications.
+        await prisma.notificationActor.create({
+          data: {
+            notificationId: existingNotification.id,
+            actorId,
+          },
+        });
+
+        await prisma.notification.update({
+          where: {
+            id: existingNotification.id,
+          },
+          data: {
+            isRead: false,
+            updatedAt: new Date(),
+          },
+        });
+        return;
+      } else return;
+    } else {
+      //if notif with given recipientId, postId, and type does not exist, create it.
+      await prisma.notification.create({
+        data: {
+          recipientId,
+          postId,
+          type,
+          actors: {
+            create: {
+              actorId,
+            },
+          },
+          updatedAt: new Date(),
+        },
+      });
+    }
   }
 };
