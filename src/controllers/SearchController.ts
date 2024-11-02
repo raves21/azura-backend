@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { PrismaClient } from "@prisma/client";
-import { areTheyFriends } from "../utils/functions/reusablePrismaFunctions";
 import AppError from "../utils/types/errors";
 
 const prisma = new PrismaClient();
@@ -27,38 +26,61 @@ export default class SearchController {
         createdAt: order,
       },
       where: {
-        content: {
-          search: query.toString(),
-        },
         OR: [
-          //all public posts
+          // search in post content
           {
-            privacy: "PUBLIC",
-          },
-
-          //all friends-only posts from the current user
-          {
-            ownerId: payload.userId,
-            privacy: {
-              in: ["FRIENDS_ONLY"],
+            content: {
+              search: query.toString().trim().split(" ").join(" & "),
             },
           },
-
-          //all friends-only posts from the current user's friends
+          // search in related media title
           {
-            privacy: "FRIENDS_ONLY",
-            owner: {
-              followers: {
-                some: {
-                  followedId: payload.userId,
-                },
-              },
-              following: {
-                some: {
-                  followerId: payload.userId,
-                },
+            media: {
+              title: {
+                search: query.toString().trim().split(" ").join(" & "),
               },
             },
+          },
+        ],
+        AND: [
+          // privacy filters
+          {
+            OR: [
+              // public posts
+              {
+                privacy: "PUBLIC",
+              },
+              //all friends-only posts from the current user
+              {
+                AND: [{ ownerId: payload.userId }, { privacy: "FRIENDS_ONLY" }],
+              },
+              //all friends-only posts from the current user's friends
+              {
+                AND: [
+                  { privacy: "FRIENDS_ONLY" },
+                  {
+                    owner: {
+                      AND: [
+                        {
+                          followers: {
+                            some: {
+                              followedId: payload.userId,
+                            },
+                          },
+                        },
+                        {
+                          following: {
+                            some: {
+                              followerId: payload.userId,
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
           },
         ],
       },
@@ -69,6 +91,7 @@ export default class SearchController {
             id: true,
             name: true,
             description: true,
+            photo: true,
             collectionItems: {
               take: 3,
               select: {
@@ -147,9 +170,18 @@ export default class SearchController {
         createdAt: order,
       },
       where: {
-        username: {
-          search: query.toString(),
-        },
+        OR: [
+          {
+            username: {
+              search: query.toString().trim().split(" ").join(" & "),
+            },
+          },
+          {
+            handle: {
+              search: query.toString().trim().split(" ").join(" & "),
+            },
+          },
+        ],
       },
       select: {
         id: true,
@@ -207,7 +239,7 @@ export default class SearchController {
         },
         where: {
           name: {
-            search: query.toString(),
+            search: query.toString().trim().split(" ").join(" & "),
           },
           OR: [
             //all public collections
