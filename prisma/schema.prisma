@@ -103,6 +103,7 @@ model Collection {
   updatedAt       DateTime         @updatedAt
 
   @@index([name])
+  @@index([ownerId])
 }
 
 model CollectionItem {
@@ -142,6 +143,7 @@ model Media {
   posts           Post[]
 
   @@index([title])
+  @@map("media")
 }
 
 model Post {
@@ -165,6 +167,8 @@ model Post {
   Notification Notification[]
 
   @@index([content])
+  @@index([ownerId])
+  @@map("posts")
 }
 
 model PostLike {
@@ -186,4 +190,7 @@ model Comment {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
 }
