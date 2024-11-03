@@ -9,6 +9,7 @@ import postsRouter from "./routes/posts";
 import feedRouter from "./routes/feed";
 import searchRouter from "./routes/search";
 import notificationsRouter from "./routes/notifications";
+import trendingRouter from "./routes/trending";
 import { verifyJWT } from "./middleware/verifyJWT";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -59,6 +60,9 @@ app.use("/api/search", searchRouter);
 
 // Notifications route
 app.use("/api/notifications", notificationsRouter);
+
+// Trending route
+app.use("/api/trending", trendingRouter);
 
 //middleware for handling errors
 app.use(errorHandler);
