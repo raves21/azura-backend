@@ -43,4 +43,21 @@ export default class CronController {
       }
     }
   );
+
+  public clearExpiredOtcs = asyncHandler(
+    async (req: Request, res: Response) => {
+      const oneHourAgo = new Date(new Date().getTime() - 60 * 60 * 1000);
+
+      await prisma.oTC.deleteMany({
+        where: {
+          expiresAt: {
+            lt: oneHourAgo, //otcs that are less than one hour ago
+          },
+        },
+      });
+      res.status(200).json({
+        message: "Success. Cleared expired otcs.",
+      });
+    }
+  );
 }

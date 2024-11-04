@@ -32,6 +32,14 @@ model User {
   @@index([username, handle])
 }
 
+model OTC {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  otc       String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
 enum NotificationType {
   LIKE
   COMMENT

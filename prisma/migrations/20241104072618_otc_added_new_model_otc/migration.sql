@@ -1,0 +1,10 @@
+-- CreateTable
+CREATE TABLE "OTC" (
+    "userId" UUID NOT NULL,
+    "otc" TEXT NOT NULL,
+
+    CONSTRAINT "OTC_pkey" PRIMARY KEY ("userId")
+);
+
+-- AddForeignKey
+ALTER TABLE "OTC" ADD CONSTRAINT "OTC_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
