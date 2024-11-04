@@ -10,6 +10,7 @@ import feedRouter from "./routes/feed";
 import searchRouter from "./routes/search";
 import notificationsRouter from "./routes/notifications";
 import trendingRouter from "./routes/trending";
+import otcRouter from "./routes/otc";
 import { verifyJWT } from "./middleware/verifyJWT";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -30,6 +31,9 @@ app.get("/", async (req, res) => {
 
 // Auth route
 app.use("/api/auth", authRouter);
+
+// OTC route
+app.use("/api/otc", otcRouter);
 
 //Refresh route
 app.use("/api/refresh", refreshRouter);

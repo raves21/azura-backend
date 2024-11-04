@@ -1,11 +1,21 @@
 import { Response, Request } from "express";
-import bcrypt from "bcrypt";
+import bcrypt, { compare } from "bcrypt";
 import { PrismaClient } from "@prisma/client";
 import { sign } from "jsonwebtoken";
 import AppError from "../utils/types/errors";
 import { asyncHandler } from "../middleware/asyncHandler";
+import { createTransport } from "nodemailer";
 
 const prisma = new PrismaClient();
+const transporter = createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.OTC_EMAIL,
+    pass: process.env.OTC_PASSWORD,
+  },
+});
 
 export default class AuthController {
   public login = asyncHandler(async (req: Request, res: Response) => {
@@ -146,38 +156,6 @@ export default class AuthController {
       );
     }
 
-    //check for duplicate email in the db
-    const foundEmailDupe = await prisma.user.findFirst({
-      where: {
-        email,
-      },
-    });
-
-    if (foundEmailDupe) {
-      throw new AppError(
-        409,
-        "Conflict",
-        "This email is already associated with another account.",
-        true
-      );
-    }
-
-    //check for duplicate handle in the db
-    const foundHandleDupe = await prisma.user.findFirst({
-      where: {
-        handle,
-      },
-    });
-
-    if (foundHandleDupe) {
-      throw new AppError(
-        409,
-        "Conflict",
-        "This handle is already associated with another account.",
-        true
-      );
-    }
-
     //encrypt the password
     const encryptedPassword = await bcrypt.hash(password, 10);
 
@@ -204,11 +182,6 @@ export default class AuthController {
   public logoutCurrentSession = asyncHandler(
     async (req: Request, res: Response) => {
       //*NOTE: On client, also delete accessToken or set to null or something
-
-      //NOTE: this function has no error handling if cookies.refreshToken
-      //does not exist, because it will always exist (all user actions has cookies attached).
-      //And even if refreshToken in cookies is expired, we can still use that to
-      //query the UserSession table to find our session and delete it.
 
       const cookies = req.cookies;
       const refreshTokenFromCookies = cookies.refreshToken;
@@ -264,20 +237,50 @@ export default class AuthController {
       throw new AppError(422, "Invalid Format", "Handle not provided.", true);
     }
 
-    const foundHandle = await prisma.user.findFirst({
+    const foundHandleDupe = await prisma.user.findFirst({
       where: {
         handle: handle.toString(),
       },
     });
 
-    if (foundHandle) {
-      res.status(200).json({
-        isHandleValid: false,
-      });
+    if (foundHandleDupe) {
+      throw new AppError(
+        409,
+        "Conflict",
+        "This handle is already associated with another account.",
+        true
+      );
     }
 
     res.status(200).json({
-      isHandleValid: true,
+      message: "handle is valid.",
+    });
+  });
+
+  public verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.query;
+
+    if (!email) {
+      throw new AppError(422, "Invalid Format.", "No email provided.", true);
+    }
+
+    const foundEmailDupe = await prisma.user.findFirst({
+      where: {
+        email: email.toString(),
+      },
+    });
+
+    if (foundEmailDupe) {
+      throw new AppError(
+        409,
+        "Conflict",
+        "This email is already associated with another account.",
+        true
+      );
+    }
+
+    res.status(200).json({
+      message: "email is valid",
     });
   });
 }
