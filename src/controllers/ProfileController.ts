@@ -123,4 +123,18 @@ export default class ProfileController {
       message: "email updated successfully.",
     });
   });
+
+  public deleteAccount = asyncHandler(async (req: Request, res: Response) => {
+    const payload = req.jwtPayload;
+
+    await prisma.user.delete({
+      where: {
+        id: payload.userId,
+      },
+    });
+
+    res.status(200).json({
+      message: "account deleted successfully.",
+    });
+  });
 }
