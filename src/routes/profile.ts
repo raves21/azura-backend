@@ -8,6 +8,7 @@ router
   .get("/verify-password", profileController.verifyPassword)
   .put("/details", profileController.updateUserDetails)
   .put("/password", profileController.updatePassword)
-  .put("/email", profileController.updateEmail);
+  .put("/email", profileController.updateEmail)
+  .delete("/account", profileController.deleteAccount);
 
 export default router;
