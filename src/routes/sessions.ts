@@ -9,6 +9,10 @@ router
   .get("/", sessionsController.getSessions)
 
   //post
+  .post(
+    "/sessions-except-current/logout",
+    sessionsController.logoutSessionsExceptCurrent
+  )
   .post("/:sessionId/logout", sessionsController.logoutSession);
 
 export default router;

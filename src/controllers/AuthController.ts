@@ -4,18 +4,8 @@ import { PrismaClient } from "@prisma/client";
 import { sign } from "jsonwebtoken";
 import AppError from "../utils/types/errors";
 import { asyncHandler } from "../middleware/asyncHandler";
-import { createTransport } from "nodemailer";
 
 const prisma = new PrismaClient();
-const transporter = createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.OTC_EMAIL,
-    pass: process.env.OTC_PASSWORD,
-  },
-});
 
 export default class AuthController {
   public login = asyncHandler(async (req: Request, res: Response) => {
@@ -230,57 +220,61 @@ export default class AuthController {
       .json(`Session with id ${sessionId} logged out successfully.`);
   });
 
-  public verifyHandle = asyncHandler(async (req: Request, res: Response) => {
-    const { handle } = req.query;
+  public checkHandleAvailabilty = asyncHandler(
+    async (req: Request, res: Response) => {
+      const { handle } = req.query;
 
-    if (!handle) {
-      throw new AppError(422, "Invalid Format", "Handle not provided.", true);
+      if (!handle) {
+        throw new AppError(422, "Invalid Format", "Handle not provided.", true);
+      }
+
+      const foundHandleDupe = await prisma.user.findFirst({
+        where: {
+          handle: handle.toString(),
+        },
+      });
+
+      if (foundHandleDupe) {
+        throw new AppError(
+          409,
+          "Conflict",
+          "This handle is already associated with another account.",
+          true
+        );
+      }
+
+      res.status(200).json({
+        message: "handle is available.",
+      });
     }
+  );
 
-    const foundHandleDupe = await prisma.user.findFirst({
-      where: {
-        handle: handle.toString(),
-      },
-    });
+  public checkEmailAvailability = asyncHandler(
+    async (req: Request, res: Response) => {
+      const { email } = req.query;
 
-    if (foundHandleDupe) {
-      throw new AppError(
-        409,
-        "Conflict",
-        "This handle is already associated with another account.",
-        true
-      );
+      if (!email) {
+        throw new AppError(422, "Invalid Format.", "No email provided.", true);
+      }
+
+      const foundEmailDupe = await prisma.user.findFirst({
+        where: {
+          email: email.toString(),
+        },
+      });
+
+      if (foundEmailDupe) {
+        throw new AppError(
+          409,
+          "Conflict",
+          "This email is already associated with another account.",
+          true
+        );
+      }
+
+      res.status(200).json({
+        message: "email is available.",
+      });
     }
-
-    res.status(200).json({
-      message: "handle is valid.",
-    });
-  });
-
-  public verifyEmail = asyncHandler(async (req: Request, res: Response) => {
-    const { email } = req.query;
-
-    if (!email) {
-      throw new AppError(422, "Invalid Format.", "No email provided.", true);
-    }
-
-    const foundEmailDupe = await prisma.user.findFirst({
-      where: {
-        email: email.toString(),
-      },
-    });
-
-    if (foundEmailDupe) {
-      throw new AppError(
-        409,
-        "Conflict",
-        "This email is already associated with another account.",
-        true
-      );
-    }
-
-    res.status(200).json({
-      message: "email is valid",
-    });
-  });
+  );
 }

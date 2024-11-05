@@ -111,7 +111,16 @@ export default class FeedController {
           .map((like) => like.userId)
           .includes(payload.userId.toString()),
         media: post.media,
-        collection: post.collection,
+        collection: post.collection
+          ? {
+              id: post.collection.id,
+              name: post.collection.name,
+              description: post.collection.description,
+              previewPosters: post.collection.collectionItems.map(
+                (item) => item.media.posterImage
+              ),
+            }
+          : null,
         createdAt: post.createdAt,
       })),
     });
@@ -225,7 +234,16 @@ export default class FeedController {
             .map((like) => like.userId)
             .includes(payload.userId.toString()),
           media: post.media,
-          collection: post.collection,
+          collection: post.collection
+            ? {
+                id: post.collection.id,
+                name: post.collection.name,
+                description: post.collection.description,
+                previewPosters: post.collection.collectionItems.map(
+                  (item) => item.media.posterImage
+                ),
+              }
+            : null,
           createdAt: post.createdAt,
         })),
       });

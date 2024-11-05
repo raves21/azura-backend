@@ -48,4 +48,22 @@ export default class SessionsController {
       .status(200)
       .json(`Session with id ${sessionId} logged out successfully.`);
   });
+
+  public logoutSessionsExceptCurrent = asyncHandler(
+    async (req: Request, res: Response) => {
+      const payload = req.jwtPayload;
+
+      await prisma.userSession.deleteMany({
+        where: {
+          NOT: {
+            sessionId: payload.sessionId,
+          },
+        },
+      });
+
+      res.status(200).json({
+        message: "sessions except current session logged out successfully.",
+      });
+    }
+  );
 }
