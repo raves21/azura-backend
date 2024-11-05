@@ -11,6 +11,7 @@ import searchRouter from "./routes/search";
 import notificationsRouter from "./routes/notifications";
 import trendingRouter from "./routes/trending";
 import otcRouter from "./routes/otc";
+import profileRouter from "./routes/profile";
 import { verifyJWT } from "./middleware/verifyJWT";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -67,6 +68,9 @@ app.use("/api/notifications", notificationsRouter);
 
 // Trending route
 app.use("/api/trending", trendingRouter);
+
+// Profile route
+app.use("/api/profile", profileRouter);
 
 //middleware for handling errors
 app.use(errorHandler);

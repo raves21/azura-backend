@@ -27,28 +27,19 @@ export default class OTCController {
 
     const otc = `${Math.floor(100000 + Math.random() * 900000)}`;
 
-    //find record in otc table if exists
-    const foundOTCRecord = await prisma.oTC.findFirst({
-      where: {
-        email,
-      },
-    });
-
-    if (foundOTCRecord) {
-      //delete record of the user in otc table (if it exists)
-      await prisma.oTC.deleteMany({
-        where: {
-          id: foundOTCRecord.id,
-        },
-      });
-    }
-
     //send the email
     await transporter.sendMail({
       from: process.env.OTC_EMAIL,
       to: email,
-      subject: "OTC from AZURA",
+      subject: "Verification code from AZURA",
       html: `<p>Here is your verification code: <strong>${otc}</strong></p><br><p>This code will expire in 1 hour.</p>`,
+    });
+
+    //delete record of the user in otc table (if it exists)
+    await prisma.oTC.deleteMany({
+      where: {
+        email,
+      },
     });
 
     //*only store record in the db if the sendMail succeeds.
@@ -63,8 +54,9 @@ export default class OTCController {
         expiresAt: getExpirationTime(),
       },
     });
-    res.status(200).json("otc sent.");
-    return;
+    res.status(200).json({
+      message: "otc sent.",
+    });
   });
 
   public verifyOTC = asyncHandler(async (req: Request, res: Response) => {
