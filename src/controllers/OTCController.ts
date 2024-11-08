@@ -25,6 +25,10 @@ export default class OTCController {
   public sendOTC = asyncHandler(async (req: Request, res: Response) => {
     const { email } = req.body;
 
+    if (!email) {
+      throw new AppError(422, "Invalid Format.", "No email given.", true);
+    }
+
     const otc = `${Math.floor(100000 + Math.random() * 900000)}`;
 
     //send the email
@@ -60,7 +64,7 @@ export default class OTCController {
   });
 
   public verifyOTC = asyncHandler(async (req: Request, res: Response) => {
-    const { email, otc } = req.body;
+    const { email, otc } = req.query;
 
     if (!otc || !email) {
       throw new AppError(
@@ -74,7 +78,7 @@ export default class OTCController {
     //find the otc record using the email
     const foundOTCRecord = await prisma.oTC.findFirst({
       where: {
-        email,
+        email: email.toString(),
       },
     });
 
@@ -104,7 +108,7 @@ export default class OTCController {
     }
 
     //check if given OTC and the OTC from the database matches
-    const matchedOTC = await compare(otc, foundOTCRecord.otc);
+    const matchedOTC = await compare(otc.toString(), foundOTCRecord.otc);
 
     if (!matchedOTC) {
       throw new AppError(

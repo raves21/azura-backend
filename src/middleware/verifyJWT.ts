@@ -17,7 +17,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   if (!authHeader) {
     throw new AppError(
       401,
-      "Unauthorized.",
+      "Unauthorized",
       "Unauthorized. No token in header.",
       true
     );
@@ -32,7 +32,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
     async (err, decoded) => {
       try {
         if (err) {
-          throw new AppError(401, "InvalidTokenError", "Invalid token.", true);
+          throw new AppError(401, "Unauthorized", "Invalid token.", true);
         }
         const payload = decoded as CustomJWTPayload;
         //find user session in UserSession table
@@ -42,6 +42,8 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
           },
         });
 
+        //if userSession is not found, then that means someone logged the currentUser's session out
+        //(logging out means the session is deleted in the UserSession table)
         if (!foundUserSession) {
           res.clearCookie("refreshToken", {
             httpOnly: true,

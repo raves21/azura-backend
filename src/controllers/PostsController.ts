@@ -649,7 +649,7 @@ export default class PostsController {
       if (foundPostOwner.ownerId !== payload.userId) {
         throw new AppError(
           403,
-          "Unauthorized",
+          "Forbidden",
           "You cannot delete a comment from a post you do not own.",
           true
         );

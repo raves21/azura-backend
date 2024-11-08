@@ -1,16 +1,16 @@
 import { Response, Request } from "express";
-import bcrypt, { compare } from "bcrypt";
+import bcrypt from "bcrypt";
 import { PrismaClient } from "@prisma/client";
-import { sign } from "jsonwebtoken";
 import AppError from "../utils/types/errors";
 import { asyncHandler } from "../middleware/asyncHandler";
+import { deleteExpiredSessionsAndLogin } from "../utils/functions/reusablePrismaFunctions";
+import { SESSION_LIMIT } from "../utils/constants";
 
 const prisma = new PrismaClient();
 
 export default class AuthController {
   public login = asyncHandler(async (req: Request, res: Response) => {
     const { email, password } = req.body;
-    const sessionLimit = 2;
 
     if (!email || !password) {
       throw new AppError(
@@ -39,6 +39,7 @@ export default class AuthController {
             deviceName: true,
             sessionId: true,
             createdAt: true,
+            refreshTokenExpiresAt: true,
           },
         },
         createdAt: true,
@@ -50,88 +51,51 @@ export default class AuthController {
       throw new AppError(401, "Unathorized", "User not found.", true);
     }
 
-    //check if user session has reached session limit
-    const currentUserSessions = foundUser.userSessions;
-    if (currentUserSessions.length >= sessionLimit) {
-      res.status(200).json({
-        message: "Maximum session limit reached.",
-        isDetachedMode: true,
-        data: {
-          id: foundUser.id,
-          username: foundUser.username,
-          email: foundUser.email,
-          handle: foundUser.handle,
-          avatar: foundUser.avatar,
-          sessions: currentUserSessions,
+    const currentDateTime = new Date();
+    //if session limit has been exceeded, look for the user's sessions that have
+    //expired refreshTokens
+    if (foundUser.userSessions.length >= SESSION_LIMIT) {
+      const expiredSessions = await prisma.userSession.findMany({
+        where: {
+          userId: foundUser.id,
+          refreshTokenExpiresAt: {
+            lt: currentDateTime,
+          },
         },
       });
-      return;
+
+      //if there are no sessions with expired refreshTokens, proceed in detachedMode
+      if (expiredSessions.length === 0) {
+        res.status(200).json({
+          message: "Maximum session limit reached.",
+          isDetachedMode: true,
+          data: {
+            user: {
+              id: foundUser.id,
+              username: foundUser.username,
+              email: foundUser.email,
+              handle: foundUser.handle,
+              avatar: foundUser.avatar,
+            },
+            sessions: foundUser.userSessions,
+          },
+        });
+        return;
+      }
+
+      await deleteExpiredSessionsAndLogin({
+        foundUser,
+        password,
+        currentDate: currentDateTime,
+        res,
+      });
     }
-
-    //evaluate password
-    const matchedPassword = await bcrypt.compare(password, foundUser.password);
-
-    //if passwords dont match throw error.
-    if (!matchedPassword) {
-      throw new AppError(
-        422,
-        "Invalid Format.",
-        "Incorrect Email or Password",
-        true
-      );
-    }
-
-    //if passwords DO match, then create refreshToken
-    const refreshToken = sign(
-      {
-        userId: foundUser.id,
-        email: foundUser.email,
-        handle: foundUser.handle,
-      },
-      process.env.REFRESH_TOKEN_SECRET as string,
-      { expiresIn: "1d" }
-    );
-
-    //save user's session in the UserSession table, along with their refreshToken
-    const newlyCreatedUserSession = await prisma.userSession.create({
-      data: {
-        userId: foundUser.id,
-        deviceName: `unknown device`,
-        refreshToken,
-      },
-    });
-
-    //create accessToken, including sessionId in its payload
-    const accessToken = sign(
-      {
-        userId: foundUser.id,
-        sessionId: newlyCreatedUserSession.sessionId,
-        email: foundUser.email,
-        handle: foundUser.handle,
-      },
-      process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: "30m" }
-    );
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, //1 day
-      //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
-    });
-    res.status(200).json({
-      message: `You are now logged in as ${foundUser.username}`,
-      data: {
-        user: {
-          id: foundUser.id,
-          username: foundUser.username,
-          email: foundUser.email,
-          handle: foundUser.handle,
-          avatar: foundUser.avatar,
-          createdAt: foundUser.createdAt,
-        },
-        isDetachedMode: false,
-        accessToken,
-      },
+    //if session limit not exceeded, proceed to logging in.
+    await deleteExpiredSessionsAndLogin({
+      foundUser,
+      password,
+      currentDate: currentDateTime,
+      res,
     });
   });
 
@@ -183,6 +147,7 @@ export default class AuthController {
         },
       });
 
+      //if user session not found, then it means someone already logged him out and his
       //user session was already deleted in the UserSession table (omae wa mo logged out)
       if (!foundUserSession) {
         res
@@ -191,7 +156,8 @@ export default class AuthController {
         return;
       }
 
-      //Delete that userSession using the foundUserSession's sessionId (since that is the primary key)
+      //if user session found,
+      //Delete that userSession using the foundUserSession's sessionId (primary key)
       await prisma.userSession.delete({
         where: {
           sessionId: foundUserSession.sessionId,

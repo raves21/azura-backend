@@ -5,6 +5,7 @@ import { CustomJWTPayload } from "../utils/types/jwt";
 import { TokenExpiredError } from "jsonwebtoken";
 import AppError from "../utils/types/errors";
 import { asyncHandler } from "../middleware/asyncHandler";
+import { ACCESS_TOKEN_DURATION } from "../utils/constants";
 
 const prisma = new PrismaClient();
 
@@ -14,7 +15,7 @@ export default class RefreshTokenController {
       const cookies = req.cookies;
 
       if (!cookies?.refreshToken) {
-        throw new AppError(401, "Unauthorized.", "No JWT in cookies!", true);
+        throw new AppError(401, "Unauthorized", "No JWT in cookies!", true);
       }
 
       const refreshTokenFromCookies = cookies.refreshToken as string;
@@ -29,8 +30,6 @@ export default class RefreshTokenController {
         },
       });
 
-      //if userSession is not found, then that means someone/the user himself logged that session out
-      //(logging out means the session is deleted in the UserSession table)
       if (!foundUserSession) {
         throw new AppError(
           404,
@@ -62,9 +61,9 @@ export default class RefreshTokenController {
                 );
               } else if (foundUser.id !== payload.userId) {
                 throw new AppError(
-                  403,
-                  "Forbidden",
-                  "Unauthorized. Grant new access token failed.",
+                  401,
+                  "Unauthorized.",
+                  "Grant new access token failed.",
                   true
                 );
               } else {
@@ -81,8 +80,9 @@ export default class RefreshTokenController {
                 handle: foundUser.handle,
               },
               process.env.ACCESS_TOKEN_SECRET as string,
-              { expiresIn: "30m" }
+              { expiresIn: ACCESS_TOKEN_DURATION }
             );
+            console.log("TOKEN REFRESHED!");
             res.json({
               message: "U are granted a new access token!",
               data: {

@@ -14,19 +14,28 @@ import otcRouter from "./routes/otc";
 import profileRouter from "./routes/profile";
 import { verifyJWT } from "./middleware/verifyJWT";
 import { errorHandler } from "./middleware/errorHandler";
+import cors from "cors";
 
 const app: Express = express();
 const port = 8080;
 const cookieParser = require("cookie-parser");
 
-//middleware for json
-app.use(express.json());
+//middleware for cors
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 //middleware for cookies
 app.use(cookieParser());
 
+//middleware for json
+app.use(express.json());
+
 // Entry route
-app.get("/", async (req, res) => {
+app.get("/", (req, res) => {
   res.json("SKRRT SKRRT");
 });
 
@@ -36,14 +45,19 @@ app.use("/api/auth", authRouter);
 // OTC route
 app.use("/api/otc", otcRouter);
 
-//Refresh route
+// Refresh route
 app.use("/api/refresh", refreshRouter);
 
-//cron-jobs
+// Route for cron-jobs
 app.use("/cron", cronRouter);
 
 //* Apply JWT verification middleware
 app.use(verifyJWT);
+
+// Route for checking token validity in the frontend
+app.get("/api/check-token", (req, res) => {
+  res.status(200).json("token valid");
+});
 
 // Users route
 app.use("/api/users", usersRouter);

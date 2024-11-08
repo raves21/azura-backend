@@ -1,16 +1,20 @@
-import { Media, NotificationType, PrismaClient, Privacy } from "@prisma/client";
-import { Response } from "express";
+import { Media, PrismaClient } from "@prisma/client";
 import AppError from "../types/errors";
+import bcrypt from "bcrypt";
+import { sign } from "jsonwebtoken";
+import {
+  CheckResourcePrivacyAndUserRelationshipArgs,
+  DeleteExpiredSessionsAndLoginArgs,
+  UpsertNotificationArgs,
+} from "../types/prisma";
+import {
+  ACCESS_TOKEN_DURATION,
+  REFRESH_TOKEN_COOKIE_MAXAGE,
+  REFRESH_TOKEN_DURATION,
+  REFRESH_TOKEN_EXPIRY_DATE,
+} from "../constants";
 
 const prisma = new PrismaClient();
-
-type CheckPrivacyAndUserRelationshipArgs = {
-  currentUserId: string;
-  ownerId: string;
-  privacy: Privacy;
-  successData: Record<string, any>;
-  res: Response;
-};
 
 export const checkResourcePrivacyAndUserOwnership = async ({
   currentUserId,
@@ -18,21 +22,18 @@ export const checkResourcePrivacyAndUserOwnership = async ({
   privacy,
   successData,
   res,
-}: CheckPrivacyAndUserRelationshipArgs) => {
+}: CheckResourcePrivacyAndUserRelationshipArgs) => {
   if (currentUserId !== ownerId) {
-    let isEntityPrivacyAndUserRelationshipValid = false;
+    let isValid = false;
     if (privacy === "FRIENDS_ONLY") {
       //check if currentUser is friends (following each other) with other user
-      isEntityPrivacyAndUserRelationshipValid = await areTheyFriends(
-        currentUserId,
-        ownerId
-      );
+      isValid = await areTheyFriends(currentUserId, ownerId);
     } else if (privacy === "PUBLIC") {
-      isEntityPrivacyAndUserRelationshipValid = true;
+      isValid = true;
     }
 
     //check if validation passes
-    if (isEntityPrivacyAndUserRelationshipValid) {
+    if (isValid) {
       res.status(200).json({
         message: "success",
         data: { ...successData, isOwnedByCurrentUser: false },
@@ -103,13 +104,6 @@ export const updateExistingMedia = async (
       },
     });
   }
-};
-
-type UpsertNotificationArgs = {
-  recipientId: string;
-  actorId: string;
-  type: NotificationType;
-  postId?: string | null;
 };
 
 export const upsertNotification = async ({
@@ -213,4 +207,85 @@ export const upsertNotification = async ({
       });
     }
   }
+};
+
+export const deleteExpiredSessionsAndLogin = async ({
+  password,
+  foundUser,
+  currentDate,
+  res,
+}: DeleteExpiredSessionsAndLoginArgs) => {
+  await prisma.userSession.deleteMany({
+    where: {
+      refreshTokenExpiresAt: {
+        lt: currentDate,
+      },
+    },
+  });
+  //evaluate password
+  const matchedPassword = await bcrypt.compare(password, foundUser.password);
+
+  //if passwords dont match throw error.
+  if (!matchedPassword) {
+    throw new AppError(
+      422,
+      "Invalid Format.",
+      "Incorrect Email or Password",
+      true
+    );
+  }
+
+  //if passwords DO match, then create refreshToken
+  const refreshToken = sign(
+    {
+      userId: foundUser.id,
+      email: foundUser.email,
+      handle: foundUser.handle,
+    },
+    process.env.REFRESH_TOKEN_SECRET as string,
+    { expiresIn: REFRESH_TOKEN_DURATION }
+  );
+
+  //save user's session in the UserSession table, along with their refreshToken
+  const newlyCreatedUserSession = await prisma.userSession.create({
+    data: {
+      userId: foundUser.id,
+      deviceName: `unknown device`,
+      refreshToken,
+      refreshTokenExpiresAt: REFRESH_TOKEN_EXPIRY_DATE,
+    },
+  });
+
+  //create accessToken, including sessionId in its payload
+  const accessToken = sign(
+    {
+      userId: foundUser.id,
+      sessionId: newlyCreatedUserSession.sessionId,
+      email: foundUser.email,
+      handle: foundUser.handle,
+    },
+    process.env.ACCESS_TOKEN_SECRET as string,
+    { expiresIn: ACCESS_TOKEN_DURATION }
+  );
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    maxAge: REFRESH_TOKEN_COOKIE_MAXAGE,
+    //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
+  });
+
+  res.status(200).json({
+    message: `You are now logged in as ${foundUser.username}`,
+    data: {
+      user: {
+        id: foundUser.id,
+        username: foundUser.username,
+        email: foundUser.email,
+        handle: foundUser.handle,
+        avatar: foundUser.avatar,
+      },
+      isDetachedMode: false,
+      accessToken,
+    },
+  });
 };
