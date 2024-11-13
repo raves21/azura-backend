@@ -2,12 +2,13 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
+import { RequestWithPayload } from "../utils/types/jwt";
 
 const prisma = new PrismaClient();
 
 export default class NotificationsController {
   public getNotifications = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const payload = req.jwtPayload;
 
       const { page, perPage } = req.query;

@@ -1,12 +1,16 @@
 import { TokenExpiredError, verify } from "jsonwebtoken";
 import { Response, NextFunction, Request } from "express";
-import { CustomJWTPayload } from "../utils/types/jwt";
+import { CustomJWTPayload, RequestWithPayload } from "../utils/types/jwt";
 import AppError from "../utils/types/errors";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
+export const verifyJWT = (
+  req: RequestWithPayload,
+  res: Response,
+  next: NextFunction
+) => {
   const cookies = req.cookies;
 
   if (!cookies?.refreshToken) {

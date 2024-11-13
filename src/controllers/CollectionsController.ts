@@ -7,12 +7,13 @@ import {
   areTheyFriends,
   updateExistingMedia,
 } from "../utils/functions/reusablePrismaFunctions";
+import { RequestWithPayload } from "../utils/types/jwt";
 
 const prisma = new PrismaClient();
 
 export default class CollectionsController {
   public getCurrentUserCollections = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const payload = req.jwtPayload;
 
       const { page, perPage, ascending } = req.query;
@@ -63,7 +64,7 @@ export default class CollectionsController {
   );
 
   public getUserCollections = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const { handle } = req.params;
       const payload = req.jwtPayload;
 
@@ -137,7 +138,7 @@ export default class CollectionsController {
   );
 
   public createCollection = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const { name, description, privacy } = req.body;
       const payload = req.jwtPayload;
 
@@ -158,7 +159,7 @@ export default class CollectionsController {
   );
 
   public deleteCollection = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const payload = req.jwtPayload;
       const { id } = req.params;
 
@@ -276,7 +277,7 @@ export default class CollectionsController {
   );
 
   public deleteCollectionItems = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       //array of collectionItemIds
       const { collectionItemsToDelete } = req.body;
       const { id: collectionId } = req.params;
@@ -311,7 +312,7 @@ export default class CollectionsController {
   );
 
   public getCollectionInfo = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       //collection id
       const { id } = req.params;
       const payload = req.jwtPayload;
@@ -395,7 +396,7 @@ export default class CollectionsController {
   );
 
   public getCollectionItemInfo = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const payload = req.jwtPayload;
       const { collectionId, id } = req.params;
 
@@ -434,7 +435,7 @@ export default class CollectionsController {
   );
 
   public updateCollection = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const payload = req.jwtPayload;
       const { id } = req.params;
       const { name, description, privacy } = req.body;
@@ -458,7 +459,7 @@ export default class CollectionsController {
   );
 
   public checkMediaExistenceInCollections = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const payload = req.jwtPayload;
       const { mediaId } = req.params;
 

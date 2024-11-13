@@ -8,12 +8,13 @@ import {
   upsertNotification,
 } from "../utils/functions/reusablePrismaFunctions";
 import AppError from "../utils/types/errors";
+import { RequestWithPayload } from "../utils/types/jwt";
 
 const prisma = new PrismaClient();
 
 export default class PostsController {
   public getCurrentUserPosts = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const payload = req.jwtPayload;
 
       const { page, perPage, ascending } = req.query;
@@ -108,378 +109,407 @@ export default class PostsController {
     }
   );
 
-  public getUserPosts = asyncHandler(async (req: Request, res: Response) => {
-    const { handle } = req.params;
-    const payload = req.jwtPayload;
+  public getUserPosts = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const { handle } = req.params;
+      const payload = req.jwtPayload;
 
-    const { page, perPage, ascending } = req.query;
+      const { page, perPage, ascending } = req.query;
 
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
 
-    const foundOwner = await prisma.user.findFirst({
-      where: {
-        handle,
-      },
-    });
-
-    if (!foundOwner) {
-      throw new AppError(404, "NotFound", "User not found.", true);
-    }
-
-    //check if currentUser is friends with owner
-    const isCurrentUserFriendsWithOwner = await areTheyFriends(
-      payload.userId,
-      foundOwner.id
-    );
-
-    //retrieve posts that have privacy FRIENDS_ONLY and PUBLIC
-    const userPosts = await prisma.post.findMany({
-      where: {
-        ownerId: foundOwner.id,
-        privacy: {
-          in: isCurrentUserFriendsWithOwner
-            ? ["FRIENDS_ONLY", "PUBLIC"]
-            : ["PUBLIC"],
+      const foundOwner = await prisma.user.findFirst({
+        where: {
+          handle,
         },
-      },
-      skip,
-      take: _perPage,
-      orderBy: {
-        createdAt: order,
-      },
-      include: {
-        media: true,
-        collection: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            collectionItems: {
-              take: 3,
-              select: {
-                media: {
-                  select: {
-                    posterImage: true,
+      });
+
+      if (!foundOwner) {
+        throw new AppError(404, "NotFound", "User not found.", true);
+      }
+
+      //check if currentUser is friends with owner
+      const isCurrentUserFriendsWithOwner = await areTheyFriends(
+        payload.userId,
+        foundOwner.id
+      );
+
+      //retrieve posts that have privacy FRIENDS_ONLY and PUBLIC
+      const userPosts = await prisma.post.findMany({
+        where: {
+          ownerId: foundOwner.id,
+          privacy: {
+            in: isCurrentUserFriendsWithOwner
+              ? ["FRIENDS_ONLY", "PUBLIC"]
+              : ["PUBLIC"],
+          },
+        },
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
+        },
+        include: {
+          media: true,
+          collection: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              collectionItems: {
+                take: 3,
+                select: {
+                  media: {
+                    select: {
+                      posterImage: true,
+                    },
                   },
                 },
               },
             },
           },
-        },
-        owner: {
-          select: {
-            id: true,
-            username: true,
-            handle: true,
+          owner: {
+            select: {
+              id: true,
+              username: true,
+              handle: true,
+            },
+          },
+          _count: {
+            select: {
+              comments: true,
+              likes: true,
+            },
           },
         },
-        _count: {
-          select: {
-            comments: true,
-            likes: true,
-          },
-        },
-      },
-    });
+      });
 
-    res.status(200).json({
-      message: "success",
-      page: _page,
-      perPage: _perPage,
-      data: userPosts.map((post) => ({
-        id: post.id,
-        content: post.content,
-        privacy: post.privacy,
-        totalLikes: post._count.likes,
-        totalComments: post._count.comments,
-        owner: post.owner,
-        media: post.media,
-        collection: post.collection
+      res.status(200).json({
+        message: "success",
+        page: _page,
+        perPage: _perPage,
+        data: userPosts.map((post) => ({
+          id: post.id,
+          content: post.content,
+          privacy: post.privacy,
+          totalLikes: post._count.likes,
+          totalComments: post._count.comments,
+          owner: post.owner,
+          media: post.media,
+          collection: post.collection
+            ? {
+                id: post.collection.id,
+                name: post.collection.name,
+                description: post.collection.description,
+                previewPosters: post.collection.collectionItems.map(
+                  (collectionItem) => collectionItem.media.posterImage
+                ),
+              }
+            : null,
+          createdAt: post.createdAt,
+        })),
+      });
+    }
+  );
+
+  public getPostInfo = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      //post id
+      const { id } = req.params;
+      const payload = req.jwtPayload;
+
+      const foundPost = await prisma.post.findFirst({
+        where: {
+          id,
+        },
+        include: {
+          media: true,
+          collection: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              collectionItems: {
+                take: 3,
+                select: {
+                  media: {
+                    select: {
+                      posterImage: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          owner: {
+            select: {
+              id: true,
+              username: true,
+              handle: true,
+            },
+          },
+          _count: {
+            select: {
+              comments: true,
+              likes: true,
+            },
+          },
+        },
+      });
+
+      if (!foundPost) {
+        throw new AppError(404, "NotFound", "Post not found.", true);
+      }
+
+      const successData = {
+        id: foundPost.id,
+        content: foundPost.content,
+        privacy: foundPost.privacy,
+        totalLikes: foundPost._count.likes,
+        totalComments: foundPost._count.comments,
+        owner: foundPost.owner,
+        media: foundPost.media,
+        collection: foundPost.collection
           ? {
-              id: post.collection.id,
-              name: post.collection.name,
-              description: post.collection.description,
-              previewPosters: post.collection.collectionItems.map(
+              id: foundPost.collection.id,
+              name: foundPost.collection.name,
+              description: foundPost.collection.description,
+              previewPosters: foundPost.collection.collectionItems.map(
                 (collectionItem) => collectionItem.media.posterImage
               ),
             }
           : null,
-        createdAt: post.createdAt,
-      })),
-    });
-  });
+        isOwnedByCurrentUser: foundPost.owner.id === payload.userId,
+        createdAt: foundPost.createdAt,
+      };
 
-  public getPostInfo = asyncHandler(async (req: Request, res: Response) => {
-    //post id
-    const { id } = req.params;
-    const payload = req.jwtPayload;
-
-    const foundPost = await prisma.post.findFirst({
-      where: {
-        id,
-      },
-      include: {
-        media: true,
-        collection: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            collectionItems: {
-              take: 3,
-              select: {
-                media: {
-                  select: {
-                    posterImage: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        owner: {
-          select: {
-            id: true,
-            username: true,
-            handle: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-            likes: true,
-          },
-        },
-      },
-    });
-
-    if (!foundPost) {
-      throw new AppError(404, "NotFound", "Post not found.", true);
-    }
-
-    const successData = {
-      id: foundPost.id,
-      content: foundPost.content,
-      privacy: foundPost.privacy,
-      totalLikes: foundPost._count.likes,
-      totalComments: foundPost._count.comments,
-      owner: foundPost.owner,
-      media: foundPost.media,
-      collection: foundPost.collection
-        ? {
-            id: foundPost.collection.id,
-            name: foundPost.collection.name,
-            description: foundPost.collection.description,
-            previewPosters: foundPost.collection.collectionItems.map(
-              (collectionItem) => collectionItem.media.posterImage
-            ),
-          }
-        : null,
-      isOwnedByCurrentUser: foundPost.owner.id === payload.userId,
-      createdAt: foundPost.createdAt,
-    };
-
-    await checkResourcePrivacyAndUserOwnership({
-      currentUserId: payload.userId,
-      ownerId: foundPost.owner.id,
-      privacy: foundPost.privacy,
-      res,
-      successData,
-    });
-  });
-
-  public createPost = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.jwtPayload;
-    const { content, privacy, media, collectionId } = req.body;
-
-    //check if media exists in req.body
-    if (media) {
-      //check if media exists in Media table
-      const foundMedia = await prisma.media.findFirst({
-        where: {
-          id: media.id,
-        },
+      await checkResourcePrivacyAndUserOwnership({
+        currentUserId: payload.userId,
+        ownerId: foundPost.owner.id,
+        privacy: foundPost.privacy,
+        res,
+        successData,
       });
-      if (!foundMedia) {
-        //if not found, create the media
-        const newMedia = await prisma.media.create({
-          data: {
+    }
+  );
+
+  public createPost = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const payload = req.jwtPayload;
+      const { content, privacy, media, collectionId } = req.body;
+
+      //check if media exists in req.body
+      if (media) {
+        //check if media exists in Media table
+        const foundMedia = await prisma.media.findFirst({
+          where: {
             id: media.id,
-            title: media.title,
-            type: media.type,
-            year: media.year,
-            description: media.description,
-            coverImage: media.coverImage,
-            posterImage: media.posterImage,
-            rating: media.rating,
-            status: media.status,
           },
         });
-        //proceed to creating the post with newMedia
-        const newPostWithNewMedia = await prisma.post.create({
+        if (!foundMedia) {
+          //if not found, create the media
+          const newMedia = await prisma.media.create({
+            data: {
+              id: media.id,
+              title: media.title,
+              type: media.type,
+              year: media.year,
+              description: media.description,
+              coverImage: media.coverImage,
+              posterImage: media.posterImage,
+              rating: media.rating,
+              status: media.status,
+            },
+          });
+          //proceed to creating the post with newMedia
+          const newPostWithNewMedia = await prisma.post.create({
+            data: {
+              content,
+              privacy,
+              mediaId: newMedia.id,
+              ownerId: payload.userId,
+            },
+          });
+
+          res.status(201).json({
+            message: "Post (with new media) successfully created.",
+            data: newPostWithNewMedia,
+          });
+          return;
+        }
+        //if media already exists, then just use the foundMedia to create the new post
+        //*if foundMedia details are not the same with the req.body, update the foundMedia with the one from
+        //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
+        //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
+        await updateExistingMedia(foundMedia, media);
+        const newPostWithFoundMedia = await prisma.post.create({
           data: {
             content,
             privacy,
-            mediaId: newMedia.id,
+            mediaId: foundMedia.id,
             ownerId: payload.userId,
           },
         });
-
         res.status(201).json({
-          message: "Post (with new media) successfully created.",
-          data: newPostWithNewMedia,
+          message: "Post (with found media) successfully created.",
+          data: newPostWithFoundMedia,
         });
         return;
       }
-      //if media already exists, then just use the foundMedia to create the new post
-      //*if foundMedia details are not the same with the req.body, update the foundMedia with the one from
-      //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
-      //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
-      await updateExistingMedia(foundMedia, media);
-      const newPostWithFoundMedia = await prisma.post.create({
-        data: {
-          content,
-          privacy,
-          mediaId: foundMedia.id,
-          ownerId: payload.userId,
-        },
-      });
-      res.status(201).json({
-        message: "Post (with found media) successfully created.",
-        data: newPostWithFoundMedia,
-      });
-      return;
-    }
 
-    //check if collectionId exists in req.body
-    if (collectionId) {
-      //use the collectionId to create the new post
-      const newPostWithCollection = await prisma.post.create({
-        data: {
-          ownerId: payload.userId,
-          content,
-          privacy,
-          collectionId,
-        },
-      });
-      res.status(201).json({
-        message: "Post (with collection) successfully created.",
-        data: newPostWithCollection,
-      });
-      return;
-    }
-
-    //if either media or collectionId exists in req.body, this means user just wants to make a post
-    //without attaching anything.
-
-    const newPostWithoutAttachments = await prisma.post.create({
-      data: {
-        ownerId: payload.userId,
-        content,
-        privacy,
-      },
-    });
-
-    res.status(201).json({
-      message: "Post (without attachments) created successfully.",
-      data: newPostWithoutAttachments,
-    });
-    return;
-  });
-
-  public deletePost = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.jwtPayload;
-    const { id } = req.params;
-
-    const deletedPost = await prisma.post.delete({
-      where: {
-        id,
-        ownerId: payload.userId,
-      },
-    });
-
-    res.status(200).json({
-      message: "Post deleted successfully.",
-      data: deletedPost,
-    });
-  });
-
-  public updatePost = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.jwtPayload;
-    const { id } = req.params;
-    //! NEEDS REFACTOR: make proper validation for req.body
-    const { content, privacy, media, collectionId } = req.body;
-
-    //check if media exists in req.body
-    if (media) {
-      //check if media exists in Media table
-      const foundMedia = await prisma.media.findFirst({
-        where: {
-          id: media.id,
-        },
-      });
-      if (!foundMedia) {
-        //if not found, create new media
-        const newMedia = await prisma.media.create({
+      //check if collectionId exists in req.body
+      if (collectionId) {
+        //use the collectionId to create the new post
+        const newPostWithCollection = await prisma.post.create({
           data: {
-            id: media.id,
-            title: media.title,
-            type: media.type,
-            year: media.year,
-            description: media.description,
-            coverImage: media.coverImage,
-            posterImage: media.posterImage,
-            rating: media.rating,
-            status: media.status,
+            ownerId: payload.userId,
+            content,
+            privacy,
+            collectionId,
           },
         });
-        //proceed to updating the post with the new media
-        const updatedPostWithNewMedia = await prisma.post.update({
+        res.status(201).json({
+          message: "Post (with collection) successfully created.",
+          data: newPostWithCollection,
+        });
+        return;
+      }
+
+      //if either media or collectionId exists in req.body, this means user just wants to make a post
+      //without attaching anything.
+
+      const newPostWithoutAttachments = await prisma.post.create({
+        data: {
+          ownerId: payload.userId,
+          content,
+          privacy,
+        },
+      });
+
+      res.status(201).json({
+        message: "Post (without attachments) created successfully.",
+        data: newPostWithoutAttachments,
+      });
+      return;
+    }
+  );
+
+  public deletePost = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const payload = req.jwtPayload;
+      const { id } = req.params;
+
+      const deletedPost = await prisma.post.delete({
+        where: {
+          id,
+          ownerId: payload.userId,
+        },
+      });
+
+      res.status(200).json({
+        message: "Post deleted successfully.",
+        data: deletedPost,
+      });
+    }
+  );
+
+  public updatePost = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const payload = req.jwtPayload;
+      const { id } = req.params;
+      //! NEEDS REFACTOR: make proper validation for req.body
+      const { content, privacy, media, collectionId } = req.body;
+
+      //check if media exists in req.body
+      if (media) {
+        //check if media exists in Media table
+        const foundMedia = await prisma.media.findFirst({
+          where: {
+            id: media.id,
+          },
+        });
+        if (!foundMedia) {
+          //if not found, create new media
+          const newMedia = await prisma.media.create({
+            data: {
+              id: media.id,
+              title: media.title,
+              type: media.type,
+              year: media.year,
+              description: media.description,
+              coverImage: media.coverImage,
+              posterImage: media.posterImage,
+              rating: media.rating,
+              status: media.status,
+            },
+          });
+          //proceed to updating the post with the new media
+          const updatedPostWithNewMedia = await prisma.post.update({
+            where: {
+              id,
+            },
+            data: {
+              content,
+              privacy,
+              mediaId: newMedia.id,
+              ownerId: payload.userId,
+            },
+          });
+          res.status(200).json({
+            message: "Post (with new media) updated succesfully.",
+            data: updatedPostWithNewMedia,
+          });
+          return;
+        }
+        //if media already exists, then just use the foundMedia to update the post
+        //*if foundMedia details are not the same with the req.body, update the foundMedia with the one from
+        //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
+        //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
+        await updateExistingMedia(foundMedia, media);
+        const updatedPostWithFoundMedia = await prisma.post.update({
           where: {
             id,
           },
           data: {
             content,
             privacy,
-            mediaId: newMedia.id,
+            mediaId: foundMedia.id,
             ownerId: payload.userId,
           },
         });
-        res.status(200).json({
-          message: "Post (with new media) updated succesfully.",
-          data: updatedPostWithNewMedia,
+        res.status(201).json({
+          message: "Post (with found media) updated successfully.",
+          data: updatedPostWithFoundMedia,
         });
         return;
       }
-      //if media already exists, then just use the foundMedia to update the post
-      //*if foundMedia details are not the same with the req.body, update the foundMedia with the one from
-      //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
-      //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
-      await updateExistingMedia(foundMedia, media);
-      const updatedPostWithFoundMedia = await prisma.post.update({
-        where: {
-          id,
-        },
-        data: {
-          content,
-          privacy,
-          mediaId: foundMedia.id,
-          ownerId: payload.userId,
-        },
-      });
-      res.status(201).json({
-        message: "Post (with found media) updated successfully.",
-        data: updatedPostWithFoundMedia,
-      });
-      return;
-    }
-    //check if collectionId exists in req.body
-    if (collectionId) {
-      //use the collectionId to create the new post
-      const updatedPostWithCollection = await prisma.post.update({
+      //check if collectionId exists in req.body
+      if (collectionId) {
+        //use the collectionId to create the new post
+        const updatedPostWithCollection = await prisma.post.update({
+          where: {
+            id,
+          },
+          data: {
+            ownerId: payload.userId,
+            content,
+            privacy,
+            collectionId,
+          },
+        });
+        res.status(201).json({
+          message: "Post (with collection) updated successfully.",
+          data: updatedPostWithCollection,
+        });
+        return;
+      }
+
+      //if either media or collectionId exists in req.body, this means user just wants to update a post
+      //that has no attachments (no media or collection attached)
+      const newPostWithoutAttachments = await prisma.post.update({
         where: {
           id,
         },
@@ -487,89 +517,72 @@ export default class PostsController {
           ownerId: payload.userId,
           content,
           privacy,
-          collectionId,
         },
       });
+
       res.status(201).json({
-        message: "Post (with collection) updated successfully.",
-        data: updatedPostWithCollection,
+        message: "Post (without attachments) updated successfully.",
+        data: newPostWithoutAttachments,
       });
       return;
     }
+  );
 
-    //if either media or collectionId exists in req.body, this means user just wants to update a post
-    //that has no attachments (no media or collection attached)
-    const newPostWithoutAttachments = await prisma.post.update({
-      where: {
-        id,
-      },
-      data: {
-        ownerId: payload.userId,
-        content,
-        privacy,
-      },
-    });
+  public getPostComments = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const payload = req.jwtPayload;
+      const { id } = req.params;
 
-    res.status(201).json({
-      message: "Post (without attachments) updated successfully.",
-      data: newPostWithoutAttachments,
-    });
-    return;
-  });
+      const { page, perPage, ascending } = req.query;
 
-  public getPostComments = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.jwtPayload;
-    const { id } = req.params;
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
 
-    const { page, perPage, ascending } = req.query;
-
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
-
-    const postComments = await prisma.comment.findMany({
-      skip,
-      take: _perPage,
-      orderBy: {
-        createdAt: order,
-      },
-      where: {
-        postId: id,
-      },
-      select: {
-        id: true,
-        postId: true,
-        content: true,
-        createdAt: true,
-        author: {
-          select: {
-            id: true,
-            username: true,
-            handle: true,
+      const postComments = await prisma.comment.findMany({
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
+        },
+        where: {
+          postId: id,
+        },
+        select: {
+          id: true,
+          postId: true,
+          content: true,
+          createdAt: true,
+          author: {
+            select: {
+              id: true,
+              username: true,
+              handle: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    res.status(200).json({
-      message: "success",
-      page: _page,
-      perPage: _perPage,
-      data: postComments.map((comment) => ({
-        id: comment.id,
-        postId: comment.postId,
-        content: comment.content,
-        author: comment.author,
-        createdAt: comment.createdAt,
-        isCurrentUserAuthor:
-          comment.author.id === payload.userId ? true : false,
-      })),
-    });
-  });
+      res.status(200).json({
+        message: "success",
+        page: _page,
+        perPage: _perPage,
+        data: postComments.map((comment) => ({
+          id: comment.id,
+          postId: comment.postId,
+          content: comment.content,
+          author: comment.author,
+          createdAt: comment.createdAt,
+          isCurrentUserAuthor:
+            comment.author.id === payload.userId ? true : false,
+        })),
+      });
+    }
+  );
 
   public createPostComment = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const payload = req.jwtPayload;
       //postId
       const { id } = req.params;
@@ -605,7 +618,7 @@ export default class PostsController {
   );
 
   public updatePostComment = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const { postId, commentId } = req.params;
       const { content } = req.body;
       const payload = req.jwtPayload;
@@ -629,7 +642,7 @@ export default class PostsController {
   );
 
   public deletePostComment = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const { postId, commentId } = req.params;
       const payload = req.jwtPayload;
 
@@ -672,107 +685,113 @@ export default class PostsController {
     }
   );
 
-  public getPostLikes = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const payload = req.jwtPayload;
-    const { page, perPage, ascending } = req.query;
+  public getPostLikes = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const { id } = req.params;
+      const payload = req.jwtPayload;
+      const { page, perPage, ascending } = req.query;
 
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
 
-    const postLikes = await prisma.postLike.findMany({
-      skip,
-      take: _perPage,
-      orderBy: {
-        createdAt: order,
-      },
-      where: {
-        postId: id,
-      },
-      select: {
-        postId: true,
-        user: {
-          select: {
-            id: true,
-            username: true,
-            avatar: true,
-            handle: true,
-            following: {
-              select: {
-                followerId: true,
+      const postLikes = await prisma.postLike.findMany({
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
+        },
+        where: {
+          postId: id,
+        },
+        select: {
+          postId: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              avatar: true,
+              handle: true,
+              following: {
+                select: {
+                  followerId: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    res.status(200).json({
-      message: "success",
-      page: _page,
-      perPage: _perPage,
-      data: postLikes.map((postLike) => ({
-        postId: postLike.postId,
-        user: {
-          id: postLike.user.id,
-          username: postLike.user.username,
-          avatar: postLike.user.avatar,
-          handle: postLike.user.handle,
-          isFollowedByCurrentUser: postLike.user.following
-            .map((follow) => follow.followerId)
-            .includes(payload.userId),
-        },
-      })),
-    });
-  });
-
-  public likePost = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.jwtPayload;
-    const { id } = req.params;
-
-    const newPostLike = await prisma.postLike.create({
-      data: {
-        userId: payload.userId,
-        postId: id,
-      },
-      select: {
-        post: {
-          select: {
-            ownerId: true,
+      res.status(200).json({
+        message: "success",
+        page: _page,
+        perPage: _perPage,
+        data: postLikes.map((postLike) => ({
+          postId: postLike.postId,
+          user: {
+            id: postLike.user.id,
+            username: postLike.user.username,
+            avatar: postLike.user.avatar,
+            handle: postLike.user.handle,
+            isFollowedByCurrentUser: postLike.user.following
+              .map((follow) => follow.followerId)
+              .includes(payload.userId),
           },
-        },
-      },
-    });
+        })),
+      });
+    }
+  );
 
-    await upsertNotification({
-      recipientId: newPostLike.post.ownerId,
-      actorId: payload.userId,
-      postId: id,
-      type: "LIKE",
-    });
+  public likePost = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const payload = req.jwtPayload;
+      const { id } = req.params;
 
-    res.status(200).json({
-      message: "Post liked successfully.",
-    });
-  });
-
-  public unlikePost = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.jwtPayload;
-    const { id } = req.params;
-
-    await prisma.postLike.delete({
-      where: {
-        userId_postId: {
+      const newPostLike = await prisma.postLike.create({
+        data: {
           userId: payload.userId,
           postId: id,
         },
-      },
-    });
+        select: {
+          post: {
+            select: {
+              ownerId: true,
+            },
+          },
+        },
+      });
 
-    res.status(200).json({
-      message: "Post unliked successfully.",
-    });
-  });
+      await upsertNotification({
+        recipientId: newPostLike.post.ownerId,
+        actorId: payload.userId,
+        postId: id,
+        type: "LIKE",
+      });
+
+      res.status(200).json({
+        message: "Post liked successfully.",
+      });
+    }
+  );
+
+  public unlikePost = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const payload = req.jwtPayload;
+      const { id } = req.params;
+
+      await prisma.postLike.delete({
+        where: {
+          userId_postId: {
+            userId: payload.userId,
+            postId: id,
+          },
+        },
+      });
+
+      res.status(200).json({
+        message: "Post unliked successfully.",
+      });
+    }
+  );
 }

@@ -2,231 +2,239 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { PrismaClient } from "@prisma/client";
 import AppError from "../utils/types/errors";
+import { RequestWithPayload } from "../utils/types/jwt";
 
 const prisma = new PrismaClient();
 
 export default class SearchController {
-  public searchPosts = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.jwtPayload;
-    const { page, perPage, ascending, query } = req.query;
+  public searchPosts = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const payload = req.jwtPayload;
+      const { page, perPage, ascending, query } = req.query;
 
-    if (!query) {
-      throw new AppError(422, "Invalid Format.", "No query provided.", true);
-    }
+      if (!query) {
+        throw new AppError(422, "Invalid Format.", "No query provided.", true);
+      }
 
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
 
-    const searchPosts = await prisma.post.findMany({
-      skip,
-      take: _perPage,
-      orderBy: {
-        createdAt: order,
-      },
-      where: {
-        OR: [
-          // search in post content
-          {
-            content: {
-              search: query.toString().trim().split(" ").join(" & "),
-            },
-          },
-          // search in related media title
-          {
-            media: {
-              title: {
+      const searchPosts = await prisma.post.findMany({
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
+        },
+        where: {
+          OR: [
+            // search in post content
+            {
+              content: {
                 search: query.toString().trim().split(" ").join(" & "),
               },
             },
-          },
-        ],
-        AND: [
-          // privacy filters
-          {
-            OR: [
-              // public posts
-              {
-                privacy: "PUBLIC",
+            // search in related media title
+            {
+              media: {
+                title: {
+                  search: query.toString().trim().split(" ").join(" & "),
+                },
               },
-              //all friends-only posts from the current user
-              {
-                AND: [{ ownerId: payload.userId }, { privacy: "FRIENDS_ONLY" }],
-              },
-              //all friends-only posts from the current user's friends
-              {
-                AND: [
-                  { privacy: "FRIENDS_ONLY" },
-                  {
-                    owner: {
-                      AND: [
-                        {
-                          followers: {
-                            some: {
-                              followedId: payload.userId,
+            },
+          ],
+          AND: [
+            // privacy filters
+            {
+              OR: [
+                // public posts
+                {
+                  privacy: "PUBLIC",
+                },
+                //all friends-only posts from the current user
+                {
+                  AND: [
+                    { ownerId: payload.userId },
+                    { privacy: "FRIENDS_ONLY" },
+                  ],
+                },
+                //all friends-only posts from the current user's friends
+                {
+                  AND: [
+                    { privacy: "FRIENDS_ONLY" },
+                    {
+                      owner: {
+                        AND: [
+                          {
+                            followers: {
+                              some: {
+                                followedId: payload.userId,
+                              },
                             },
                           },
-                        },
-                        {
-                          following: {
-                            some: {
-                              followerId: payload.userId,
+                          {
+                            following: {
+                              some: {
+                                followerId: payload.userId,
+                              },
                             },
                           },
-                        },
-                      ],
+                        ],
+                      },
                     },
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      include: {
-        media: true,
-        collection: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            photo: true,
-            collectionItems: {
-              take: 3,
-              select: {
-                media: {
-                  select: {
-                    posterImage: true,
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        include: {
+          media: true,
+          collection: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              photo: true,
+              collectionItems: {
+                take: 3,
+                select: {
+                  media: {
+                    select: {
+                      posterImage: true,
+                    },
                   },
                 },
               },
             },
           },
-        },
-        owner: {
-          select: {
-            id: true,
-            username: true,
-            avatar: true,
-            handle: true,
-            createdAt: true,
+          owner: {
+            select: {
+              id: true,
+              username: true,
+              avatar: true,
+              handle: true,
+              createdAt: true,
+            },
+          },
+          likes: {
+            where: {
+              userId: payload.userId,
+            },
+            select: {
+              userId: true,
+            },
+          },
+          _count: {
+            select: {
+              comments: true,
+              likes: true,
+            },
           },
         },
-        likes: {
-          where: {
-            userId: payload.userId,
-          },
-          select: {
-            userId: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-            likes: true,
-          },
-        },
-      },
-    });
+      });
 
-    res.status(200).json({
-      message: "success",
-      page: _page,
-      perPage: _perPage,
-      data: searchPosts.map((post) => ({
-        id: post.id,
-        content: post.content,
-        privacy: post.privacy,
-        owner: post.owner,
-        totalLikes: post._count.likes,
-        totalComments: post._count.comments,
-        isLikedByCurrentUser: post.likes
-          .map((like) => like.userId)
-          .includes(payload.userId.toString()),
-        media: post.media,
-        collection: post.collection
-          ? {
-              id: post.collection.id,
-              name: post.collection.name,
-              description: post.collection.description,
-              previewPosters: post.collection.collectionItems.map(
-                (item) => item.media.posterImage
-              ),
-            }
-          : null,
-      })),
-    });
-  });
-
-  public searchUsers = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.jwtPayload;
-    const { page, perPage, ascending, query } = req.query;
-
-    if (!query) {
-      throw new AppError(422, "Invalid Format.", "No query provided.", true);
+      res.status(200).json({
+        message: "success",
+        page: _page,
+        perPage: _perPage,
+        data: searchPosts.map((post) => ({
+          id: post.id,
+          content: post.content,
+          privacy: post.privacy,
+          owner: post.owner,
+          totalLikes: post._count.likes,
+          totalComments: post._count.comments,
+          isLikedByCurrentUser: post.likes
+            .map((like) => like.userId)
+            .includes(payload.userId.toString()),
+          media: post.media,
+          collection: post.collection
+            ? {
+                id: post.collection.id,
+                name: post.collection.name,
+                description: post.collection.description,
+                previewPosters: post.collection.collectionItems.map(
+                  (item) => item.media.posterImage
+                ),
+              }
+            : null,
+        })),
+      });
     }
+  );
 
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+  public searchUsers = asyncHandler(
+    async (req: RequestWithPayload, res: Response) => {
+      const payload = req.jwtPayload;
+      const { page, perPage, ascending, query } = req.query;
 
-    const searchUsers = await prisma.user.findMany({
-      skip,
-      take: _perPage,
-      orderBy: {
-        createdAt: order,
-      },
-      where: {
-        OR: [
-          {
-            username: {
-              search: query.toString().trim().split(" ").join(" & "),
+      if (!query) {
+        throw new AppError(422, "Invalid Format.", "No query provided.", true);
+      }
+
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
+
+      const searchUsers = await prisma.user.findMany({
+        skip,
+        take: _perPage,
+        orderBy: {
+          createdAt: order,
+        },
+        where: {
+          OR: [
+            {
+              username: {
+                search: query.toString().trim().split(" ").join(" & "),
+              },
             },
-          },
-          {
-            handle: {
-              search: query.toString().trim().split(" ").join(" & "),
+            {
+              handle: {
+                search: query.toString().trim().split(" ").join(" & "),
+              },
             },
-          },
-        ],
-      },
-      select: {
-        id: true,
-        username: true,
-        avatar: true,
-        bio: true,
-        handle: true,
-        following: {
-          select: {
-            followerId: true,
+          ],
+        },
+        select: {
+          id: true,
+          username: true,
+          avatar: true,
+          bio: true,
+          handle: true,
+          following: {
+            select: {
+              followerId: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    res.status(200).json({
-      message: "success",
-      page: _page,
-      perPage: _perPage,
-      data: searchUsers.map((user) => ({
-        id: user.id,
-        username: user.username,
-        avatar: user.avatar,
-        bio: user.bio,
-        handle: user.handle,
-        isFollowedByCurrentUser: user.following
-          .map((follow) => follow.followerId)
-          .includes(payload.userId)
-          ? true
-          : false,
-      })),
-    });
-  });
+      res.status(200).json({
+        message: "success",
+        page: _page,
+        perPage: _perPage,
+        data: searchUsers.map((user) => ({
+          id: user.id,
+          username: user.username,
+          avatar: user.avatar,
+          bio: user.bio,
+          handle: user.handle,
+          isFollowedByCurrentUser: user.following
+            .map((follow) => follow.followerId)
+            .includes(payload.userId)
+            ? true
+            : false,
+        })),
+      });
+    }
+  );
 
   public searchCollections = asyncHandler(
-    async (req: Request, res: Response) => {
+    async (req: RequestWithPayload, res: Response) => {
       const payload = req.jwtPayload;
       const { page, perPage, ascending, query } = req.query;
 
