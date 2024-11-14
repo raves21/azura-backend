@@ -48,7 +48,7 @@ export default class AuthController {
 
     //if user not found, throw error.
     if (!foundUser) {
-      throw new AppError(401, "Unathorized", "User not found.", true);
+      throw new AppError(404, "Unathorized", "User not found.", true);
     }
 
     const currentDateTime = new Date();
@@ -258,6 +258,7 @@ export default class AuthController {
       select: {
         id: true,
         avatar: true,
+        email: true,
         username: true,
         handle: true,
       },
@@ -270,6 +271,24 @@ export default class AuthController {
     res.status(200).json({
       message: "success",
       data: foundUser,
+    });
+  });
+
+  public updatePassword = asyncHandler(async (req: Request, res: Response) => {
+    const { userId, newPassword } = req.body;
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        password: hashedNewPassword,
+      },
+    });
+
+    res.status(200).json({
+      message: "Password updated successfully.",
     });
   });
 }

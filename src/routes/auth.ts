@@ -7,7 +7,8 @@ const authController = new AuthController();
 router
   .get("/check-handle-availability", authController.checkHandleAvailabilty)
   .get("/check-email-availability", authController.checkEmailAvailability)
-  .get("/find-user-by-email ", authController.findUserByEmail)
+  .get("/forgot-password/find-user-by-email", authController.findUserByEmail)
+  .post("/forgot-password/change-password", authController.updatePassword)
   .post("/login", authController.login)
   .post("/signup", authController.signUp)
   .post("/logout", authController.logoutCurrentSession)
