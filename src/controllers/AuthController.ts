@@ -243,4 +243,33 @@ export default class AuthController {
       });
     }
   );
+
+  public findUserByEmail = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.query;
+
+    if (!email) {
+      throw new AppError(422, "Invalid Format.", "Email not provided", true);
+    }
+
+    const foundUser = await prisma.user.findFirst({
+      where: {
+        email: email.toString(),
+      },
+      select: {
+        id: true,
+        avatar: true,
+        username: true,
+        handle: true,
+      },
+    });
+
+    if (!foundUser) {
+      throw new AppError(404, "NotFound", "User not found.", true);
+    }
+
+    res.status(200).json({
+      message: "success",
+      data: foundUser,
+    });
+  });
 }
