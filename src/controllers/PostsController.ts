@@ -34,6 +34,14 @@ export default class PostsController {
           createdAt: order,
         },
         select: {
+          likes: {
+            where: {
+              userId: payload.userId,
+            },
+            select: {
+              userId: true,
+            },
+          },
           id: true,
           content: true,
           privacy: true,
@@ -99,6 +107,9 @@ export default class PostsController {
           privacy: post.privacy,
           totalLikes: post._count.likes,
           totalComments: post._count.comments,
+          isLikedByCurrentUser: post.likes
+            .map((like) => like.userId)
+            .includes(payload.userId.toString()),
           owner: post.owner,
           media: post.media,
           collection: post.collection
@@ -161,6 +172,14 @@ export default class PostsController {
           createdAt: order,
         },
         include: {
+          likes: {
+            where: {
+              userId: payload.userId,
+            },
+            select: {
+              userId: true,
+            },
+          },
           media: true,
           collection: {
             select: {
@@ -218,6 +237,9 @@ export default class PostsController {
           privacy: post.privacy,
           totalLikes: post._count.likes,
           totalComments: post._count.comments,
+          isLikedByCurrentUser: post.likes
+            .map((like) => like.userId)
+            .includes(payload.userId.toString()),
           owner: post.owner,
           media: post.media,
           collection: post.collection
