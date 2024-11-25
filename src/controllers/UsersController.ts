@@ -38,10 +38,13 @@ export default class UsersController {
         },
       },
     });
+    const totalItems = await prisma.user.count();
+    const totalPages = Math.ceil(totalItems / _perPage);
     res.status(200).json({
       message: "success",
       page: _page,
       perPage: _perPage,
+      totalPages,
       data: allUsers.map((user) => ({
         id: user.id,
         username: user.username,
@@ -273,10 +276,19 @@ export default class UsersController {
           },
         },
       });
+
+      const totalItems = await prisma.follow.count({
+        where: {
+          followerId: payload.userId,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: currentUserFollowingList.map((item) => ({
           id: item.followed.id,
           username: item.followed.username,
@@ -327,10 +339,17 @@ export default class UsersController {
           },
         },
       });
+      const totalItems = await prisma.follow.count({
+        where: {
+          followedId: payload.userId,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: currentUserFollowerList.map((item) => ({
           id: item.follower.id,
           username: item.follower.username,
@@ -384,10 +403,18 @@ export default class UsersController {
           },
         },
       });
+
+      const totalItems = await prisma.follow.count({
+        where: {
+          followerId: id,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: userFollowingList.map((item) => ({
           id: item.followed.id,
           username: item.followed.username,
@@ -440,10 +467,18 @@ export default class UsersController {
           },
         },
       });
+
+      const totalItems = await prisma.follow.count({
+        where: {
+          followedId: id,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: userFollowerList.map((item) => ({
           id: item.follower.id,
           username: item.follower.username,

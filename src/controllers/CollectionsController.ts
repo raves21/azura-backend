@@ -45,11 +45,18 @@ export default class CollectionsController {
           },
         },
       });
+      const totalItems = await prisma.collection.count({
+        where: {
+          ownerId: payload.userId,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
 
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: currentUserCollections.map((collection) => ({
           id: collection.id,
           name: collection.name,
@@ -120,10 +127,23 @@ export default class CollectionsController {
         },
       });
 
+      const totalItems = await prisma.collection.count({
+        where: {
+          ownerId: foundOwner.id,
+          privacy: {
+            in: isCurrentUserFriendsWithOwner
+              ? ["FRIENDS_ONLY", "PUBLIC"]
+              : ["PUBLIC"],
+          },
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: userCollections.map((collection) => ({
           id: collection.id,
           name: collection.name,
@@ -386,10 +406,18 @@ export default class CollectionsController {
         },
       });
 
+      const totalItems = await prisma.collectionItem.count({
+        where: {
+          collectionId: id,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: collectionItems,
       });
     }

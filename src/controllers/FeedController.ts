@@ -98,10 +98,46 @@ export default class FeedController {
         },
       });
 
+      const totalItems = await prisma.post.count({
+        where: {
+          OR: [
+            //all public posts
+            {
+              privacy: "PUBLIC",
+            },
+
+            //all friends-only posts from the current user
+            {
+              ownerId: payload.userId,
+              privacy: "FRIENDS_ONLY",
+            },
+
+            //all friends-only posts from the current user's friends
+            {
+              privacy: "FRIENDS_ONLY",
+              owner: {
+                followers: {
+                  some: {
+                    followedId: payload.userId,
+                  },
+                },
+                following: {
+                  some: {
+                    followerId: payload.userId,
+                  },
+                },
+              },
+            },
+          ],
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: forYouPosts.map((post) => ({
           id: post.id,
           content: post.content,
@@ -222,10 +258,48 @@ export default class FeedController {
         },
       });
 
+      const totalItems = await prisma.post.count({
+        where: {
+          OR: [
+            //all friends-only posts from the current user's friends
+            {
+              privacy: "FRIENDS_ONLY",
+              owner: {
+                followers: {
+                  some: {
+                    followedId: payload.userId,
+                  },
+                },
+                following: {
+                  some: {
+                    followerId: payload.userId,
+                  },
+                },
+              },
+            },
+            //all public posts from users that the current user follow
+            //this includes all public posts from the current user's friends
+            {
+              privacy: "PUBLIC",
+              owner: {
+                following: {
+                  some: {
+                    followerId: payload.userId,
+                  },
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: followingPosts.map((post) => ({
           id: post.id,
           content: post.content,

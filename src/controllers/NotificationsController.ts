@@ -53,8 +53,18 @@ export default class NotificationsController {
         },
       });
 
+      const totalItems = await prisma.notification.count({
+        where: {
+          recipientId: payload.userId,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
+        page: _page,
+        perPage: _perPage,
+        totalPages,
         data: notifications.map((notif) => ({
           id: notif.id,
           recipientId: notif.recipientId,

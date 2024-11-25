@@ -135,10 +135,77 @@ export default class SearchController {
         },
       });
 
+      const totalItems = await prisma.post.count({
+        where: {
+          OR: [
+            // search in post content
+            {
+              content: {
+                search: query.toString().trim().split(" ").join(" & "),
+              },
+            },
+            // search in related media title
+            {
+              media: {
+                title: {
+                  search: query.toString().trim().split(" ").join(" & "),
+                },
+              },
+            },
+          ],
+          AND: [
+            // privacy filters
+            {
+              OR: [
+                // public posts
+                {
+                  privacy: "PUBLIC",
+                },
+                //all friends-only posts from the current user
+                {
+                  AND: [
+                    { ownerId: payload.userId },
+                    { privacy: "FRIENDS_ONLY" },
+                  ],
+                },
+                //all friends-only posts from the current user's friends
+                {
+                  AND: [
+                    { privacy: "FRIENDS_ONLY" },
+                    {
+                      owner: {
+                        AND: [
+                          {
+                            followers: {
+                              some: {
+                                followedId: payload.userId,
+                              },
+                            },
+                          },
+                          {
+                            following: {
+                              some: {
+                                followerId: payload.userId,
+                              },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: searchPosts.map((post) => ({
           id: post.id,
           content: post.content,
@@ -213,10 +280,29 @@ export default class SearchController {
         },
       });
 
+      const totalItems = await prisma.user.count({
+        where: {
+          OR: [
+            {
+              username: {
+                search: query.toString().trim().split(" ").join(" & "),
+              },
+            },
+            {
+              handle: {
+                search: query.toString().trim().split(" ").join(" & "),
+              },
+            },
+          ],
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: searchUsers.map((user) => ({
           id: user.id,
           username: user.username,
@@ -304,10 +390,43 @@ export default class SearchController {
         },
       });
 
+      const totalItems = await prisma.collection.count({
+        where: {
+          name: {
+            search: query.toString().trim().split(" ").join(" & "),
+          },
+          OR: [
+            //all public collections
+            {
+              privacy: "PUBLIC",
+            },
+
+            //all friends-only collections from the current user's friends
+            {
+              privacy: "FRIENDS_ONLY",
+              owner: {
+                followers: {
+                  some: {
+                    followedId: payload.userId,
+                  },
+                },
+                following: {
+                  some: {
+                    followerId: payload.userId,
+                  },
+                },
+              },
+            },
+          ],
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: searchCollections.map((collection) => ({
           id: collection.id,
           name: collection.name,

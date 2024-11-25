@@ -81,10 +81,18 @@ export default class PostsController {
         },
       });
 
+      const totalItems = await prisma.post.count({
+        where: {
+          ownerId: payload.userId,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: currentUserPosts.map((post) => ({
           id: post.id,
           content: post.content,
@@ -187,10 +195,23 @@ export default class PostsController {
         },
       });
 
+      const totalItems = await prisma.post.count({
+        where: {
+          ownerId: foundOwner.id,
+          privacy: {
+            in: isCurrentUserFriendsWithOwner
+              ? ["FRIENDS_ONLY", "PUBLIC"]
+              : ["PUBLIC"],
+          },
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: userPosts.map((post) => ({
           id: post.id,
           content: post.content,
@@ -564,10 +585,18 @@ export default class PostsController {
         },
       });
 
+      const totalItems = await prisma.comment.count({
+        where: {
+          postId: id,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: postComments.map((comment) => ({
           id: comment.id,
           postId: comment.postId,
@@ -723,10 +752,18 @@ export default class PostsController {
         },
       });
 
+      const totalItems = await prisma.postLike.count({
+        where: {
+          postId: id,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
+
       res.status(200).json({
         message: "success",
         page: _page,
         perPage: _perPage,
+        totalPages,
         data: postLikes.map((postLike) => ({
           postId: postLike.postId,
           user: {
