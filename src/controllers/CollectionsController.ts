@@ -34,7 +34,7 @@ export default class CollectionsController {
         },
         include: {
           collectionItems: {
-            take: 3,
+            take: 4,
             select: {
               media: {
                 select: {
@@ -61,7 +61,6 @@ export default class CollectionsController {
           id: collection.id,
           name: collection.name,
           photo: collection.photo,
-          privacy: collection.privacy,
           previewPosters: collection.collectionItems.map(
             (collectionItem) => collectionItem.media.posterImage
           ),
@@ -115,7 +114,7 @@ export default class CollectionsController {
         },
         include: {
           collectionItems: {
-            take: 3,
+            take: 4,
             select: {
               media: {
                 select: {
@@ -148,7 +147,6 @@ export default class CollectionsController {
           id: collection.id,
           name: collection.name,
           photo: collection.photo,
-          privacy: collection.privacy,
           previewPosters: collection.collectionItems.map(
             (collectionItem) => collectionItem.media.posterImage
           ),
