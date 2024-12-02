@@ -399,6 +399,7 @@ export default class CollectionsController {
           collectionId: id,
         },
         select: {
+          id: true,
           collectionId: true,
           media: true,
         },
