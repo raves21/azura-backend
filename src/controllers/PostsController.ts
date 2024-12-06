@@ -633,8 +633,6 @@ export default class PostsController {
           content: comment.content,
           author: comment.author,
           createdAt: comment.createdAt,
-          isCurrentUserAuthor:
-            comment.author.id === payload.userId ? true : false,
         })),
       });
     }
