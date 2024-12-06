@@ -36,7 +36,7 @@ export const checkResourcePrivacyAndUserOwnership = async ({
     if (isValid) {
       res.status(200).json({
         message: "success",
-        data: { ...successData, isOwnedByCurrentUser: false },
+        data: { ...successData },
       });
     } else {
       //if validation does not pass, throw 404
@@ -47,7 +47,7 @@ export const checkResourcePrivacyAndUserOwnership = async ({
     //if current user owns the resource
     res.status(200).json({
       message: "success",
-      data: { ...successData, isOwnedByCurrentUser: true },
+      data: { ...successData },
     });
   }
 };

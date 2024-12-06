@@ -333,7 +333,6 @@ export default class PostsController {
               ),
             }
           : null,
-        isOwnedByCurrentUser: foundPost.owner.id === payload.userId,
         createdAt: foundPost.createdAt,
       };
 
