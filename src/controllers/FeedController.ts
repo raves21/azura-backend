@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import { PrismaClient, Privacy } from "@prisma/client";
+import { Response } from "express";
+import { PrismaClient } from "@prisma/client";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { RequestWithPayload } from "../utils/types/jwt";
 
@@ -68,6 +68,7 @@ export default class FeedController {
                   media: {
                     select: {
                       posterImage: true,
+                      coverImage: true,
                     },
                   },
                 },
@@ -157,7 +158,7 @@ export default class FeedController {
                 name: post.collection.name,
                 description: post.collection.description,
                 previewPosters: post.collection.collectionItems.map(
-                  (item) => item.media.posterImage
+                  (item) => item.media
                 ),
               }
             : null,
@@ -230,6 +231,7 @@ export default class FeedController {
                   media: {
                     select: {
                       posterImage: true,
+                      coverImage: true,
                     },
                   },
                 },
@@ -321,7 +323,7 @@ export default class FeedController {
                 name: post.collection.name,
                 description: post.collection.description,
                 previewPosters: post.collection.collectionItems.map(
-                  (item) => item.media.posterImage
+                  (item) => item.media
                 ),
               }
             : null,

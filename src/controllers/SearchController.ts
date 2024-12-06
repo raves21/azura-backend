@@ -103,6 +103,7 @@ export default class SearchController {
                   media: {
                     select: {
                       posterImage: true,
+                      coverImage: true,
                     },
                   },
                 },

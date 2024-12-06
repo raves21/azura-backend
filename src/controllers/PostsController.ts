@@ -67,6 +67,7 @@ export default class PostsController {
                   media: {
                     select: {
                       posterImage: true,
+                      coverImage: true,
                     },
                   },
                 },
@@ -120,7 +121,7 @@ export default class PostsController {
                 name: post.collection.name,
                 description: post.collection.description,
                 previewPosters: post.collection.collectionItems.map(
-                  (collectionItem) => collectionItem.media.posterImage
+                  (collectionItem) => collectionItem.media
                 ),
               }
             : null,
@@ -195,6 +196,7 @@ export default class PostsController {
                   media: {
                     select: {
                       posterImage: true,
+                      coverImage: true,
                     },
                   },
                 },
@@ -252,7 +254,7 @@ export default class PostsController {
                 name: post.collection.name,
                 description: post.collection.description,
                 previewPosters: post.collection.collectionItems.map(
-                  (collectionItem) => collectionItem.media.posterImage
+                  (collectionItem) => collectionItem.media
                 ),
               }
             : null,
