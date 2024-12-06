@@ -275,6 +275,14 @@ export default class PostsController {
           id,
         },
         include: {
+          likes: {
+            where: {
+              userId: payload.userId,
+            },
+            select: {
+              userId: true,
+            },
+          },
           media: true,
           collection: {
             select: {
@@ -320,6 +328,9 @@ export default class PostsController {
         privacy: foundPost.privacy,
         totalLikes: foundPost._count.likes,
         totalComments: foundPost._count.comments,
+        isLikedByCurrentUser: foundPost.likes
+          .map((like) => like.userId)
+          .includes(payload.userId),
         owner: foundPost.owner,
         media: foundPost.media,
         collection: foundPost.collection
