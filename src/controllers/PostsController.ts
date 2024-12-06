@@ -58,6 +58,7 @@ export default class PostsController {
           collection: {
             select: {
               id: true,
+              photo: true,
               name: true,
               description: true,
               collectionItems: {
@@ -115,6 +116,7 @@ export default class PostsController {
           collection: post.collection
             ? {
                 id: post.collection.id,
+                photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
                 previewPosters: post.collection.collectionItems.map(
@@ -184,6 +186,7 @@ export default class PostsController {
           collection: {
             select: {
               id: true,
+              photo: true,
               name: true,
               description: true,
               collectionItems: {
@@ -245,6 +248,7 @@ export default class PostsController {
           collection: post.collection
             ? {
                 id: post.collection.id,
+                photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
                 previewPosters: post.collection.collectionItems.map(
@@ -273,6 +277,7 @@ export default class PostsController {
           collection: {
             select: {
               id: true,
+              photo: true,
               name: true,
               description: true,
               collectionItems: {
@@ -318,6 +323,7 @@ export default class PostsController {
         collection: foundPost.collection
           ? {
               id: foundPost.collection.id,
+              photo: foundPost.collection.photo,
               name: foundPost.collection.name,
               description: foundPost.collection.description,
               previewPosters: foundPost.collection.collectionItems.map(

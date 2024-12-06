@@ -59,6 +59,7 @@ export default class FeedController {
           collection: {
             select: {
               id: true,
+              photo: true,
               name: true,
               description: true,
               collectionItems: {
@@ -152,6 +153,7 @@ export default class FeedController {
           collection: post.collection
             ? {
                 id: post.collection.id,
+                photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
                 previewPosters: post.collection.collectionItems.map(
@@ -219,6 +221,7 @@ export default class FeedController {
           collection: {
             select: {
               id: true,
+              photo: true,
               name: true,
               description: true,
               collectionItems: {
@@ -314,6 +317,7 @@ export default class FeedController {
           collection: post.collection
             ? {
                 id: post.collection.id,
+                photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
                 previewPosters: post.collection.collectionItems.map(
