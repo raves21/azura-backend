@@ -78,6 +78,7 @@ export default class PostsController {
           owner: {
             select: {
               id: true,
+              avatar: true,
               username: true,
               handle: true,
             },
@@ -206,6 +207,7 @@ export default class PostsController {
           owner: {
             select: {
               id: true,
+              avatar: true,
               username: true,
               handle: true,
             },
@@ -305,6 +307,7 @@ export default class PostsController {
           owner: {
             select: {
               id: true,
+              avatar: true,
               username: true,
               handle: true,
             },
@@ -618,6 +621,7 @@ export default class PostsController {
           author: {
             select: {
               id: true,
+              avatar: true,
               username: true,
               handle: true,
             },

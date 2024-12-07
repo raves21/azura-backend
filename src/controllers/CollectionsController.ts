@@ -343,6 +343,7 @@ export default class CollectionsController {
           owner: {
             select: {
               id: true,
+              avatar: true,
               username: true,
               handle: true,
             },
