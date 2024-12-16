@@ -102,6 +102,9 @@ export default class SearchController {
                 select: {
                   media: {
                     select: {
+                      title: true,
+                      year: true,
+                      type: true,
                       posterImage: true,
                       coverImage: true,
                     },
@@ -223,8 +226,8 @@ export default class SearchController {
                 id: post.collection.id,
                 name: post.collection.name,
                 description: post.collection.description,
-                previewPosters: post.collection.collectionItems.map(
-                  (item) => item.media.posterImage
+                previewCollectionItems: post.collection.collectionItems.map(
+                  (collectionItem) => collectionItem.media
                 ),
               }
             : null,
@@ -375,7 +378,11 @@ export default class SearchController {
             select: {
               media: {
                 select: {
+                  title: true,
+                  year: true,
+                  type: true,
                   posterImage: true,
+                  coverImage: true,
                 },
               },
             },
@@ -434,8 +441,8 @@ export default class SearchController {
           photo: collection.photo,
           owner: collection.owner,
           privacy: collection.privacy,
-          previewPosters: collection.collectionItems.map(
-            (collectionItem) => collectionItem.media.posterImage
+          previewCollectionItems: collection.collectionItems.map(
+            (collectionItem) => collectionItem.media
           ),
         })),
       });

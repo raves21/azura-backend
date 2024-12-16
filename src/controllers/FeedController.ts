@@ -67,6 +67,9 @@ export default class FeedController {
                 select: {
                   media: {
                     select: {
+                      title: true,
+                      year: true,
+                      type: true,
                       posterImage: true,
                       coverImage: true,
                     },
@@ -157,8 +160,8 @@ export default class FeedController {
                 photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
-                previewPosters: post.collection.collectionItems.map(
-                  (item) => item.media
+                previewCollectionItems: post.collection.collectionItems.map(
+                  (collectionItem) => collectionItem.media
                 ),
               }
             : null,
@@ -230,6 +233,9 @@ export default class FeedController {
                 select: {
                   media: {
                     select: {
+                      title: true,
+                      year: true,
+                      type: true,
                       posterImage: true,
                       coverImage: true,
                     },
@@ -322,8 +328,8 @@ export default class FeedController {
                 photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
-                previewPosters: post.collection.collectionItems.map(
-                  (item) => item.media
+                previewCollectionItems: post.collection.collectionItems.map(
+                  (collectionItem) => collectionItem.media
                 ),
               }
             : null,

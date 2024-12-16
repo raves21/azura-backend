@@ -38,7 +38,11 @@ export default class CollectionsController {
             select: {
               media: {
                 select: {
+                  title: true,
+                  year: true,
+                  type: true,
                   posterImage: true,
+                  coverImage: true,
                 },
               },
             },
@@ -61,8 +65,8 @@ export default class CollectionsController {
           id: collection.id,
           name: collection.name,
           photo: collection.photo,
-          previewPosters: collection.collectionItems.map(
-            (collectionItem) => collectionItem.media.posterImage
+          previewCollectionItems: collection.collectionItems.map(
+            (collectionItem) => collectionItem.media
           ),
         })),
       });
@@ -118,7 +122,11 @@ export default class CollectionsController {
             select: {
               media: {
                 select: {
+                  title: true,
+                  year: true,
+                  type: true,
                   posterImage: true,
+                  coverImage: true,
                 },
               },
             },
@@ -147,8 +155,8 @@ export default class CollectionsController {
           id: collection.id,
           name: collection.name,
           photo: collection.photo,
-          previewPosters: collection.collectionItems.map(
-            (collectionItem) => collectionItem.media.posterImage
+          previewCollectionItems: collection.collectionItems.map(
+            (collectionItem) => collectionItem.media
           ),
         })),
       });
