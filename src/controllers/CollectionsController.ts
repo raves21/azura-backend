@@ -38,11 +38,7 @@ export default class CollectionsController {
             select: {
               media: {
                 select: {
-                  title: true,
-                  year: true,
-                  type: true,
                   posterImage: true,
-                  coverImage: true,
                 },
               },
             },
@@ -122,11 +118,7 @@ export default class CollectionsController {
             select: {
               media: {
                 select: {
-                  title: true,
-                  year: true,
-                  type: true,
                   posterImage: true,
-                  coverImage: true,
                 },
               },
             },
