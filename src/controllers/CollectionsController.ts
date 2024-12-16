@@ -65,7 +65,7 @@ export default class CollectionsController {
           id: collection.id,
           name: collection.name,
           photo: collection.photo,
-          previewCollectionItems: collection.collectionItems.map(
+          previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
           ),
         })),
@@ -155,7 +155,7 @@ export default class CollectionsController {
           id: collection.id,
           name: collection.name,
           photo: collection.photo,
-          previewCollectionItems: collection.collectionItems.map(
+          previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
           ),
         })),

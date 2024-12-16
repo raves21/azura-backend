@@ -160,7 +160,7 @@ export default class FeedController {
                 photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
-                previewCollectionItems: post.collection.collectionItems.map(
+                previewMedias: post.collection.collectionItems.map(
                   (collectionItem) => collectionItem.media
                 ),
               }
@@ -328,7 +328,7 @@ export default class FeedController {
                 photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
-                previewCollectionItems: post.collection.collectionItems.map(
+                previewMedias: post.collection.collectionItems.map(
                   (collectionItem) => collectionItem.media
                 ),
               }

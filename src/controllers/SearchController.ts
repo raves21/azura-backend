@@ -226,7 +226,7 @@ export default class SearchController {
                 id: post.collection.id,
                 name: post.collection.name,
                 description: post.collection.description,
-                previewCollectionItems: post.collection.collectionItems.map(
+                previewMedias: post.collection.collectionItems.map(
                   (collectionItem) => collectionItem.media
                 ),
               }
@@ -441,7 +441,7 @@ export default class SearchController {
           photo: collection.photo,
           owner: collection.owner,
           privacy: collection.privacy,
-          previewCollectionItems: collection.collectionItems.map(
+          previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
           ),
         })),

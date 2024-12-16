@@ -124,7 +124,7 @@ export default class PostsController {
                 photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
-                previewCollectionItems: post.collection.collectionItems.map(
+                previewMedias: post.collection.collectionItems.map(
                   (collectionItem) => collectionItem.media
                 ),
               }
@@ -261,7 +261,7 @@ export default class PostsController {
                 photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
-                previewCollectionItems: post.collection.collectionItems.map(
+                previewMedias: post.collection.collectionItems.map(
                   (collectionItem) => collectionItem.media
                 ),
               }
@@ -352,7 +352,7 @@ export default class PostsController {
               photo: foundPost.collection.photo,
               name: foundPost.collection.name,
               description: foundPost.collection.description,
-              previewCollectionItems: foundPost.collection.collectionItems.map(
+              previewMedias: foundPost.collection.collectionItems.map(
                 (collectionItem) => collectionItem.media
               ),
             }
