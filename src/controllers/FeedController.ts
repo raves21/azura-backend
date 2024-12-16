@@ -62,6 +62,8 @@ export default class FeedController {
               photo: true,
               name: true,
               description: true,
+              owner: true,
+              privacy: true,
               collectionItems: {
                 take: 3,
                 select: {
@@ -160,6 +162,8 @@ export default class FeedController {
                 photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
+                privacy: post.collection.privacy,
+                owner: post.collection.owner,
                 previewMedias: post.collection.collectionItems.map(
                   (collectionItem) => collectionItem.media
                 ),
@@ -228,6 +232,8 @@ export default class FeedController {
               photo: true,
               name: true,
               description: true,
+              owner: true,
+              privacy: true,
               collectionItems: {
                 take: 3,
                 select: {
@@ -328,6 +334,8 @@ export default class FeedController {
                 photo: post.collection.photo,
                 name: post.collection.name,
                 description: post.collection.description,
+                owner: post.collection.owner,
+                privacy: post.collection.privacy,
                 previewMedias: post.collection.collectionItems.map(
                   (collectionItem) => collectionItem.media
                 ),

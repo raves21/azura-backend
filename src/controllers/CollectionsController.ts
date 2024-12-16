@@ -113,6 +113,7 @@ export default class CollectionsController {
           },
         },
         include: {
+          owner: true,
           collectionItems: {
             take: 4,
             select: {
@@ -147,6 +148,7 @@ export default class CollectionsController {
           id: collection.id,
           name: collection.name,
           photo: collection.photo,
+          owner: collection.owner,
           previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
           ),

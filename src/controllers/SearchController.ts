@@ -94,9 +94,11 @@ export default class SearchController {
           collection: {
             select: {
               id: true,
+              photo: true,
               name: true,
               description: true,
-              photo: true,
+              owner: true,
+              privacy: true,
               collectionItems: {
                 take: 3,
                 select: {
@@ -226,6 +228,8 @@ export default class SearchController {
                 id: post.collection.id,
                 name: post.collection.name,
                 description: post.collection.description,
+                owner: post.collection.owner,
+                privacy: post.collection.privacy,
                 previewMedias: post.collection.collectionItems.map(
                   (collectionItem) => collectionItem.media
                 ),
