@@ -55,7 +55,7 @@ app.use("/cron", cronRouter);
 app.use(verifyJWT);
 
 // Route for checking token validity in the frontend
-app.get("/api/check-token", (req, res) => {
+app.get("/api/check-token", (_, res) => {
   res.status(200).json("token valid");
 });
 

@@ -86,6 +86,12 @@ export default class RefreshTokenController {
             res.json({
               message: "U are granted a new access token!",
               data: {
+                currentUserBasicInfo: {
+                  id: foundUser.id,
+                  username: foundUser.username,
+                  handle: foundUser.handle,
+                  avatar: foundUser.avatar,
+                },
                 accessToken: newAccessToken,
               },
             });
