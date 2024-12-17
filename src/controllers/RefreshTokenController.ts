@@ -90,6 +90,7 @@ export default class RefreshTokenController {
                   id: foundUser.id,
                   username: foundUser.username,
                   handle: foundUser.handle,
+                  email: foundUser.email,
                   avatar: foundUser.avatar,
                 },
                 accessToken: newAccessToken,
