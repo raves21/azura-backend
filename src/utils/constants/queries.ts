@@ -7,16 +7,7 @@ export const POSTS_INCLUDE = (currentUserId: string) => ({
       userId: true,
     },
   },
-  media: {
-    select: {
-      id: true,
-      title: true,
-      type: true,
-      posterImage: true,
-      coverImage: true,
-      year: true,
-    },
-  },
+  media: true,
   collection: {
     select: {
       id: true,
