@@ -255,7 +255,7 @@ export default class PostsController {
             },
           });
           //proceed to creating the post with newMedia
-          await prisma.post.create({
+          const newPostWithNewMedia = await prisma.post.create({
             data: {
               content,
               privacy,
@@ -266,6 +266,7 @@ export default class PostsController {
 
           res.status(201).json({
             message: "Post (with new media) successfully created.",
+            data: { ...newPostWithNewMedia, collection: null },
           });
           return;
         }
@@ -274,7 +275,7 @@ export default class PostsController {
         //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
         //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
         await updateExistingMedia(foundMedia, media);
-        await prisma.post.create({
+        const newPostWithExistingMedia = await prisma.post.create({
           data: {
             content,
             privacy,
@@ -284,6 +285,7 @@ export default class PostsController {
         });
         res.status(201).json({
           message: "Post (with found media) successfully created.",
+          data: { ...newPostWithExistingMedia, collection: null },
         });
         return;
       }
@@ -291,16 +293,59 @@ export default class PostsController {
       //check if collectionId exists in req.body
       if (collectionId) {
         //use the collectionId to create the new post
-        await prisma.post.create({
+        const newPostWithCollection = await prisma.post.create({
           data: {
             ownerId: payload.userId,
             content,
             privacy,
             collectionId,
           },
+          include: {
+            collection: {
+              select: {
+                id: true,
+                photo: true,
+                name: true,
+                description: true,
+                owner: true,
+                privacy: true,
+                collectionItems: {
+                  take: 3,
+                  select: {
+                    media: {
+                      select: {
+                        title: true,
+                        year: true,
+                        type: true,
+                        posterImage: true,
+                        coverImage: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         });
         res.status(201).json({
           message: "Post (with collection) successfully created.",
+          data: {
+            ...newPostWithCollection,
+            collection: newPostWithCollection.collection
+              ? {
+                  id: newPostWithCollection.collection.id,
+                  photo: newPostWithCollection.collection.photo,
+                  name: newPostWithCollection.collection.name,
+                  description: newPostWithCollection.collection.description,
+                  owner: newPostWithCollection.collection.owner,
+                  privacy: newPostWithCollection.collection.privacy,
+                  previewMedias:
+                    newPostWithCollection.collection.collectionItems.map(
+                      (collectionItem) => collectionItem.media
+                    ),
+                }
+              : null,
+          },
         });
         return;
       }
@@ -308,7 +353,7 @@ export default class PostsController {
       //if either media or collectionId exists in req.body, this means user just wants to make a post
       //without attaching anything.
 
-      await prisma.post.create({
+      const newPostWithNoAttachments = await prisma.post.create({
         data: {
           ownerId: payload.userId,
           content,
@@ -318,6 +363,7 @@ export default class PostsController {
 
       res.status(201).json({
         message: "Post (without attachments) created successfully.",
+        data: { ...newPostWithNoAttachments, collection: null },
       });
       return;
     }
