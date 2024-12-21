@@ -12,7 +12,7 @@ import {
   REFRESH_TOKEN_COOKIE_MAXAGE,
   REFRESH_TOKEN_DURATION,
   REFRESH_TOKEN_EXPIRY_DATE,
-} from "../constants";
+} from "../constants/auth";
 
 const prisma = new PrismaClient();
 

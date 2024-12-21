@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import AppError from "../utils/types/errors";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { deleteExpiredSessionsAndLogin } from "../utils/functions/reusablePrismaFunctions";
-import { SESSION_LIMIT } from "../utils/constants";
+import { SESSION_LIMIT } from "../utils/constants/auth";
 
 const prisma = new PrismaClient();
 

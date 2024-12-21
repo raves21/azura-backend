@@ -5,7 +5,7 @@ import { CustomJWTPayload } from "../utils/types/jwt";
 import { TokenExpiredError } from "jsonwebtoken";
 import AppError from "../utils/types/errors";
 import { asyncHandler } from "../middleware/asyncHandler";
-import { ACCESS_TOKEN_DURATION } from "../utils/constants";
+import { ACCESS_TOKEN_DURATION } from "../utils/constants/auth";
 
 const prisma = new PrismaClient();
 

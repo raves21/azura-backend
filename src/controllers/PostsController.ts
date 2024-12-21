@@ -9,6 +9,7 @@ import {
 } from "../utils/functions/reusablePrismaFunctions";
 import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
+import { POSTS_INCLUDE } from "../utils/constants/queries";
 
 const prisma = new PrismaClient();
 
@@ -33,68 +34,7 @@ export default class PostsController {
         orderBy: {
           createdAt: order,
         },
-        select: {
-          likes: {
-            where: {
-              userId: payload.userId,
-            },
-            select: {
-              userId: true,
-            },
-          },
-          id: true,
-          content: true,
-          privacy: true,
-          media: {
-            select: {
-              id: true,
-              title: true,
-              type: true,
-              posterImage: true,
-              coverImage: true,
-              year: true,
-            },
-          },
-          collection: {
-            select: {
-              id: true,
-              photo: true,
-              name: true,
-              description: true,
-              owner: true,
-              privacy: true,
-              collectionItems: {
-                take: 3,
-                select: {
-                  media: {
-                    select: {
-                      title: true,
-                      year: true,
-                      type: true,
-                      posterImage: true,
-                      coverImage: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          createdAt: true,
-          owner: {
-            select: {
-              id: true,
-              avatar: true,
-              username: true,
-              handle: true,
-            },
-          },
-          _count: {
-            select: {
-              comments: true,
-              likes: true,
-            },
-          },
-        },
+        include: POSTS_INCLUDE(payload.userId),
       });
 
       const totalItems = await prisma.post.count({
@@ -182,55 +122,7 @@ export default class PostsController {
         orderBy: {
           createdAt: order,
         },
-        include: {
-          likes: {
-            where: {
-              userId: payload.userId,
-            },
-            select: {
-              userId: true,
-            },
-          },
-          media: true,
-          collection: {
-            select: {
-              id: true,
-              photo: true,
-              name: true,
-              description: true,
-              owner: true,
-              privacy: true,
-              collectionItems: {
-                take: 3,
-                select: {
-                  media: {
-                    select: {
-                      title: true,
-                      year: true,
-                      type: true,
-                      posterImage: true,
-                      coverImage: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          owner: {
-            select: {
-              id: true,
-              avatar: true,
-              username: true,
-              handle: true,
-            },
-          },
-          _count: {
-            select: {
-              comments: true,
-              likes: true,
-            },
-          },
-        },
+        include: POSTS_INCLUDE(payload.userId),
       });
 
       const totalItems = await prisma.post.count({
@@ -290,55 +182,7 @@ export default class PostsController {
         where: {
           id,
         },
-        include: {
-          likes: {
-            where: {
-              userId: payload.userId,
-            },
-            select: {
-              userId: true,
-            },
-          },
-          media: true,
-          collection: {
-            select: {
-              id: true,
-              photo: true,
-              name: true,
-              description: true,
-              owner: true,
-              privacy: true,
-              collectionItems: {
-                take: 3,
-                select: {
-                  media: {
-                    select: {
-                      title: true,
-                      year: true,
-                      type: true,
-                      posterImage: true,
-                      coverImage: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          owner: {
-            select: {
-              id: true,
-              avatar: true,
-              username: true,
-              handle: true,
-            },
-          },
-          _count: {
-            select: {
-              comments: true,
-              likes: true,
-            },
-          },
-        },
+        include: POSTS_INCLUDE(payload.userId),
       });
 
       if (!foundPost) {
@@ -411,7 +255,7 @@ export default class PostsController {
             },
           });
           //proceed to creating the post with newMedia
-          const newPostWithNewMedia = await prisma.post.create({
+          await prisma.post.create({
             data: {
               content,
               privacy,
@@ -422,7 +266,6 @@ export default class PostsController {
 
           res.status(201).json({
             message: "Post (with new media) successfully created.",
-            data: newPostWithNewMedia,
           });
           return;
         }
@@ -431,7 +274,7 @@ export default class PostsController {
         //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
         //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
         await updateExistingMedia(foundMedia, media);
-        const newPostWithFoundMedia = await prisma.post.create({
+        await prisma.post.create({
           data: {
             content,
             privacy,
@@ -441,7 +284,6 @@ export default class PostsController {
         });
         res.status(201).json({
           message: "Post (with found media) successfully created.",
-          data: newPostWithFoundMedia,
         });
         return;
       }
@@ -449,7 +291,7 @@ export default class PostsController {
       //check if collectionId exists in req.body
       if (collectionId) {
         //use the collectionId to create the new post
-        const newPostWithCollection = await prisma.post.create({
+        await prisma.post.create({
           data: {
             ownerId: payload.userId,
             content,
@@ -459,7 +301,6 @@ export default class PostsController {
         });
         res.status(201).json({
           message: "Post (with collection) successfully created.",
-          data: newPostWithCollection,
         });
         return;
       }
@@ -467,7 +308,7 @@ export default class PostsController {
       //if either media or collectionId exists in req.body, this means user just wants to make a post
       //without attaching anything.
 
-      const newPostWithoutAttachments = await prisma.post.create({
+      await prisma.post.create({
         data: {
           ownerId: payload.userId,
           content,
@@ -477,7 +318,6 @@ export default class PostsController {
 
       res.status(201).json({
         message: "Post (without attachments) created successfully.",
-        data: newPostWithoutAttachments,
       });
       return;
     }
@@ -488,7 +328,7 @@ export default class PostsController {
       const payload = req.jwtPayload;
       const { id } = req.params;
 
-      const deletedPost = await prisma.post.delete({
+      await prisma.post.delete({
         where: {
           id,
           ownerId: payload.userId,
@@ -497,7 +337,6 @@ export default class PostsController {
 
       res.status(200).json({
         message: "Post deleted successfully.",
-        data: deletedPost,
       });
     }
   );
@@ -533,7 +372,7 @@ export default class PostsController {
             },
           });
           //proceed to updating the post with the new media
-          const updatedPostWithNewMedia = await prisma.post.update({
+          await prisma.post.update({
             where: {
               id,
             },
@@ -546,7 +385,6 @@ export default class PostsController {
           });
           res.status(200).json({
             message: "Post (with new media) updated succesfully.",
-            data: updatedPostWithNewMedia,
           });
           return;
         }
@@ -555,7 +393,7 @@ export default class PostsController {
         //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
         //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
         await updateExistingMedia(foundMedia, media);
-        const updatedPostWithFoundMedia = await prisma.post.update({
+        await prisma.post.update({
           where: {
             id,
           },
@@ -568,14 +406,13 @@ export default class PostsController {
         });
         res.status(201).json({
           message: "Post (with found media) updated successfully.",
-          data: updatedPostWithFoundMedia,
         });
         return;
       }
       //check if collectionId exists in req.body
       if (collectionId) {
         //use the collectionId to create the new post
-        const updatedPostWithCollection = await prisma.post.update({
+        await prisma.post.update({
           where: {
             id,
           },
@@ -588,14 +425,13 @@ export default class PostsController {
         });
         res.status(201).json({
           message: "Post (with collection) updated successfully.",
-          data: updatedPostWithCollection,
         });
         return;
       }
 
       //if either media or collectionId exists in req.body, this means user just wants to update a post
       //that has no attachments (no media or collection attached)
-      const newPostWithoutAttachments = await prisma.post.update({
+      await prisma.post.update({
         where: {
           id,
         },
@@ -608,7 +444,6 @@ export default class PostsController {
 
       res.status(201).json({
         message: "Post (without attachments) updated successfully.",
-        data: newPostWithoutAttachments,
       });
       return;
     }
@@ -616,7 +451,6 @@ export default class PostsController {
 
   public getPostComments = asyncHandler(
     async (req: RequestWithPayload, res: Response) => {
-      const payload = req.jwtPayload;
       const { id } = req.params;
 
       const { page, perPage, ascending } = req.query;
@@ -705,7 +539,6 @@ export default class PostsController {
 
       res.status(201).json({
         message: "Comment created successfully.",
-        data: newComment,
       });
     }
   );
@@ -716,7 +549,7 @@ export default class PostsController {
       const { content } = req.body;
       const payload = req.jwtPayload;
 
-      const updatedComment = await prisma.comment.update({
+      await prisma.comment.update({
         where: {
           id: commentId,
           postId,
@@ -729,7 +562,6 @@ export default class PostsController {
 
       res.status(200).json({
         message: "Comment updated successfully.",
-        data: updatedComment,
       });
     }
   );
@@ -761,7 +593,7 @@ export default class PostsController {
         );
       }
 
-      const deletedPostComment = await prisma.comment.delete({
+      await prisma.comment.delete({
         where: {
           id: commentId,
           postId,
@@ -773,7 +605,6 @@ export default class PostsController {
 
       res.status(200).json({
         message: "Post deleted successfully.",
-        data: { commentId: deletedPostComment.id },
       });
     }
   );

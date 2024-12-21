@@ -2,6 +2,7 @@ import { Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { RequestWithPayload } from "../utils/types/jwt";
+import { POSTS_INCLUDE } from "../utils/constants/queries";
 
 const prisma = new PrismaClient();
 
@@ -54,55 +55,7 @@ export default class FeedController {
             },
           ],
         },
-        include: {
-          media: true,
-          collection: {
-            select: {
-              id: true,
-              photo: true,
-              name: true,
-              description: true,
-              owner: true,
-              privacy: true,
-              collectionItems: {
-                take: 3,
-                select: {
-                  media: {
-                    select: {
-                      title: true,
-                      year: true,
-                      type: true,
-                      posterImage: true,
-                      coverImage: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          owner: {
-            select: {
-              id: true,
-              username: true,
-              avatar: true,
-              handle: true,
-            },
-          },
-          likes: {
-            where: {
-              userId: payload.userId,
-            },
-            select: {
-              userId: true,
-            },
-          },
-          _count: {
-            select: {
-              comments: true,
-              likes: true,
-            },
-          },
-        },
+        include: POSTS_INCLUDE(payload.userId),
       });
 
       const totalItems = await prisma.post.count({
@@ -224,55 +177,7 @@ export default class FeedController {
             },
           ],
         },
-        include: {
-          media: true,
-          collection: {
-            select: {
-              id: true,
-              photo: true,
-              name: true,
-              description: true,
-              owner: true,
-              privacy: true,
-              collectionItems: {
-                take: 3,
-                select: {
-                  media: {
-                    select: {
-                      title: true,
-                      year: true,
-                      type: true,
-                      posterImage: true,
-                      coverImage: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          owner: {
-            select: {
-              id: true,
-              username: true,
-              avatar: true,
-              handle: true,
-            },
-          },
-          likes: {
-            where: {
-              userId: payload.userId, // Current user's likes
-            },
-            select: {
-              userId: true,
-            },
-          },
-          _count: {
-            select: {
-              comments: true,
-              likes: true,
-            },
-          },
-        },
+        include: POSTS_INCLUDE(payload.userId),
       });
 
       const totalItems = await prisma.post.count({
