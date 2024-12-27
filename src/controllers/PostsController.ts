@@ -9,7 +9,7 @@ import {
 } from "../utils/functions/reusablePrismaFunctions";
 import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
-import { POSTS_INCLUDE } from "../utils/constants/queries";
+import { CREATE_POST_SELECT, POSTS_INCLUDE } from "../utils/constants/queries";
 
 const prisma = new PrismaClient();
 
@@ -185,6 +185,25 @@ export default class PostsController {
         include: POSTS_INCLUDE(payload.userId),
       });
 
+      const postFirstLiker = await prisma.post.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          likes: {
+            take: 1,
+            select: {
+              user: {
+                select: {
+                  avatar: true,
+                  username: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
       if (!foundPost) {
         throw new AppError(404, "NotFound", "Post not found.", true);
       }
@@ -200,6 +219,10 @@ export default class PostsController {
           .includes(payload.userId),
         owner: foundPost.owner,
         media: foundPost.media,
+        postFirstLiker:
+          postFirstLiker && postFirstLiker.likes.length !== 0
+            ? postFirstLiker.likes.map((liker) => liker.user)[0]
+            : null,
         collection: foundPost.collection
           ? {
               id: foundPost.collection.id,
@@ -262,6 +285,7 @@ export default class PostsController {
               mediaId: newMedia.id,
               ownerId: payload.userId,
             },
+            select: CREATE_POST_SELECT,
           });
 
           res.status(201).json({
@@ -282,6 +306,7 @@ export default class PostsController {
             mediaId: foundMedia.id,
             ownerId: payload.userId,
           },
+          select: CREATE_POST_SELECT,
         });
         res.status(201).json({
           message: "Post (with found media) successfully created.",
@@ -359,6 +384,7 @@ export default class PostsController {
           content,
           privacy,
         },
+        select: CREATE_POST_SELECT,
       });
 
       res.status(201).json({
@@ -568,6 +594,7 @@ export default class PostsController {
           content,
         },
         select: {
+          id: true,
           post: {
             select: {
               ownerId: true,
@@ -585,6 +612,9 @@ export default class PostsController {
 
       res.status(201).json({
         message: "Comment created successfully.",
+        data: {
+          id: newComment.id,
+        },
       });
     }
   );

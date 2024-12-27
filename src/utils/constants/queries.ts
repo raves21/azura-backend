@@ -47,3 +47,8 @@ export const POSTS_INCLUDE = (currentUserId: string) => ({
     },
   },
 });
+
+export const CREATE_POST_SELECT = {
+  id: true,
+  createdAt: true,
+};
