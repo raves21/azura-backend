@@ -185,16 +185,16 @@ export default class PostsController {
         include: POSTS_INCLUDE(payload.userId),
       });
 
-      const postFirstLiker = await prisma.post.findFirst({
+      const postFirstLikers = await prisma.post.findFirst({
         where: {
           id,
         },
         select: {
           likes: {
             orderBy: {
-              createdAt: "desc",
+              createdAt: "asc",
             },
-            take: 1,
+            take: 2,
             select: {
               user: {
                 select: {
@@ -223,9 +223,9 @@ export default class PostsController {
           .includes(payload.userId),
         owner: foundPost.owner,
         media: foundPost.media,
-        postFirstLiker:
-          postFirstLiker && postFirstLiker.likes.length !== 0
-            ? postFirstLiker.likes.map((liker) => liker.user)[0]
+        postFirstLikers:
+          postFirstLikers && postFirstLikers.likes.length !== 0
+            ? postFirstLikers.likes.map((liker) => liker.user)
             : null,
         collection: foundPost.collection
           ? {
