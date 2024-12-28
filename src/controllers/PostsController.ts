@@ -191,6 +191,9 @@ export default class PostsController {
         },
         select: {
           likes: {
+            orderBy: {
+              createdAt: "desc",
+            },
             take: 1,
             select: {
               user: {
