@@ -195,6 +195,7 @@ export default class PostsController {
             select: {
               user: {
                 select: {
+                  id: true,
                   avatar: true,
                   username: true,
                 },
