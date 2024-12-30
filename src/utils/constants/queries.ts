@@ -1,3 +1,12 @@
+export const ENTITY_OWNER_SELECT = {
+  select: {
+    id: true,
+    username: true,
+    handle: true,
+    avatar: true,
+  },
+};
+
 export const POSTS_INCLUDE = (currentUserId: string) => ({
   likes: {
     where: {
@@ -14,7 +23,7 @@ export const POSTS_INCLUDE = (currentUserId: string) => ({
       photo: true,
       name: true,
       description: true,
-      owner: true,
+      owner: ENTITY_OWNER_SELECT,
       privacy: true,
       collectionItems: {
         take: 3,
@@ -32,14 +41,7 @@ export const POSTS_INCLUDE = (currentUserId: string) => ({
       },
     },
   },
-  owner: {
-    select: {
-      id: true,
-      avatar: true,
-      username: true,
-      handle: true,
-    },
-  },
+  owner: ENTITY_OWNER_SELECT,
   _count: {
     select: {
       comments: true,

@@ -3,7 +3,7 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import { PrismaClient } from "@prisma/client";
 import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
-import { POSTS_INCLUDE } from "../utils/constants/queries";
+import { ENTITY_OWNER_SELECT, POSTS_INCLUDE } from "../utils/constants/queries";
 
 const prisma = new PrismaClient();
 
@@ -343,14 +343,7 @@ export default class SearchController {
               },
             },
           },
-          owner: {
-            select: {
-              id: true,
-              username: true,
-              avatar: true,
-              handle: true,
-            },
-          },
+          owner: ENTITY_OWNER_SELECT,
         },
       });
 

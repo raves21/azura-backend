@@ -8,6 +8,7 @@ import {
   updateExistingMedia,
 } from "../utils/functions/reusablePrismaFunctions";
 import { RequestWithPayload } from "../utils/types/jwt";
+import { ENTITY_OWNER_SELECT } from "../utils/constants/queries";
 
 const prisma = new PrismaClient();
 
@@ -33,6 +34,7 @@ export default class CollectionsController {
           ownerId: payload.userId,
         },
         include: {
+          owner: ENTITY_OWNER_SELECT,
           collectionItems: {
             take: 4,
             select: {
@@ -61,6 +63,7 @@ export default class CollectionsController {
           id: collection.id,
           name: collection.name,
           photo: collection.photo,
+          owner: collection.owner,
           previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
           ),
@@ -113,7 +116,7 @@ export default class CollectionsController {
           },
         },
         include: {
-          owner: true,
+          owner: ENTITY_OWNER_SELECT,
           collectionItems: {
             take: 4,
             select: {
@@ -342,14 +345,7 @@ export default class CollectionsController {
           id,
         },
         include: {
-          owner: {
-            select: {
-              id: true,
-              avatar: true,
-              username: true,
-              handle: true,
-            },
-          },
+          owner: ENTITY_OWNER_SELECT,
           _count: {
             select: {
               collectionItems: true,
