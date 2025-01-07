@@ -9,7 +9,8 @@ import { RequestWithPayload } from "../utils/types/jwt";
 const prisma = new PrismaClient();
 
 export default class UsersController {
-  public async getAllUsers(req: RequestWithPayload, res: Response) {
+  public async getAllUsers(_: Request, res: Response) {
+    const req = _ as RequestWithPayload;
     const { page, perPage, ascending } = req.query;
     const payload = req.jwtPayload;
 
@@ -22,7 +23,7 @@ export default class UsersController {
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order,
+        createdAt: order
       },
       select: {
         id: true,
@@ -33,10 +34,10 @@ export default class UsersController {
         bio: true,
         following: {
           select: {
-            followerId: true,
-          },
-        },
-      },
+            followerId: true
+          }
+        }
+      }
     });
     const totalItems = await prisma.user.count();
     const totalPages = Math.ceil(totalItems / _perPage);
@@ -54,18 +55,19 @@ export default class UsersController {
         bio: user.bio,
         isFollowedByCurrentUser: user.following
           .map((follow) => follow.followerId)
-          .includes(payload.userId),
-      })),
+          .includes(payload.userId)
+      }))
     });
   }
 
   public getCurrentUserInfo = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
 
       const currentUser = await prisma.user.findFirst({
         where: {
-          id: payload.userId,
+          id: payload.userId
         },
         select: {
           id: true,
@@ -80,10 +82,10 @@ export default class UsersController {
           _count: {
             select: {
               followers: true,
-              following: true,
-            },
-          },
-        },
+              following: true
+            }
+          }
+        }
       });
 
       if (!currentUser) {
@@ -103,148 +105,146 @@ export default class UsersController {
           //*idk why but ts needs to be inverted ⬇️
           totalFollowers: currentUser._count.following,
           totalFollowing: currentUser._count.followers,
-          sessionId: payload.sessionId,
-        },
+          sessionId: payload.sessionId
+        }
       });
     }
   );
 
-  public getUserInfo = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const { handle } = req.params;
-      const payload = req.jwtPayload;
+  public getUserInfo = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const { handle } = req.params;
+    const payload = req.jwtPayload;
 
-      const foundUser = await prisma.user.findFirst({
-        where: {
-          handle,
-        },
-        select: {
-          id: true,
-          username: true,
-          avatar: true,
-          banner: true,
-          bio: true,
-          handle: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              followers: true,
-              following: true,
-            },
-          },
-        },
-      });
-
-      if (!foundUser) {
-        throw new AppError(404, "NotFoundError", "User not found.", true);
+    const foundUser = await prisma.user.findFirst({
+      where: {
+        handle
+      },
+      select: {
+        id: true,
+        username: true,
+        avatar: true,
+        banner: true,
+        bio: true,
+        handle: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            followers: true,
+            following: true
+          }
+        }
       }
+    });
 
-      const followsCurrentUser = await prisma.follow.findFirst({
-        where: {
-          followerId: foundUser.id,
-          followedId: payload.userId,
-        },
-      });
-
-      const followedByCurrentUser = await prisma.follow.findFirst({
-        where: {
-          followerId: payload.userId,
-          followedId: foundUser.id,
-        },
-      });
-
-      res.status(200).json({
-        message: `success. user found.`,
-        data: {
-          id: foundUser.id,
-          username: foundUser.username,
-          avatar: foundUser.avatar,
-          banner: foundUser.banner,
-          bio: foundUser.bio,
-          handle: foundUser.handle,
-          createdAt: foundUser.createdAt,
-          //*idk why but ts needs to be inverted ⬇️
-          totalFollowers: foundUser._count.following,
-          totalFollowing: foundUser._count.followers,
-          followsYou: followsCurrentUser ? true : false,
-          followedByYou: followedByCurrentUser ? true : false,
-        },
-      });
+    if (!foundUser) {
+      throw new AppError(404, "NotFoundError", "User not found.", true);
     }
-  );
 
-  public followUser = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const { id: userToFollow } = req.params;
-      const payload = req.jwtPayload;
-
-      if (userToFollow === payload.userId) {
-        throw new AppError(
-          400,
-          "BadRequest",
-          "You cannot follow yourself.",
-          true
-        );
+    const followsCurrentUser = await prisma.follow.findFirst({
+      where: {
+        followerId: foundUser.id,
+        followedId: payload.userId
       }
+    });
 
-      await prisma.follow.create({
-        data: {
-          followerId: payload.userId,
-          followedId: userToFollow,
-        },
-      });
-
-      await upsertNotification({
-        recipientId: userToFollow,
-        actorId: payload.userId,
-        type: "FOLLOW",
-      });
-      res.status(201).json({
-        message: `Success, you have successfully followed user ${userToFollow}`,
-      });
-    }
-  );
-
-  public unfollowUser = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const payload = req.jwtPayload;
-      const { id: userToUnfollow } = req.params;
-
-      //check if the relationship between currentUser and userToUnfollow exists
-      const foundRelationship = await prisma.follow.findFirst({
-        where: {
-          followerId: payload.userId,
-          followedId: userToUnfollow,
-        },
-      });
-
-      if (!foundRelationship) {
-        throw new AppError(
-          404,
-          "Relationship not found.",
-          `Relationship between ${payload.userId} and ${userToUnfollow} not found.`,
-          true
-        );
+    const followedByCurrentUser = await prisma.follow.findFirst({
+      where: {
+        followerId: payload.userId,
+        followedId: foundUser.id
       }
+    });
 
-      //delete the relationship
-      await prisma.follow.delete({
-        where: {
-          followerId_followedId: {
-            followerId: payload.userId,
-            followedId: userToUnfollow,
-          },
-        },
-      });
+    res.status(200).json({
+      message: `success. user found.`,
+      data: {
+        id: foundUser.id,
+        username: foundUser.username,
+        avatar: foundUser.avatar,
+        banner: foundUser.banner,
+        bio: foundUser.bio,
+        handle: foundUser.handle,
+        createdAt: foundUser.createdAt,
+        //*idk why but ts needs to be inverted ⬇️
+        totalFollowers: foundUser._count.following,
+        totalFollowing: foundUser._count.followers,
+        followsYou: followsCurrentUser ? true : false,
+        followedByYou: followedByCurrentUser ? true : false
+      }
+    });
+  });
 
-      res.status(200).json({
-        message: `Successfully unfollowed user ${userToUnfollow}`,
-      });
+  public followUser = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const { id: userToFollow } = req.params;
+    const payload = req.jwtPayload;
+
+    if (userToFollow === payload.userId) {
+      throw new AppError(
+        400,
+        "BadRequest",
+        "You cannot follow yourself.",
+        true
+      );
     }
-  );
+
+    await prisma.follow.create({
+      data: {
+        followerId: payload.userId,
+        followedId: userToFollow
+      }
+    });
+
+    await upsertNotification({
+      recipientId: userToFollow,
+      actorId: payload.userId,
+      type: "FOLLOW"
+    });
+    res.status(201).json({
+      message: `Success, you have successfully followed user ${userToFollow}`
+    });
+  });
+
+  public unfollowUser = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const payload = req.jwtPayload;
+    const { id: userToUnfollow } = req.params;
+
+    //check if the relationship between currentUser and userToUnfollow exists
+    const foundRelationship = await prisma.follow.findFirst({
+      where: {
+        followerId: payload.userId,
+        followedId: userToUnfollow
+      }
+    });
+
+    if (!foundRelationship) {
+      throw new AppError(
+        404,
+        "Relationship not found.",
+        `Relationship between ${payload.userId} and ${userToUnfollow} not found.`,
+        true
+      );
+    }
+
+    //delete the relationship
+    await prisma.follow.delete({
+      where: {
+        followerId_followedId: {
+          followerId: payload.userId,
+          followedId: userToUnfollow
+        }
+      }
+    });
+
+    res.status(200).json({
+      message: `Successfully unfollowed user ${userToUnfollow}`
+    });
+  });
   public getCurrentUserFollowingList = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
 
       const { page, perPage, ascending } = req.query;
@@ -256,12 +256,12 @@ export default class UsersController {
 
       const currentUserFollowingList = await prisma.follow.findMany({
         where: {
-          followerId: payload.userId,
+          followerId: payload.userId
         },
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order,
+          createdAt: order
         },
         select: {
           followed: {
@@ -271,16 +271,16 @@ export default class UsersController {
               email: true,
               avatar: true,
               handle: true,
-              bio: true,
-            },
-          },
-        },
+              bio: true
+            }
+          }
+        }
       });
 
       const totalItems = await prisma.follow.count({
         where: {
-          followerId: payload.userId,
-        },
+          followerId: payload.userId
+        }
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -295,14 +295,15 @@ export default class UsersController {
           handle: item.followed.username,
           bio: item.followed.bio,
           avatar: item.followed.avatar,
-          isFollowedByCurrentUser: true,
-        })),
+          isFollowedByCurrentUser: true
+        }))
       });
     }
   );
 
   public getCurrentUserFollowerList = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
 
       const { page, perPage, ascending } = req.query;
@@ -314,12 +315,12 @@ export default class UsersController {
 
       const currentUserFollowerList = await prisma.follow.findMany({
         where: {
-          followedId: payload.userId,
+          followedId: payload.userId
         },
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order,
+          createdAt: order
         },
         select: {
           follower: {
@@ -332,17 +333,17 @@ export default class UsersController {
               bio: true,
               following: {
                 select: {
-                  followerId: true,
-                },
-              },
-            },
-          },
-        },
+                  followerId: true
+                }
+              }
+            }
+          }
+        }
       });
       const totalItems = await prisma.follow.count({
         where: {
-          followedId: payload.userId,
-        },
+          followedId: payload.userId
+        }
       });
       const totalPages = Math.ceil(totalItems / _perPage);
       res.status(200).json({
@@ -359,14 +360,15 @@ export default class UsersController {
           avatar: item.follower.avatar,
           isFollowedByCurrentUser: item.follower.following
             .map((follow) => follow.followerId)
-            .includes(payload.userId),
-        })),
+            .includes(payload.userId)
+        }))
       });
     }
   );
 
   public getUserFollowingList = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       const { id } = req.params;
       const payload = req.jwtPayload;
       const { page, perPage, ascending } = req.query;
@@ -378,12 +380,12 @@ export default class UsersController {
 
       const userFollowingList = await prisma.follow.findMany({
         where: {
-          followerId: id,
+          followerId: id
         },
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order,
+          createdAt: order
         },
         select: {
           followed: {
@@ -396,18 +398,18 @@ export default class UsersController {
               bio: true,
               following: {
                 select: {
-                  followerId: true,
-                },
-              },
-            },
-          },
-        },
+                  followerId: true
+                }
+              }
+            }
+          }
+        }
       });
 
       const totalItems = await prisma.follow.count({
         where: {
-          followerId: id,
-        },
+          followerId: id
+        }
       });
       const totalPages = Math.ceil(totalItems / _perPage);
       res.status(200).json({
@@ -424,14 +426,15 @@ export default class UsersController {
           avatar: item.followed.avatar,
           isFollowedByCurrentUser: item.followed.following
             .map((follow) => follow.followerId)
-            .includes(payload.userId),
-        })),
+            .includes(payload.userId)
+        }))
       });
     }
   );
 
   public getUserFollowerList = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       const { id } = req.params;
       const { page, perPage, ascending } = req.query;
       const payload = req.jwtPayload;
@@ -442,12 +445,12 @@ export default class UsersController {
 
       const userFollowerList = await prisma.follow.findMany({
         where: {
-          followedId: id,
+          followedId: id
         },
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order,
+          createdAt: order
         },
         select: {
           follower: {
@@ -460,18 +463,18 @@ export default class UsersController {
               bio: true,
               following: {
                 select: {
-                  followerId: true,
-                },
-              },
-            },
-          },
-        },
+                  followerId: true
+                }
+              }
+            }
+          }
+        }
       });
 
       const totalItems = await prisma.follow.count({
         where: {
-          followedId: id,
-        },
+          followedId: id
+        }
       });
       const totalPages = Math.ceil(totalItems / _perPage);
       res.status(200).json({
@@ -488,8 +491,8 @@ export default class UsersController {
           avatar: item.follower.avatar,
           isFollowedByCurrentUser: item.follower.following
             .map((follow) => follow.followerId)
-            .includes(payload.userId),
-        })),
+            .includes(payload.userId)
+        }))
       });
     }
   );

@@ -7,80 +7,79 @@ import { RequestWithPayload } from "../utils/types/jwt";
 const prisma = new PrismaClient();
 
 export default class NotificationsController {
-  public getNotifications = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const payload = req.jwtPayload;
+  public getNotifications = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const payload = req.jwtPayload;
 
-      const { page, perPage } = req.query;
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+    const { page, perPage } = req.query;
+    const _page = Number(page) || 1;
+    const _perPage = Number(perPage) || 10;
+    const skip = (_page - 1) * _perPage;
 
-      const notifications = await prisma.notification.findMany({
-        skip,
-        take: _perPage,
-        orderBy: {
-          updatedAt: "desc",
+    const notifications = await prisma.notification.findMany({
+      skip,
+      take: _perPage,
+      orderBy: {
+        updatedAt: "desc"
+      },
+      where: {
+        recipientId: payload.userId
+      },
+      include: {
+        post: {
+          select: {
+            id: true
+          }
         },
-        where: {
-          recipientId: payload.userId,
-        },
-        include: {
-          post: {
-            select: {
-              id: true,
-            },
+        actors: {
+          take: 2,
+          orderBy: {
+            createdAt: "desc"
           },
-          actors: {
-            take: 2,
-            orderBy: {
-              createdAt: "desc",
-            },
-            select: {
-              actor: {
-                select: {
-                  avatar: true,
-                  username: true,
-                },
-              },
-            },
-          },
-          _count: {
-            select: {
-              actors: true,
-            },
-          },
+          select: {
+            actor: {
+              select: {
+                avatar: true,
+                username: true
+              }
+            }
+          }
         },
-      });
+        _count: {
+          select: {
+            actors: true
+          }
+        }
+      }
+    });
 
-      const totalItems = await prisma.notification.count({
-        where: {
-          recipientId: payload.userId,
-        },
-      });
-      const totalPages = Math.ceil(totalItems / _perPage);
+    const totalItems = await prisma.notification.count({
+      where: {
+        recipientId: payload.userId
+      }
+    });
+    const totalPages = Math.ceil(totalItems / _perPage);
 
-      res.status(200).json({
-        message: "success",
-        page: _page,
-        perPage: _perPage,
-        totalPages,
-        data: notifications.map((notif) => ({
-          id: notif.id,
-          recipientId: notif.recipientId,
-          isRead: notif.isRead,
-          postId: notif.postId,
-          type: notif.type,
-          actorsPreview: notif.actors.map((item) => ({
-            name: item.actor.username,
-            avatar: item.actor.avatar,
-          })),
-          totalActors: notif._count.actors,
-          updatedAt: notif.updatedAt,
+    res.status(200).json({
+      message: "success",
+      page: _page,
+      perPage: _perPage,
+      totalPages,
+      data: notifications.map((notif) => ({
+        id: notif.id,
+        recipientId: notif.recipientId,
+        isRead: notif.isRead,
+        postId: notif.postId,
+        type: notif.type,
+        actorsPreview: notif.actors.map((item) => ({
+          name: item.actor.username,
+          avatar: item.actor.avatar
         })),
-      });
-    }
-  );
+        totalActors: notif._count.actors,
+        updatedAt: notif.updatedAt
+      }))
+    });
+  });
 
   public updateNotificationIsRead = asyncHandler(
     async (req: Request, res: Response) => {
@@ -99,19 +98,19 @@ export default class NotificationsController {
       const _isRead = isRead == "true";
       const updatedNotification = await prisma.notification.update({
         where: {
-          id,
+          id
         },
         data: {
-          isRead: _isRead,
+          isRead: _isRead
         },
         select: {
-          isRead: true,
-        },
+          isRead: true
+        }
       });
 
       res.status(200).json({
         message: "isRead updated",
-        data: updatedNotification,
+        data: updatedNotification
       });
     }
   );
@@ -122,8 +121,8 @@ export default class NotificationsController {
 
       await prisma.notification.delete({
         where: {
-          id,
-        },
+          id
+        }
       });
 
       res.status(200).json("successfully deleted notification.");

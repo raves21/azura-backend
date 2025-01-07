@@ -6,11 +6,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const verifyJWT = (
-  req: RequestWithPayload,
-  res: Response,
-  next: NextFunction
-) => {
+export const verifyJWT = (_: Request, res: Response, next: NextFunction) => {
+  const req = _ as RequestWithPayload;
   const cookies = req.cookies;
 
   if (!cookies?.refreshToken) {
@@ -42,15 +39,15 @@ export const verifyJWT = (
         //find user session in UserSession table
         const foundUserSession = await prisma.userSession.findFirst({
           where: {
-            sessionId: payload.sessionId,
-          },
+            sessionId: payload.sessionId
+          }
         });
 
         //if userSession is not found, then that means someone logged the currentUser's session out
         //(logging out means the session is deleted in the UserSession table)
         if (!foundUserSession) {
           res.clearCookie("refreshToken", {
-            httpOnly: true,
+            httpOnly: true
             //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
           });
           throw new TokenExpiredError("Your session has expired.", new Date());

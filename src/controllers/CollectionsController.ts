@@ -5,7 +5,7 @@ import AppError from "../utils/types/errors";
 import {
   checkResourcePrivacyAndUserOwnership,
   areTheyFriends,
-  updateExistingMedia,
+  updateExistingMedia
 } from "../utils/functions/reusablePrismaFunctions";
 import { RequestWithPayload } from "../utils/types/jwt";
 import { ENTITY_OWNER_SELECT } from "../utils/constants/queries";
@@ -14,7 +14,8 @@ const prisma = new PrismaClient();
 
 export default class CollectionsController {
   public getCurrentUserCollections = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
 
       const { page, perPage, ascending } = req.query;
@@ -28,10 +29,10 @@ export default class CollectionsController {
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order,
+          createdAt: order
         },
         where: {
-          ownerId: payload.userId,
+          ownerId: payload.userId
         },
         include: {
           owner: ENTITY_OWNER_SELECT,
@@ -40,17 +41,17 @@ export default class CollectionsController {
             select: {
               media: {
                 select: {
-                  posterImage: true,
-                },
-              },
-            },
-          },
-        },
+                  posterImage: true
+                }
+              }
+            }
+          }
+        }
       });
       const totalItems = await prisma.collection.count({
         where: {
-          ownerId: payload.userId,
-        },
+          ownerId: payload.userId
+        }
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -66,14 +67,15 @@ export default class CollectionsController {
           owner: collection.owner,
           previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
-          ),
-        })),
+          )
+        }))
       });
     }
   );
 
   public getUserCollections = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       const { handle } = req.params;
       const payload = req.jwtPayload;
 
@@ -86,8 +88,8 @@ export default class CollectionsController {
 
       const foundOwner = await prisma.user.findFirst({
         where: {
-          handle,
-        },
+          handle
+        }
       });
 
       if (!foundOwner) {
@@ -105,15 +107,15 @@ export default class CollectionsController {
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order,
+          createdAt: order
         },
         where: {
           ownerId: foundOwner.id,
           privacy: {
             in: isCurrentUserFriendsWithOwner
               ? ["FRIENDS_ONLY", "PUBLIC"]
-              : ["PUBLIC"],
-          },
+              : ["PUBLIC"]
+          }
         },
         include: {
           owner: ENTITY_OWNER_SELECT,
@@ -122,12 +124,12 @@ export default class CollectionsController {
             select: {
               media: {
                 select: {
-                  posterImage: true,
-                },
-              },
-            },
-          },
-        },
+                  posterImage: true
+                }
+              }
+            }
+          }
+        }
       });
 
       const totalItems = await prisma.collection.count({
@@ -136,9 +138,9 @@ export default class CollectionsController {
           privacy: {
             in: isCurrentUserFriendsWithOwner
               ? ["FRIENDS_ONLY", "PUBLIC"]
-              : ["PUBLIC"],
-          },
-        },
+              : ["PUBLIC"]
+          }
+        }
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -154,50 +156,48 @@ export default class CollectionsController {
           owner: collection.owner,
           previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
-          ),
-        })),
+          )
+        }))
       });
     }
   );
 
-  public createCollection = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const { name, description, privacy } = req.body;
-      const payload = req.jwtPayload;
+  public createCollection = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const { name, description, privacy } = req.body;
+    const payload = req.jwtPayload;
 
-      const newCollection = await prisma.collection.create({
-        data: {
-          ownerId: payload.userId,
-          name,
-          description,
-          privacy,
-        },
-      });
+    const newCollection = await prisma.collection.create({
+      data: {
+        ownerId: payload.userId,
+        name,
+        description,
+        privacy
+      }
+    });
 
-      res.status(201).json({
-        message: "create collection successful.",
-        data: newCollection,
-      });
-    }
-  );
+    res.status(201).json({
+      message: "create collection successful.",
+      data: newCollection
+    });
+  });
 
-  public deleteCollection = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const payload = req.jwtPayload;
-      const { id } = req.params;
+  public deleteCollection = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const payload = req.jwtPayload;
+    const { id } = req.params;
 
-      const deletedCollection = await prisma.collection.delete({
-        where: {
-          id,
-          ownerId: payload.userId,
-        },
-      });
-      res.status(200).json({
-        message: "collection deleted successfuly.",
-        data: deletedCollection,
-      });
-    }
-  );
+    const deletedCollection = await prisma.collection.delete({
+      where: {
+        id,
+        ownerId: payload.userId
+      }
+    });
+    res.status(200).json({
+      message: "collection deleted successfuly.",
+      data: deletedCollection
+    });
+  });
 
   public addCollectionItem = asyncHandler(
     async (req: Request, res: Response) => {
@@ -211,7 +211,7 @@ export default class CollectionsController {
         coverImage,
         posterImage,
         rating,
-        status,
+        status
       } = req.body;
 
       if (
@@ -235,8 +235,8 @@ export default class CollectionsController {
       //check if media already exists in Media table
       const foundMedia = await prisma.media.findFirst({
         where: {
-          id: mediaId,
-        },
+          id: mediaId
+        }
       });
 
       if (foundMedia) {
@@ -254,20 +254,20 @@ export default class CollectionsController {
           rating,
           status,
           type: foundMedia.type,
-          createdAt: foundMedia.createdAt,
+          createdAt: foundMedia.createdAt
         };
         await updateExistingMedia(foundMedia, media);
         //proceed to creating the collection item
         const newCollectionItem = await prisma.collectionItem.create({
           data: {
             collectionId,
-            mediaId: foundMedia.id,
-          },
+            mediaId: foundMedia.id
+          }
         });
 
         res.status(201).json({
           message: "collection item created successfully.",
-          data: newCollectionItem,
+          data: newCollectionItem
         });
       } else {
         //if does not exist, create media and use it to create collectionItem
@@ -281,26 +281,27 @@ export default class CollectionsController {
             coverImage,
             posterImage,
             rating,
-            status,
-          },
+            status
+          }
         });
 
         const newCollectionItem = await prisma.collectionItem.create({
           data: {
             collectionId,
-            mediaId: newMedia.id,
-          },
+            mediaId: newMedia.id
+          }
         });
         res.status(201).json({
           message: "collection item created successfully",
-          data: newCollectionItem,
+          data: newCollectionItem
         });
       }
     }
   );
 
   public deleteCollectionItems = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       //array of collectionItemIds
       const { collectionItemsToDelete } = req.body;
       const { id: collectionId } = req.params;
@@ -310,8 +311,8 @@ export default class CollectionsController {
       const foundCollection = await prisma.collection.findFirst({
         where: {
           id: collectionId,
-          ownerId: payload.userId,
-        },
+          ownerId: payload.userId
+        }
       });
 
       if (!foundCollection) {
@@ -322,60 +323,59 @@ export default class CollectionsController {
       const deletedCollectionItems = await prisma.collectionItem.deleteMany({
         where: {
           id: {
-            in: collectionItemsToDelete,
-          },
-        },
+            in: collectionItemsToDelete
+          }
+        }
       });
 
       res.status(200).json({
         message: "collection item/s successfully deleted.",
-        deletedCount: deletedCollectionItems.count,
+        deletedCount: deletedCollectionItems.count
       });
     }
   );
 
-  public getCollectionInfo = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      //collection id
-      const { id } = req.params;
-      const payload = req.jwtPayload;
+  public getCollectionInfo = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    //collection id
+    const { id } = req.params;
+    const payload = req.jwtPayload;
 
-      const foundCollection = await prisma.collection.findFirst({
-        where: {
-          id,
-        },
-        include: {
-          owner: ENTITY_OWNER_SELECT,
-          _count: {
-            select: {
-              collectionItems: true,
-            },
-          },
-        },
-      });
-
-      if (!foundCollection) {
-        throw new AppError(404, "NotFound", `Collection not found.`, true);
+    const foundCollection = await prisma.collection.findFirst({
+      where: {
+        id
+      },
+      include: {
+        owner: ENTITY_OWNER_SELECT,
+        _count: {
+          select: {
+            collectionItems: true
+          }
+        }
       }
+    });
 
-      const successData = {
-        id,
-        name: foundCollection?.name,
-        description: foundCollection?.description,
-        privacy: foundCollection?.privacy,
-        owner: foundCollection?.owner,
-        totalCollectionItems: foundCollection?._count.collectionItems,
-      };
-
-      await checkResourcePrivacyAndUserOwnership({
-        currentUserId: payload.userId,
-        ownerId: foundCollection.ownerId,
-        privacy: foundCollection.privacy,
-        successData,
-        res,
-      });
+    if (!foundCollection) {
+      throw new AppError(404, "NotFound", `Collection not found.`, true);
     }
-  );
+
+    const successData = {
+      id,
+      name: foundCollection?.name,
+      description: foundCollection?.description,
+      privacy: foundCollection?.privacy,
+      owner: foundCollection?.owner,
+      totalCollectionItems: foundCollection?._count.collectionItems
+    };
+
+    await checkResourcePrivacyAndUserOwnership({
+      currentUserId: payload.userId,
+      ownerId: foundCollection.ownerId,
+      privacy: foundCollection.privacy,
+      successData,
+      res
+    });
+  });
 
   public getCollectionCollectionItems = asyncHandler(
     async (req: Request, res: Response) => {
@@ -392,22 +392,22 @@ export default class CollectionsController {
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order,
+          createdAt: order
         },
         where: {
-          collectionId: id,
+          collectionId: id
         },
         select: {
           id: true,
           collectionId: true,
-          media: true,
-        },
+          media: true
+        }
       });
 
       const totalItems = await prisma.collectionItem.count({
         where: {
-          collectionId: id,
-        },
+          collectionId: id
+        }
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -416,30 +416,31 @@ export default class CollectionsController {
         page: _page,
         perPage: _perPage,
         totalPages,
-        data: collectionItems,
+        data: collectionItems
       });
     }
   );
 
   public getCollectionItemInfo = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
       const { collectionId, id } = req.params;
 
       const foundCollectionItem = await prisma.collectionItem.findFirst({
         where: {
           id,
-          collectionId,
+          collectionId
         },
         include: {
           collection: {
             select: {
               ownerId: true,
-              privacy: true,
-            },
+              privacy: true
+            }
           },
-          media: true,
-        },
+          media: true
+        }
       });
 
       if (!foundCollectionItem) {
@@ -454,55 +455,55 @@ export default class CollectionsController {
         successData: {
           id: foundCollectionItem.id,
           ownerId: foundCollectionItem.collection.ownerId,
-          media: foundCollectionItem.media,
-        },
+          media: foundCollectionItem.media
+        }
       });
     }
   );
 
-  public updateCollection = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const payload = req.jwtPayload;
-      const { id } = req.params;
-      const { name, description, privacy } = req.body;
+  public updateCollection = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const payload = req.jwtPayload;
+    const { id } = req.params;
+    const { name, description, privacy } = req.body;
 
-      const updatedCollection = await prisma.collection.update({
-        where: {
-          id,
-          ownerId: payload.userId,
-        },
-        data: {
-          name,
-          description,
-          privacy,
-        },
-      });
-      res.status(200).json({
-        message: "collection updated successfully.",
-        data: updatedCollection,
-      });
-    }
-  );
+    const updatedCollection = await prisma.collection.update({
+      where: {
+        id,
+        ownerId: payload.userId
+      },
+      data: {
+        name,
+        description,
+        privacy
+      }
+    });
+    res.status(200).json({
+      message: "collection updated successfully.",
+      data: updatedCollection
+    });
+  });
 
   public checkMediaExistenceInCollections = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
       const { mediaId } = req.params;
 
       //retrieve all user's collections
       const currentUserCollections = await prisma.collection.findMany({
         where: {
-          ownerId: payload.userId,
+          ownerId: payload.userId
         },
         select: {
           id: true,
           name: true,
           collectionItems: {
             select: {
-              mediaId: true,
-            },
-          },
-        },
+              mediaId: true
+            }
+          }
+        }
       });
 
       res.status(200).json({
@@ -512,8 +513,8 @@ export default class CollectionsController {
           name: collection.name,
           doesGivenMediaExist: collection.collectionItems
             .map((collectionItem) => collectionItem.mediaId)
-            .includes(mediaId.toString()),
-        })),
+            .includes(mediaId.toString())
+        }))
       });
     }
   );

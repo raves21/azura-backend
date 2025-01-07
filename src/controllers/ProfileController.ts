@@ -8,147 +8,137 @@ import { RequestWithPayload } from "../utils/types/jwt";
 const prisma = new PrismaClient();
 
 export default class ProfileController {
-  public updateUserDetails = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const payload = req.jwtPayload;
-      const { avatar, banner, username, bio, handle } = req.body;
+  public updateUserDetails = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const payload = req.jwtPayload;
+    const { avatar, banner, username, bio, handle } = req.body;
 
-      const updatedUserDetails = await prisma.user.update({
-        where: {
-          id: payload.userId,
-        },
-        data: {
-          avatar,
-          banner,
-          username,
-          bio,
-          handle,
-        },
-        select: {
-          id: true,
-          avatar: true,
-          banner: true,
-          username: true,
-          bio: true,
-          handle: true,
-        },
-      });
-
-      res.status(200).json({
-        message: "profile updated successfully.",
-        data: updatedUserDetails,
-      });
-    }
-  );
-
-  public verifyPassword = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const { password } = req.query;
-      const payload = req.jwtPayload;
-      if (!password) {
-        throw new AppError(
-          422,
-          "Invalid format.",
-          "No password provided. ",
-          true
-        );
+    const updatedUserDetails = await prisma.user.update({
+      where: {
+        id: payload.userId
+      },
+      data: {
+        avatar,
+        banner,
+        username,
+        bio,
+        handle
+      },
+      select: {
+        id: true,
+        avatar: true,
+        banner: true,
+        username: true,
+        bio: true,
+        handle: true
       }
+    });
 
-      const foundUser = await prisma.user.findFirst({
-        where: {
-          id: payload.userId,
-        },
-      });
+    res.status(200).json({
+      message: "profile updated successfully.",
+      data: updatedUserDetails
+    });
+  });
 
-      if (!foundUser) {
-        throw new AppError(404, "NotFound", "User not found.", true);
-      }
-
-      const matchedPassword = await compare(
-        password.toString(),
-        foundUser.password
+  public verifyPassword = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const { password } = req.query;
+    const payload = req.jwtPayload;
+    if (!password) {
+      throw new AppError(
+        422,
+        "Invalid format.",
+        "No password provided. ",
+        true
       );
+    }
 
-      if (!matchedPassword) {
-        throw new AppError(
-          400,
-          "Incorrect",
-          "Given password is incorrect.",
-          true
-        );
+    const foundUser = await prisma.user.findFirst({
+      where: {
+        id: payload.userId
       }
+    });
 
-      res.status(200).json({
-        message: "Password verified.",
-      });
+    if (!foundUser) {
+      throw new AppError(404, "NotFound", "User not found.", true);
     }
-  );
 
-  public updatePassword = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const payload = req.jwtPayload;
-      const { password } = req.body;
+    const matchedPassword = await compare(
+      password.toString(),
+      foundUser.password
+    );
 
-      if (!password) {
-        throw new AppError(
-          422,
-          "Invalid format.",
-          "No password provided.",
-          true
-        );
+    if (!matchedPassword) {
+      throw new AppError(
+        400,
+        "Incorrect",
+        "Given password is incorrect.",
+        true
+      );
+    }
+
+    res.status(200).json({
+      message: "Password verified."
+    });
+  });
+
+  public updatePassword = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const payload = req.jwtPayload;
+    const { password } = req.body;
+
+    if (!password) {
+      throw new AppError(422, "Invalid format.", "No password provided.", true);
+    }
+
+    //hash the password
+    const hashedPassword = await hash(password, 10);
+
+    await prisma.user.update({
+      where: {
+        id: payload.userId
+      },
+      data: {
+        password: hashedPassword
       }
+    });
 
-      //hash the password
-      const hashedPassword = await hash(password, 10);
+    res.status(200).json({
+      message: "password updated successfully."
+    });
+  });
 
-      await prisma.user.update({
-        where: {
-          id: payload.userId,
-        },
-        data: {
-          password: hashedPassword,
-        },
-      });
+  public updateEmail = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const payload = req.jwtPayload;
+    const { email } = req.body;
 
-      res.status(200).json({
-        message: "password updated successfully.",
-      });
-    }
-  );
+    await prisma.user.update({
+      where: {
+        id: payload.userId
+      },
+      data: {
+        email
+      }
+    });
 
-  public updateEmail = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const payload = req.jwtPayload;
-      const { email } = req.body;
+    res.status(200).json({
+      message: "email updated successfully."
+    });
+  });
 
-      await prisma.user.update({
-        where: {
-          id: payload.userId,
-        },
-        data: {
-          email,
-        },
-      });
+  public deleteAccount = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const payload = req.jwtPayload;
 
-      res.status(200).json({
-        message: "email updated successfully.",
-      });
-    }
-  );
+    await prisma.user.delete({
+      where: {
+        id: payload.userId
+      }
+    });
 
-  public deleteAccount = asyncHandler(
-    async (req: RequestWithPayload, res: Response) => {
-      const payload = req.jwtPayload;
-
-      await prisma.user.delete({
-        where: {
-          id: payload.userId,
-        },
-      });
-
-      res.status(200).json({
-        message: "account deleted successfully.",
-      });
-    }
-  );
+    res.status(200).json({
+      message: "account deleted successfully."
+    });
+  });
 }
