@@ -11,7 +11,7 @@ export default class ProfileController {
   public updateUserDetails = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithPayload;
     const payload = req.jwtPayload;
-    const { avatar, banner, username, bio, handle } = req.body;
+    const { avatar, banner, username, bio } = req.body;
 
     const updatedUserDetails = await prisma.user.update({
       where: {
@@ -21,16 +21,14 @@ export default class ProfileController {
         avatar,
         banner,
         username,
-        bio,
-        handle
+        bio
       },
       select: {
         id: true,
         avatar: true,
         banner: true,
         username: true,
-        bio: true,
-        handle: true
+        bio: true
       }
     });
 
