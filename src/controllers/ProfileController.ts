@@ -51,15 +51,11 @@ export default class ProfileController {
       );
     }
 
-    const foundUser = await prisma.user.findFirst({
+    const foundUser = await prisma.user.findFirstOrThrow({
       where: {
         id: payload.userId
       }
     });
-
-    if (!foundUser) {
-      throw new AppError(404, "NotFound", "User not found.", true);
-    }
 
     const matchedPassword = await compare(
       password.toString(),

@@ -21,23 +21,14 @@ export default class RefreshTokenController {
       const refreshTokenFromCookies = cookies.refreshToken as string;
 
       //find the userSession and user using the refreshToken (refreshToken is unique)
-      const foundUserSession = await prisma.userSession.findFirst({
+      const foundUserSession = await prisma.userSession.findFirstOrThrow({
         where: {
-          refreshToken: refreshTokenFromCookies,
+          refreshToken: refreshTokenFromCookies
         },
         include: {
-          user: true,
-        },
+          user: true
+        }
       });
-
-      if (!foundUserSession) {
-        throw new AppError(
-          404,
-          "NotFoundError",
-          "Failed granting new access token. User session not found.",
-          true
-        );
-      }
 
       const foundUser = foundUserSession.user;
 
@@ -52,8 +43,8 @@ export default class RefreshTokenController {
                 //if refresh token is expired, delete the session.
                 await prisma.userSession.delete({
                   where: {
-                    sessionId: foundUserSession.sessionId,
-                  },
+                    sessionId: foundUserSession.sessionId
+                  }
                 });
                 throw new TokenExpiredError(
                   "Your session has expired.",
@@ -77,7 +68,7 @@ export default class RefreshTokenController {
                 userId: foundUser.id,
                 sessionId: foundUserSession.sessionId,
                 email: foundUser.email,
-                handle: foundUser.handle,
+                handle: foundUser.handle
               },
               process.env.ACCESS_TOKEN_SECRET as string,
               { expiresIn: ACCESS_TOKEN_DURATION }
@@ -91,10 +82,10 @@ export default class RefreshTokenController {
                   username: foundUser.username,
                   handle: foundUser.handle,
                   email: foundUser.email,
-                  avatar: foundUser.avatar,
+                  avatar: foundUser.avatar
                 },
-                accessToken: newAccessToken,
-              },
+                accessToken: newAccessToken
+              }
             });
           } catch (error) {
             next(error);

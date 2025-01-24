@@ -12,8 +12,8 @@ const transporter = createTransport({
   secure: true,
   auth: {
     user: process.env.OTC_EMAIL,
-    pass: process.env.OTC_PASSWORD,
-  },
+    pass: process.env.OTC_PASSWORD
+  }
 });
 
 const getExpirationTime = (): Date => {
@@ -36,14 +36,14 @@ export default class OTCController {
       from: process.env.OTC_EMAIL,
       to: email,
       subject: "Verification code from AZURA",
-      html: `<p>Here is your verification code: <strong>${otc}</strong></p><br><p>This code will expire in 1 hour.</p>`,
+      html: `<p>Here is your verification code: <strong>${otc}</strong></p><br><p>This code will expire in 1 hour.</p>`
     });
 
     //delete record of the user in otc table (if it exists)
     await prisma.oTC.deleteMany({
       where: {
-        email,
-      },
+        email
+      }
     });
 
     //*only store record in the db if the sendMail succeeds.
@@ -55,11 +55,11 @@ export default class OTCController {
       data: {
         email,
         otc: hashedOTC,
-        expiresAt: getExpirationTime(),
-      },
+        expiresAt: getExpirationTime()
+      }
     });
     res.status(200).json({
-      message: "otc sent.",
+      message: "otc sent."
     });
   });
 
@@ -76,28 +76,19 @@ export default class OTCController {
     }
 
     //find the otc record using the email
-    const foundOTCRecord = await prisma.oTC.findFirst({
+    const foundOTCRecord = await prisma.oTC.findFirstOrThrow({
       where: {
-        email: email.toString(),
-      },
+        email: email.toString()
+      }
     });
-
-    if (!foundOTCRecord) {
-      throw new AppError(
-        404,
-        "NotFound",
-        "OTC with given email not found.",
-        true
-      );
-    }
 
     //verify if the otc is expired
     if (foundOTCRecord.expiresAt < new Date()) {
       //if code is expired, delete it in the db
       await prisma.oTC.delete({
         where: {
-          id: foundOTCRecord.id,
-        },
+          id: foundOTCRecord.id
+        }
       });
       throw new AppError(
         410,
@@ -122,12 +113,12 @@ export default class OTCController {
     //if OTC matches, delete the record in db
     await prisma.oTC.delete({
       where: {
-        id: foundOTCRecord.id,
-      },
+        id: foundOTCRecord.id
+      }
     });
 
     res.status(200).json({
-      message: "success. the otc is correct.",
+      message: "success. the otc is correct."
     });
   });
 }

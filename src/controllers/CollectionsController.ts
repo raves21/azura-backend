@@ -86,15 +86,12 @@ export default class CollectionsController {
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
-      const foundOwner = await prisma.user.findFirst({
+      //find owner of collection based on user handle
+      const foundOwner = await prisma.user.findFirstOrThrow({
         where: {
           handle
         }
       });
-
-      if (!foundOwner) {
-        throw new AppError(404, "NotFound", "Collection not found.", true);
-      }
 
       //check if currentUser is friends with collection owner
       const isCurrentUserFriendsWithOwner = await areTheyFriends(
@@ -308,16 +305,12 @@ export default class CollectionsController {
       const payload = req.jwtPayload;
 
       //check if collection exists, and if owner owns the collection
-      const foundCollection = await prisma.collection.findFirst({
+      const foundCollection = await prisma.collection.findFirstOrThrow({
         where: {
           id: collectionId,
           ownerId: payload.userId
         }
       });
-
-      if (!foundCollection) {
-        throw new AppError(404, "NotFound", "Collection not found.", true);
-      }
 
       //delete all collectionItems with id that matches the collectionItemsToDelete ids
       const deletedCollectionItems = await prisma.collectionItem.deleteMany({
@@ -341,7 +334,7 @@ export default class CollectionsController {
     const { id } = req.params;
     const payload = req.jwtPayload;
 
-    const foundCollection = await prisma.collection.findFirst({
+    const foundCollection = await prisma.collection.findFirstOrThrow({
       where: {
         id
       },
@@ -354,10 +347,6 @@ export default class CollectionsController {
         }
       }
     });
-
-    if (!foundCollection) {
-      throw new AppError(404, "NotFound", `Collection not found.`, true);
-    }
 
     const successData = {
       id,
@@ -427,7 +416,7 @@ export default class CollectionsController {
       const payload = req.jwtPayload;
       const { collectionId, id } = req.params;
 
-      const foundCollectionItem = await prisma.collectionItem.findFirst({
+      const foundCollectionItem = await prisma.collectionItem.findFirstOrThrow({
         where: {
           id,
           collectionId
@@ -442,10 +431,6 @@ export default class CollectionsController {
           media: true
         }
       });
-
-      if (!foundCollectionItem) {
-        throw new AppError(404, "NotFound", "Collection Item not found.", true);
-      }
 
       await checkResourcePrivacyAndUserOwnership({
         currentUserId: payload.userId,

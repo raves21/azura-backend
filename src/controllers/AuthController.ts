@@ -22,9 +22,9 @@ export default class AuthController {
     }
 
     //find the user by email (email is unique)
-    const foundUser = await prisma.user.findFirst({
+    const foundUser = await prisma.user.findFirstOrThrow({
       where: {
-        email,
+        email
       },
       select: {
         id: true,
@@ -39,17 +39,12 @@ export default class AuthController {
             deviceName: true,
             sessionId: true,
             createdAt: true,
-            refreshTokenExpiresAt: true,
-          },
+            refreshTokenExpiresAt: true
+          }
         },
-        createdAt: true,
-      },
+        createdAt: true
+      }
     });
-
-    //if user not found, throw error.
-    if (!foundUser) {
-      throw new AppError(404, "Unathorized", "User not found.", true);
-    }
 
     const currentDateTime = new Date();
     //if session limit has been exceeded, look for the user's sessions that have
@@ -59,9 +54,9 @@ export default class AuthController {
         where: {
           userId: foundUser.id,
           refreshTokenExpiresAt: {
-            lt: currentDateTime,
-          },
-        },
+            lt: currentDateTime
+          }
+        }
       });
 
       //if there are no sessions with expired refreshTokens, proceed in detachedMode
@@ -75,10 +70,10 @@ export default class AuthController {
               username: foundUser.username,
               email: foundUser.email,
               handle: foundUser.handle,
-              avatar: foundUser.avatar,
+              avatar: foundUser.avatar
             },
-            sessions: foundUser.userSessions,
-          },
+            sessions: foundUser.userSessions
+          }
         });
         return;
       }
@@ -87,7 +82,7 @@ export default class AuthController {
         foundUser,
         password,
         currentDate: currentDateTime,
-        res,
+        res
       });
     }
     //if session limit not exceeded, proceed to logging in.
@@ -95,7 +90,7 @@ export default class AuthController {
       foundUser,
       password,
       currentDate: currentDateTime,
-      res,
+      res
     });
   });
 
@@ -117,19 +112,19 @@ export default class AuthController {
     const newUser = {
       email,
       username,
-      handle,
+      handle
     };
 
     await prisma.user.create({
       data: {
         ...newUser,
-        password: encryptedPassword,
-      },
+        password: encryptedPassword
+      }
     });
 
     res.status(201).json({
       message: "success, new user created",
-      data: newUser,
+      data: newUser
     });
   });
 
@@ -141,31 +136,22 @@ export default class AuthController {
       const refreshTokenFromCookies = cookies.refreshToken;
 
       //find the userSession that has that refreshToken
-      const foundUserSession = await prisma.userSession.findFirst({
+      const foundUserSession = await prisma.userSession.findFirstOrThrow({
         where: {
-          refreshToken: refreshTokenFromCookies,
-        },
+          refreshToken: refreshTokenFromCookies
+        }
       });
-
-      //if user session not found, then it means someone already logged him out and his
-      //user session was already deleted in the UserSession table (omae wa mo logged out)
-      if (!foundUserSession) {
-        res
-          .status(200)
-          .json("User session not found. Successfully logged out.");
-        return;
-      }
 
       //if user session found,
       //Delete that userSession using the foundUserSession's sessionId (primary key)
       await prisma.userSession.delete({
         where: {
-          sessionId: foundUserSession.sessionId,
-        },
+          sessionId: foundUserSession.sessionId
+        }
       });
       //and also clear the cookie
       res.clearCookie("refreshToken", {
-        httpOnly: true,
+        httpOnly: true
         //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
       });
       res.status(200).json("Found user session. Successfully logged out.");
@@ -178,8 +164,8 @@ export default class AuthController {
     //Delete the row with the sessionId in the UserSession table
     await prisma.userSession.delete({
       where: {
-        sessionId,
-      },
+        sessionId
+      }
     });
     res
       .status(200)
@@ -196,8 +182,8 @@ export default class AuthController {
 
       const foundHandleDupe = await prisma.user.findFirst({
         where: {
-          handle: handle.toString(),
-        },
+          handle: handle.toString()
+        }
       });
 
       if (foundHandleDupe) {
@@ -210,7 +196,7 @@ export default class AuthController {
       }
 
       res.status(200).json({
-        message: "handle is available.",
+        message: "handle is available."
       });
     }
   );
@@ -225,8 +211,8 @@ export default class AuthController {
 
       const foundEmailDupe = await prisma.user.findFirst({
         where: {
-          email: email.toString(),
-        },
+          email: email.toString()
+        }
       });
 
       if (foundEmailDupe) {
@@ -239,7 +225,7 @@ export default class AuthController {
       }
 
       res.status(200).json({
-        message: "email is available.",
+        message: "email is available."
       });
     }
   );
@@ -251,26 +237,22 @@ export default class AuthController {
       throw new AppError(422, "Invalid Format.", "Email not provided", true);
     }
 
-    const foundUser = await prisma.user.findFirst({
+    const foundUser = await prisma.user.findFirstOrThrow({
       where: {
-        email: email.toString(),
+        email: email.toString()
       },
       select: {
         id: true,
         avatar: true,
         email: true,
         username: true,
-        handle: true,
-      },
+        handle: true
+      }
     });
-
-    if (!foundUser) {
-      throw new AppError(404, "NotFound", "User not found.", true);
-    }
 
     res.status(200).json({
       message: "success",
-      data: foundUser,
+      data: foundUser
     });
   });
 
@@ -280,15 +262,15 @@ export default class AuthController {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: {
-        id: userId,
+        id: userId
       },
       data: {
-        password: hashedNewPassword,
-      },
+        password: hashedNewPassword
+      }
     });
 
     res.status(200).json({
-      message: "Password updated successfully.",
+      message: "Password updated successfully."
     });
   });
 }

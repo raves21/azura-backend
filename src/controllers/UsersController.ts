@@ -65,7 +65,7 @@ export default class UsersController {
       const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
 
-      const currentUser = await prisma.user.findFirst({
+      const currentUser = await prisma.user.findFirstOrThrow({
         where: {
           id: payload.userId
         },
@@ -87,10 +87,6 @@ export default class UsersController {
           }
         }
       });
-
-      if (!currentUser) {
-        throw new AppError(404, "NotFoundError", "User not found.", true);
-      }
 
       res.status(200).json({
         message: "success",
@@ -116,7 +112,7 @@ export default class UsersController {
     const { handle } = req.params;
     const payload = req.jwtPayload;
 
-    const foundUser = await prisma.user.findFirst({
+    const foundUser = await prisma.user.findFirstOrThrow({
       where: {
         handle
       },
@@ -137,10 +133,6 @@ export default class UsersController {
         }
       }
     });
-
-    if (!foundUser) {
-      throw new AppError(404, "NotFoundError", "User not found.", true);
-    }
 
     const followsCurrentUser = await prisma.follow.findFirst({
       where: {
@@ -223,7 +215,7 @@ export default class UsersController {
       throw new AppError(
         404,
         "Relationship not found.",
-        `Relationship between ${payload.userId} and ${userToUnfollow} not found.`,
+        `User relationship not found.`,
         true
       );
     }

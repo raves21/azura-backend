@@ -92,15 +92,11 @@ export default class PostsController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const foundOwner = await prisma.user.findFirst({
+    const foundOwner = await prisma.user.findFirstOrThrow({
       where: {
         handle
       }
     });
-
-    if (!foundOwner) {
-      throw new AppError(404, "NotFound", "User not found.", true);
-    }
 
     //check if currentUser is friends with owner
     const isCurrentUserFriendsWithOwner = await areTheyFriends(
@@ -178,14 +174,14 @@ export default class PostsController {
     const { id } = req.params;
     const payload = req.jwtPayload;
 
-    const foundPost = await prisma.post.findFirst({
+    const foundPost = await prisma.post.findFirstOrThrow({
       where: {
         id
       },
       include: POSTS_INCLUDE(payload.userId)
     });
 
-    const postFirstLikers = await prisma.post.findFirst({
+    const postFirstLikers = await prisma.post.findFirstOrThrow({
       where: {
         id
       },
@@ -207,10 +203,6 @@ export default class PostsController {
         }
       }
     });
-
-    if (!foundPost) {
-      throw new AppError(404, "NotFound", "Post not found.", true);
-    }
 
     const successData = {
       id: foundPost.id,

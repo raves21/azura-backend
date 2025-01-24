@@ -24,15 +24,20 @@ export const errorHandler = (
   let response: ErrorResponse = {
     httpCode: 500,
     name: error.name,
-    message: "An error occured in the server.",
+    message: "An error occured in the server."
   };
 
   if (error instanceof AppError) {
     response.httpCode = error.httpCode;
     response.message = error.message;
   } else if (error instanceof PrismaClientKnownRequestError) {
-    response.httpCode = 400;
-    response.message = "A database operation failed.";
+    if (error.code === "P2025") {
+      response.httpCode = 404;
+      response.message = "Not found.";
+    } else {
+      response.httpCode = 400;
+      response.message = "A database operation failed.";
+    }
     response.errors = error;
   } else if (error instanceof JsonWebTokenError) {
     response.httpCode = 401;
