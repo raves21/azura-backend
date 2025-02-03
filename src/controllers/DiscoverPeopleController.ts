@@ -29,14 +29,14 @@ export class DiscoverPeopleController {
         avatar: true,
         username: true,
         handle: true,
-        followers: {
+        following: {
           where: {
             followerId: payload.userId
           }
         }
       },
       orderBy: {
-        followers: {
+        following: {
           _count: "asc"
         }
       }
@@ -61,8 +61,7 @@ export class DiscoverPeopleController {
         avatar: user.avatar,
         username: user.username,
         handle: user.handle,
-        //user.followers array only contains one item, currentUser. And that is if he follows the user, otherwise, its empty.
-        isFollowedByCurrentUser: user.followers.length === 0 ? false : true
+        isFollowedByCurrentUser: user.following.length === 0 ? false : true
       }))
     });
   });
