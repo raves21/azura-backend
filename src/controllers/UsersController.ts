@@ -258,7 +258,6 @@ export default class UsersController {
             select: {
               id: true,
               username: true,
-              email: true,
               avatar: true,
               handle: true,
               bio: true
@@ -317,13 +316,12 @@ export default class UsersController {
             select: {
               id: true,
               username: true,
-              email: true,
               handle: true,
               avatar: true,
               bio: true,
               following: {
-                select: {
-                  followerId: true
+                where: {
+                  followerId: payload.userId
                 }
               }
             }
@@ -344,13 +342,10 @@ export default class UsersController {
         data: currentUserFollowerList.map((item) => ({
           id: item.follower.id,
           username: item.follower.username,
-          email: item.follower.email,
           handle: item.follower.handle,
           bio: item.follower.bio,
           avatar: item.follower.avatar,
-          isFollowedByCurrentUser: item.follower.following
-            .map((follow) => follow.followerId)
-            .includes(payload.userId)
+          isFollowedByCurrentUser: item.follower.following.length === 0 ? false : true
         }))
       });
     }
@@ -382,13 +377,12 @@ export default class UsersController {
             select: {
               id: true,
               username: true,
-              email: true,
               avatar: true,
               handle: true,
               bio: true,
-              following: {
-                select: {
-                  followerId: true
+              followers: {
+                where: {
+                  followedId: payload.userId
                 }
               }
             }
@@ -411,12 +405,9 @@ export default class UsersController {
           id: item.followed.id,
           username: item.followed.username,
           handle: item.followed.handle,
-          email: item.followed.email,
           bio: item.followed.bio,
           avatar: item.followed.avatar,
-          isFollowedByCurrentUser: item.followed.following
-            .map((follow) => follow.followerId)
-            .includes(payload.userId)
+          isFollowedByCurrentUser: item.followed.followers.length === 0 ? false : true
         }))
       });
     }
@@ -447,13 +438,12 @@ export default class UsersController {
             select: {
               id: true,
               username: true,
-              email: true,
               avatar: true,
               handle: true,
               bio: true,
               following: {
-                select: {
-                  followerId: true
+                where: {
+                  followerId: payload.userId
                 }
               }
             }
@@ -476,12 +466,9 @@ export default class UsersController {
           id: item.follower.id,
           username: item.follower.username,
           handle: item.follower.handle,
-          email: item.follower.email,
           bio: item.follower.bio,
           avatar: item.follower.avatar,
-          isFollowedByCurrentUser: item.follower.following
-            .map((follow) => follow.followerId)
-            .includes(payload.userId)
+          isFollowedByCurrentUser: item.follower.following.length === 0 ? false : true
         }))
       });
     }

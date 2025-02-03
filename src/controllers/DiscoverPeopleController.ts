@@ -29,6 +29,7 @@ export class DiscoverPeopleController {
         avatar: true,
         username: true,
         handle: true,
+        bio: true,
         following: {
           where: {
             followerId: payload.userId
@@ -61,6 +62,7 @@ export class DiscoverPeopleController {
         avatar: user.avatar,
         username: user.username,
         handle: user.handle,
+        bio: user.bio,
         isFollowedByCurrentUser: user.following.length === 0 ? false : true
       }))
     });
