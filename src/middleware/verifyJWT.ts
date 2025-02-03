@@ -2,9 +2,7 @@ import { TokenExpiredError, verify } from "jsonwebtoken";
 import { Response, NextFunction, Request } from "express";
 import { CustomJWTPayload, RequestWithPayload } from "../utils/types/jwt";
 import AppError from "../utils/types/errors";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import PRISMA from "../utils/constants/prismaInstance";
 
 export const verifyJWT = (_: Request, res: Response, next: NextFunction) => {
   const req = _ as RequestWithPayload;
@@ -37,7 +35,7 @@ export const verifyJWT = (_: Request, res: Response, next: NextFunction) => {
         }
         const payload = decoded as CustomJWTPayload;
         //find user session in UserSession table
-        const foundUserSession = await prisma.userSession.findFirst({
+        const foundUserSession = await PRISMA.userSession.findFirst({
           where: {
             sessionId: payload.sessionId
           }

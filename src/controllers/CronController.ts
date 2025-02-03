@@ -1,18 +1,16 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/asyncHandler";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import PRISMA from "../utils/constants/prismaInstance";
 
 export default class CronController {
   public clearUnusedMedia = asyncHandler(
     async (req: Request, res: Response) => {
       //retrieve all media
-      const allMedia = await prisma.media.findMany({
+      const allMedia = await PRISMA.media.findMany({
         include: {
           posts: true,
-          collectionItems: true,
-        },
+          collectionItems: true
+        }
       });
 
       //retrieve all media ids that are not referenced by any post or collectionItem
@@ -25,20 +23,20 @@ export default class CronController {
 
       if (unusedMediaIds.length !== 0) {
         //delete all from unusedMediaIds
-        await prisma.media.deleteMany({
+        await PRISMA.media.deleteMany({
           where: {
             id: {
-              in: unusedMediaIds,
-            },
-          },
+              in: unusedMediaIds
+            }
+          }
         });
         res.status(200).json({
           message: "Success. Deleted unused media/s",
-          deletedMedia: unusedMediaIds,
+          deletedMedia: unusedMediaIds
         });
       } else {
         res.status(200).json({
-          message: "Success. No unused media/s to delete.",
+          message: "Success. No unused media/s to delete."
         });
       }
     }
@@ -48,15 +46,15 @@ export default class CronController {
     async (req: Request, res: Response) => {
       const oneHourAgo = new Date(new Date().getTime() - 60 * 60 * 1000);
 
-      await prisma.oTC.deleteMany({
+      await PRISMA.oTC.deleteMany({
         where: {
           expiresAt: {
-            lt: oneHourAgo, //otcs that are less than one hour ago
-          },
-        },
+            lt: oneHourAgo //otcs that are less than one hour ago
+          }
+        }
       });
       res.status(200).json({
-        message: "Success. Cleared expired otcs.",
+        message: "Success. Cleared expired otcs."
       });
     }
   );

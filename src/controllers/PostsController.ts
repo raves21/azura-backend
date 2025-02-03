@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
 import {
   areTheyFriends,
@@ -10,8 +10,6 @@ import {
 import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
 import { CREATE_POST_SELECT, POSTS_INCLUDE } from "../utils/constants/queries";
-
-const prisma = new PrismaClient();
 
 export default class PostsController {
   public getCurrentUserPosts = asyncHandler(
@@ -26,7 +24,7 @@ export default class PostsController {
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
-      const currentUserPosts = await prisma.post.findMany({
+      const currentUserPosts = await PRISMA.post.findMany({
         where: {
           ownerId: payload.userId
         },
@@ -38,7 +36,7 @@ export default class PostsController {
         include: POSTS_INCLUDE(payload.userId)
       });
 
-      const totalItems = await prisma.post.count({
+      const totalItems = await PRISMA.post.count({
         where: {
           ownerId: payload.userId
         }
@@ -92,7 +90,7 @@ export default class PostsController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const foundOwner = await prisma.user.findFirstOrThrow({
+    const foundOwner = await PRISMA.user.findFirstOrThrow({
       where: {
         handle
       }
@@ -105,7 +103,7 @@ export default class PostsController {
     );
 
     //retrieve posts that have privacy FRIENDS_ONLY and PUBLIC
-    const userPosts = await prisma.post.findMany({
+    const userPosts = await PRISMA.post.findMany({
       where: {
         ownerId: foundOwner.id,
         privacy: {
@@ -122,7 +120,7 @@ export default class PostsController {
       include: POSTS_INCLUDE(payload.userId)
     });
 
-    const totalItems = await prisma.post.count({
+    const totalItems = await PRISMA.post.count({
       where: {
         ownerId: foundOwner.id,
         privacy: {
@@ -174,14 +172,14 @@ export default class PostsController {
     const { id } = req.params;
     const payload = req.jwtPayload;
 
-    const foundPost = await prisma.post.findFirstOrThrow({
+    const foundPost = await PRISMA.post.findFirstOrThrow({
       where: {
         id
       },
       include: POSTS_INCLUDE(payload.userId)
     });
 
-    const postFirstLikers = await prisma.post.findFirstOrThrow({
+    const postFirstLikers = await PRISMA.post.findFirstOrThrow({
       where: {
         id
       },
@@ -252,14 +250,14 @@ export default class PostsController {
     //check if media exists in req.body
     if (media) {
       //check if media exists in Media table
-      const foundMedia = await prisma.media.findFirst({
+      const foundMedia = await PRISMA.media.findFirst({
         where: {
           id: media.id
         }
       });
       if (!foundMedia) {
         //if not found, create the media
-        const newMedia = await prisma.media.create({
+        const newMedia = await PRISMA.media.create({
           data: {
             id: media.id,
             title: media.title,
@@ -273,7 +271,7 @@ export default class PostsController {
           }
         });
         //proceed to creating the post with newMedia
-        const newPostWithNewMedia = await prisma.post.create({
+        const newPostWithNewMedia = await PRISMA.post.create({
           data: {
             content,
             privacy,
@@ -294,7 +292,7 @@ export default class PostsController {
       //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
       //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
       await updateExistingMedia(foundMedia, media);
-      const newPostWithExistingMedia = await prisma.post.create({
+      const newPostWithExistingMedia = await PRISMA.post.create({
         data: {
           content,
           privacy,
@@ -313,7 +311,7 @@ export default class PostsController {
     //check if collectionId exists in req.body
     if (collectionId) {
       //use the collectionId to create the new post
-      const newPostWithCollection = await prisma.post.create({
+      const newPostWithCollection = await PRISMA.post.create({
         data: {
           ownerId: payload.userId,
           content,
@@ -373,7 +371,7 @@ export default class PostsController {
     //if either media or collectionId exists in req.body, this means user just wants to make a post
     //without attaching anything.
 
-    const newPostWithNoAttachments = await prisma.post.create({
+    const newPostWithNoAttachments = await PRISMA.post.create({
       data: {
         ownerId: payload.userId,
         content,
@@ -394,7 +392,7 @@ export default class PostsController {
     const payload = req.jwtPayload;
     const { id } = req.params;
 
-    await prisma.post.delete({
+    await PRISMA.post.delete({
       where: {
         id,
         ownerId: payload.userId
@@ -416,14 +414,14 @@ export default class PostsController {
     //check if media exists in req.body
     if (media) {
       //check if media exists in Media table
-      const foundMedia = await prisma.media.findFirst({
+      const foundMedia = await PRISMA.media.findFirst({
         where: {
           id: media.id
         }
       });
       if (!foundMedia) {
         //if not found, create new media
-        const newMedia = await prisma.media.create({
+        const newMedia = await PRISMA.media.create({
           data: {
             id: media.id,
             title: media.title,
@@ -437,7 +435,7 @@ export default class PostsController {
           }
         });
         //proceed to updating the post with the new media
-        await prisma.post.update({
+        await PRISMA.post.update({
           where: {
             id
           },
@@ -458,7 +456,7 @@ export default class PostsController {
       //*the req.body. This is to ensure that all collectionItems referencing that media will show the latest
       //*version of that Media (because sometimes the 3rd party api change the details of the anime/movie/tv)
       await updateExistingMedia(foundMedia, media);
-      await prisma.post.update({
+      await PRISMA.post.update({
         where: {
           id
         },
@@ -477,7 +475,7 @@ export default class PostsController {
     //check if collectionId exists in req.body
     if (collectionId) {
       //use the collectionId to create the new post
-      await prisma.post.update({
+      await PRISMA.post.update({
         where: {
           id
         },
@@ -496,7 +494,7 @@ export default class PostsController {
 
     //if either media or collectionId exists in req.body, this means user just wants to update a post
     //that has no attachments (no media or collection attached)
-    await prisma.post.update({
+    await PRISMA.post.update({
       where: {
         id
       },
@@ -524,7 +522,7 @@ export default class PostsController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const postComments = await prisma.comment.findMany({
+    const postComments = await PRISMA.comment.findMany({
       skip,
       take: _perPage,
       orderBy: {
@@ -549,7 +547,7 @@ export default class PostsController {
       }
     });
 
-    const totalItems = await prisma.comment.count({
+    const totalItems = await PRISMA.comment.count({
       where: {
         postId: id
       }
@@ -578,7 +576,7 @@ export default class PostsController {
     const { id } = req.params;
     const { content } = req.body;
 
-    const newComment = await prisma.comment.create({
+    const newComment = await PRISMA.comment.create({
       data: {
         authorId: payload.userId,
         postId: id,
@@ -615,7 +613,7 @@ export default class PostsController {
     const { content } = req.body;
     const payload = req.jwtPayload;
 
-    await prisma.comment.update({
+    await PRISMA.comment.update({
       where: {
         id: commentId,
         postId,
@@ -636,7 +634,7 @@ export default class PostsController {
     const { postId, commentId } = req.params;
     const payload = req.jwtPayload;
 
-    const foundPostOwner = await prisma.post.findFirst({
+    const foundPostOwner = await PRISMA.post.findFirst({
       where: {
         id: postId
       },
@@ -658,7 +656,7 @@ export default class PostsController {
       );
     }
 
-    await prisma.comment.delete({
+    await PRISMA.comment.delete({
       where: {
         id: commentId,
         postId
@@ -684,7 +682,7 @@ export default class PostsController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const postLikes = await prisma.postLike.findMany({
+    const postLikes = await PRISMA.postLike.findMany({
       skip,
       take: _perPage,
       orderBy: {
@@ -711,7 +709,7 @@ export default class PostsController {
       }
     });
 
-    const totalItems = await prisma.postLike.count({
+    const totalItems = await PRISMA.postLike.count({
       where: {
         postId: id
       }
@@ -743,7 +741,7 @@ export default class PostsController {
     const payload = req.jwtPayload;
     const { id } = req.params;
 
-    const newPostLike = await prisma.postLike.create({
+    const newPostLike = await PRISMA.postLike.create({
       data: {
         userId: payload.userId,
         postId: id
@@ -774,7 +772,7 @@ export default class PostsController {
     const payload = req.jwtPayload;
     const { id } = req.params;
 
-    await prisma.postLike.delete({
+    await PRISMA.postLike.delete({
       where: {
         userId_postId: {
           userId: payload.userId,

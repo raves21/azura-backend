@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
-
-const prisma = new PrismaClient();
 
 export default class NotificationsController {
   public getNotifications = asyncHandler(async (_: Request, res: Response) => {
@@ -16,7 +14,7 @@ export default class NotificationsController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const notifications = await prisma.notification.findMany({
+    const notifications = await PRISMA.notification.findMany({
       skip,
       take: _perPage,
       orderBy: {
@@ -53,7 +51,7 @@ export default class NotificationsController {
       }
     });
 
-    const totalItems = await prisma.notification.count({
+    const totalItems = await PRISMA.notification.count({
       where: {
         recipientId: payload.userId
       }
@@ -96,7 +94,7 @@ export default class NotificationsController {
       }
 
       const _isRead = isRead == "true";
-      const updatedNotification = await prisma.notification.update({
+      const updatedNotification = await PRISMA.notification.update({
         where: {
           id
         },
@@ -119,7 +117,7 @@ export default class NotificationsController {
     async (req: Request, res: Response) => {
       const { id } = req.params;
 
-      await prisma.notification.delete({
+      await PRISMA.notification.delete({
         where: {
           id
         }
@@ -131,7 +129,7 @@ export default class NotificationsController {
 
   public deleteAllNotifications = asyncHandler(
     async (req: Request, res: Response) => {
-      await prisma.notification.deleteMany();
+      await PRISMA.notification.deleteMany();
       res.status(200).json("successfully deleted all notifications.");
     }
   );

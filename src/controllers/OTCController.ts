@@ -1,11 +1,10 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { createTransport } from "nodemailer";
 import { compare, hash } from "bcrypt";
 import AppError from "../utils/types/errors";
 
-const prisma = new PrismaClient();
 const transporter = createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -40,7 +39,7 @@ export default class OTCController {
     });
 
     //delete record of the user in otc table (if it exists)
-    await prisma.oTC.deleteMany({
+    await PRISMA.oTC.deleteMany({
       where: {
         email
       }
@@ -51,7 +50,7 @@ export default class OTCController {
     const hashedOTC = await hash(otc, 10);
 
     //create new record in the otc table for the user
-    await prisma.oTC.create({
+    await PRISMA.oTC.create({
       data: {
         email,
         otc: hashedOTC,
@@ -76,7 +75,7 @@ export default class OTCController {
     }
 
     //find the otc record using the email
-    const foundOTCRecord = await prisma.oTC.findFirstOrThrow({
+    const foundOTCRecord = await PRISMA.oTC.findFirstOrThrow({
       where: {
         email: email.toString()
       }
@@ -85,7 +84,7 @@ export default class OTCController {
     //verify if the otc is expired
     if (foundOTCRecord.expiresAt < new Date()) {
       //if code is expired, delete it in the db
-      await prisma.oTC.delete({
+      await PRISMA.oTC.delete({
         where: {
           id: foundOTCRecord.id
         }
@@ -111,7 +110,7 @@ export default class OTCController {
     }
 
     //if OTC matches, delete the record in db
-    await prisma.oTC.delete({
+    await PRISMA.oTC.delete({
       where: {
         id: foundOTCRecord.id
       }

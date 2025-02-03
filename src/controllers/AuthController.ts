@@ -1,12 +1,10 @@
 import { Response, Request } from "express";
 import bcrypt from "bcrypt";
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import AppError from "../utils/types/errors";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { deleteExpiredSessionsAndLogin } from "../utils/functions/reusablePrismaFunctions";
 import { SESSION_LIMIT } from "../utils/constants/auth";
-
-const prisma = new PrismaClient();
 
 export default class AuthController {
   public login = asyncHandler(async (req: Request, res: Response) => {
@@ -22,7 +20,7 @@ export default class AuthController {
     }
 
     //find the user by email (email is unique)
-    const foundUser = await prisma.user.findFirstOrThrow({
+    const foundUser = await PRISMA.user.findFirstOrThrow({
       where: {
         email
       },
@@ -50,7 +48,7 @@ export default class AuthController {
     //if session limit has been exceeded, look for the user's sessions that have
     //expired refreshTokens
     if (foundUser.userSessions.length >= SESSION_LIMIT) {
-      const expiredSessions = await prisma.userSession.findMany({
+      const expiredSessions = await PRISMA.userSession.findMany({
         where: {
           userId: foundUser.id,
           refreshTokenExpiresAt: {
@@ -115,7 +113,7 @@ export default class AuthController {
       handle
     };
 
-    await prisma.user.create({
+    await PRISMA.user.create({
       data: {
         ...newUser,
         password: encryptedPassword
@@ -136,7 +134,7 @@ export default class AuthController {
       const refreshTokenFromCookies = cookies.refreshToken;
 
       //find the userSession that has that refreshToken
-      const foundUserSession = await prisma.userSession.findFirstOrThrow({
+      const foundUserSession = await PRISMA.userSession.findFirstOrThrow({
         where: {
           refreshToken: refreshTokenFromCookies
         }
@@ -144,7 +142,7 @@ export default class AuthController {
 
       //if user session found,
       //Delete that userSession using the foundUserSession's sessionId (primary key)
-      await prisma.userSession.delete({
+      await PRISMA.userSession.delete({
         where: {
           sessionId: foundUserSession.sessionId
         }
@@ -162,7 +160,7 @@ export default class AuthController {
     const { sessionId } = req.params;
 
     //Delete the row with the sessionId in the UserSession table
-    await prisma.userSession.delete({
+    await PRISMA.userSession.delete({
       where: {
         sessionId
       }
@@ -180,7 +178,7 @@ export default class AuthController {
         throw new AppError(422, "Invalid Format", "Handle not provided.", true);
       }
 
-      const foundHandleDupe = await prisma.user.findFirst({
+      const foundHandleDupe = await PRISMA.user.findFirst({
         where: {
           handle: handle.toString()
         }
@@ -209,7 +207,7 @@ export default class AuthController {
         throw new AppError(422, "Invalid Format.", "No email provided.", true);
       }
 
-      const foundEmailDupe = await prisma.user.findFirst({
+      const foundEmailDupe = await PRISMA.user.findFirst({
         where: {
           email: email.toString()
         }
@@ -237,7 +235,7 @@ export default class AuthController {
       throw new AppError(422, "Invalid Format.", "Email not provided", true);
     }
 
-    const foundUser = await prisma.user.findFirstOrThrow({
+    const foundUser = await PRISMA.user.findFirstOrThrow({
       where: {
         email: email.toString()
       },
@@ -260,7 +258,7 @@ export default class AuthController {
     const { userId, newPassword } = req.body;
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({
+    await PRISMA.user.update({
       where: {
         id: userId
       },

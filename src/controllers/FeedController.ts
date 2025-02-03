@@ -1,10 +1,8 @@
 import { Response, Request } from "express";
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { RequestWithPayload } from "../utils/types/jwt";
 import { POSTS_INCLUDE } from "../utils/constants/queries";
-
-const prisma = new PrismaClient();
 
 export default class FeedController {
   public getForYouPosts = asyncHandler(async (_: Request, res: Response) => {
@@ -18,7 +16,7 @@ export default class FeedController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const forYouPosts = await prisma.post.findMany({
+    const forYouPosts = await PRISMA.post.findMany({
       skip,
       take: _perPage,
       orderBy: {
@@ -58,7 +56,7 @@ export default class FeedController {
       include: POSTS_INCLUDE(payload.userId)
     });
 
-    const totalItems = await prisma.post.count({
+    const totalItems = await PRISMA.post.count({
       where: {
         OR: [
           //all public posts
@@ -138,7 +136,7 @@ export default class FeedController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const followingPosts = await prisma.post.findMany({
+    const followingPosts = await PRISMA.post.findMany({
       skip,
       take: _perPage,
       orderBy: {
@@ -179,7 +177,7 @@ export default class FeedController {
       include: POSTS_INCLUDE(payload.userId)
     });
 
-    const totalItems = await prisma.post.count({
+    const totalItems = await PRISMA.post.count({
       where: {
         OR: [
           //all friends-only posts from the current user's friends

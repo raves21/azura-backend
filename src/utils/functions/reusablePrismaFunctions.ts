@@ -1,4 +1,4 @@
-import { Media, PrismaClient } from "@prisma/client";
+import { Media } from "@prisma/client";
 import AppError from "../types/errors";
 import bcrypt from "bcrypt";
 import { sign } from "jsonwebtoken";
@@ -13,8 +13,7 @@ import {
   REFRESH_TOKEN_DURATION,
   REFRESH_TOKEN_EXPIRY_DATE
 } from "../constants/auth";
-
-const prisma = new PrismaClient();
+import PRISMA from "../constants/prismaInstance";
 
 export const checkResourcePrivacyAndUserOwnership = async ({
   currentUserId,
@@ -53,7 +52,7 @@ export const checkResourcePrivacyAndUserOwnership = async ({
 };
 
 export const areTheyFriends = async (userAId: string, userBId: string) => {
-  const followBack = await prisma.follow.findMany({
+  const followBack = await PRISMA.follow.findMany({
     where: {
       OR: [
         {
@@ -89,7 +88,7 @@ export const updateExistingMedia = async (
     foundMedia.rating !== mediaWithNewValues.rating ||
     foundMedia.status !== mediaWithNewValues.status
   ) {
-    await prisma.media.update({
+    await PRISMA.media.update({
       where: {
         id: foundMedia.id
       },
@@ -118,7 +117,7 @@ export const upsertNotification = async ({
   if (type === "FOLLOW") {
     //if type is FOLLOW, check if a notification with the given recipient, type,
     //with the actor in its list of actors already exists
-    const existingNotification = await prisma.notification.findFirst({
+    const existingNotification = await PRISMA.notification.findFirst({
       where: {
         recipientId,
         type,
@@ -135,7 +134,7 @@ export const upsertNotification = async ({
     if (existingNotification) return;
 
     //if it does not exist, create it.
-    await prisma.notification.create({
+    await PRISMA.notification.create({
       data: {
         type: "FOLLOW",
         recipientId,
@@ -150,7 +149,7 @@ export const upsertNotification = async ({
     return;
   } else {
     //if type is COMMENT or LIKE, check if notif with the same recipientId, postId, and type already exists.
-    const existingNotification = await prisma.notification.findFirst({
+    const existingNotification = await PRISMA.notification.findFirst({
       where: {
         recipientId,
         postId,
@@ -160,7 +159,7 @@ export const upsertNotification = async ({
 
     if (existingNotification) {
       //if notif exists, check if the actor already exists in its list of actors.
-      const existingActor = await prisma.notificationActor.findFirst({
+      const existingActor = await PRISMA.notificationActor.findFirst({
         where: {
           notificationId: existingNotification.id,
           actorId
@@ -172,14 +171,14 @@ export const upsertNotification = async ({
         //create the actor, and update the notification's isRead and updatedAt.
         //this will prevent comment and like spammers from clogging up the user's
         //notifications.
-        await prisma.notificationActor.create({
+        await PRISMA.notificationActor.create({
           data: {
             notificationId: existingNotification.id,
             actorId
           }
         });
 
-        await prisma.notification.update({
+        await PRISMA.notification.update({
           where: {
             id: existingNotification.id
           },
@@ -192,7 +191,7 @@ export const upsertNotification = async ({
       } else return;
     } else {
       //if notif with given recipientId, postId, and type does not exist, create it.
-      await prisma.notification.create({
+      await PRISMA.notification.create({
         data: {
           recipientId,
           postId,
@@ -215,7 +214,7 @@ export const deleteExpiredSessionsAndLogin = async ({
   currentDate,
   res
 }: DeleteExpiredSessionsAndLoginArgs) => {
-  await prisma.userSession.deleteMany({
+  await PRISMA.userSession.deleteMany({
     where: {
       refreshTokenExpiresAt: {
         lt: currentDate
@@ -247,7 +246,7 @@ export const deleteExpiredSessionsAndLogin = async ({
   );
 
   //save user's session in the UserSession table, along with their refreshToken
-  const newlyCreatedUserSession = await prisma.userSession.create({
+  const newlyCreatedUserSession = await PRISMA.userSession.create({
     data: {
       userId: foundUser.id,
       deviceName: `unknown device`,

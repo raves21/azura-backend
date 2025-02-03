@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/asyncHandler";
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import AppError from "../utils/types/errors";
 import { compare, hash } from "bcrypt";
 import { RequestWithPayload } from "../utils/types/jwt";
-
-const prisma = new PrismaClient();
 
 export default class ProfileController {
   public updateUserDetails = asyncHandler(async (_: Request, res: Response) => {
@@ -13,7 +11,7 @@ export default class ProfileController {
     const payload = req.jwtPayload;
     const { avatar, banner, username, bio } = req.body;
 
-    const updatedUserDetails = await prisma.user.update({
+    const updatedUserDetails = await PRISMA.user.update({
       where: {
         id: payload.userId
       },
@@ -51,7 +49,7 @@ export default class ProfileController {
       );
     }
 
-    const foundUser = await prisma.user.findFirstOrThrow({
+    const foundUser = await PRISMA.user.findFirstOrThrow({
       where: {
         id: payload.userId
       }
@@ -88,7 +86,7 @@ export default class ProfileController {
     //hash the password
     const hashedPassword = await hash(password, 10);
 
-    await prisma.user.update({
+    await PRISMA.user.update({
       where: {
         id: payload.userId
       },
@@ -107,7 +105,7 @@ export default class ProfileController {
     const payload = req.jwtPayload;
     const { email } = req.body;
 
-    await prisma.user.update({
+    await PRISMA.user.update({
       where: {
         id: payload.userId
       },
@@ -125,7 +123,7 @@ export default class ProfileController {
     const req = _ as RequestWithPayload;
     const payload = req.jwtPayload;
 
-    await prisma.user.delete({
+    await PRISMA.user.delete({
       where: {
         id: payload.userId
       }

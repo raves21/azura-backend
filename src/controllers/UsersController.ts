@@ -1,12 +1,10 @@
 import { Response, Request } from "express-serve-static-core";
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
 import { upsertNotification } from "../utils/functions/reusablePrismaFunctions";
 import { RequestWithPayload } from "../utils/types/jwt";
-
-const prisma = new PrismaClient();
 
 export default class UsersController {
   public async getAllUsers(_: Request, res: Response) {
@@ -19,7 +17,7 @@ export default class UsersController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const allUsers = await prisma.user.findMany({
+    const allUsers = await PRISMA.user.findMany({
       skip,
       take: _perPage,
       orderBy: {
@@ -39,7 +37,7 @@ export default class UsersController {
         }
       }
     });
-    const totalItems = await prisma.user.count();
+    const totalItems = await PRISMA.user.count();
     const totalPages = Math.ceil(totalItems / _perPage);
     res.status(200).json({
       message: "success",
@@ -65,7 +63,7 @@ export default class UsersController {
       const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
 
-      const currentUser = await prisma.user.findFirstOrThrow({
+      const currentUser = await PRISMA.user.findFirstOrThrow({
         where: {
           id: payload.userId
         },
@@ -112,7 +110,7 @@ export default class UsersController {
     const { handle } = req.params;
     const payload = req.jwtPayload;
 
-    const foundUser = await prisma.user.findFirstOrThrow({
+    const foundUser = await PRISMA.user.findFirstOrThrow({
       where: {
         handle
       },
@@ -134,14 +132,14 @@ export default class UsersController {
       }
     });
 
-    const followsCurrentUser = await prisma.follow.findFirst({
+    const followsCurrentUser = await PRISMA.follow.findFirst({
       where: {
         followerId: foundUser.id,
         followedId: payload.userId
       }
     });
 
-    const followedByCurrentUser = await prisma.follow.findFirst({
+    const followedByCurrentUser = await PRISMA.follow.findFirst({
       where: {
         followerId: payload.userId,
         followedId: foundUser.id
@@ -181,7 +179,7 @@ export default class UsersController {
       );
     }
 
-    await prisma.follow.create({
+    await PRISMA.follow.create({
       data: {
         followerId: payload.userId,
         followedId: userToFollow
@@ -204,7 +202,7 @@ export default class UsersController {
     const { id: userToUnfollow } = req.params;
 
     //check if the relationship between currentUser and userToUnfollow exists
-    const foundRelationship = await prisma.follow.findFirst({
+    const foundRelationship = await PRISMA.follow.findFirst({
       where: {
         followerId: payload.userId,
         followedId: userToUnfollow
@@ -221,7 +219,7 @@ export default class UsersController {
     }
 
     //delete the relationship
-    await prisma.follow.delete({
+    await PRISMA.follow.delete({
       where: {
         followerId_followedId: {
           followerId: payload.userId,
@@ -246,7 +244,7 @@ export default class UsersController {
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
-      const currentUserFollowingList = await prisma.follow.findMany({
+      const currentUserFollowingList = await PRISMA.follow.findMany({
         where: {
           followerId: payload.userId
         },
@@ -269,7 +267,7 @@ export default class UsersController {
         }
       });
 
-      const totalItems = await prisma.follow.count({
+      const totalItems = await PRISMA.follow.count({
         where: {
           followerId: payload.userId
         }
@@ -305,7 +303,7 @@ export default class UsersController {
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
-      const currentUserFollowerList = await prisma.follow.findMany({
+      const currentUserFollowerList = await PRISMA.follow.findMany({
         where: {
           followedId: payload.userId
         },
@@ -332,7 +330,7 @@ export default class UsersController {
           }
         }
       });
-      const totalItems = await prisma.follow.count({
+      const totalItems = await PRISMA.follow.count({
         where: {
           followedId: payload.userId
         }
@@ -370,7 +368,7 @@ export default class UsersController {
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
-      const userFollowingList = await prisma.follow.findMany({
+      const userFollowingList = await PRISMA.follow.findMany({
         where: {
           followerId: id
         },
@@ -398,7 +396,7 @@ export default class UsersController {
         }
       });
 
-      const totalItems = await prisma.follow.count({
+      const totalItems = await PRISMA.follow.count({
         where: {
           followerId: id
         }
@@ -435,7 +433,7 @@ export default class UsersController {
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
-      const userFollowerList = await prisma.follow.findMany({
+      const userFollowerList = await PRISMA.follow.findMany({
         where: {
           followedId: id
         },
@@ -463,7 +461,7 @@ export default class UsersController {
         }
       });
 
-      const totalItems = await prisma.follow.count({
+      const totalItems = await PRISMA.follow.count({
         where: {
           followedId: id
         }

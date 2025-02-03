@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/asyncHandler";
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
 import { ENTITY_OWNER_SELECT, POSTS_INCLUDE } from "../utils/constants/queries";
-
-const prisma = new PrismaClient();
 
 export default class SearchController {
   public searchPosts = asyncHandler(async (_: Request, res: Response) => {
@@ -22,7 +20,7 @@ export default class SearchController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const searchPosts = await prisma.post.findMany({
+    const searchPosts = await PRISMA.post.findMany({
       skip,
       take: _perPage,
       orderBy: {
@@ -90,7 +88,7 @@ export default class SearchController {
       include: POSTS_INCLUDE(payload.userId)
     });
 
-    const totalItems = await prisma.post.count({
+    const totalItems = await PRISMA.post.count({
       where: {
         OR: [
           // search in post content
@@ -199,7 +197,7 @@ export default class SearchController {
     const _perPage = Number(perPage) || 10;
     const skip = (_page - 1) * _perPage;
 
-    const searchUsers = await prisma.user.findMany({
+    const searchUsers = await PRISMA.user.findMany({
       skip,
       take: _perPage,
       orderBy: {
@@ -233,7 +231,7 @@ export default class SearchController {
       }
     });
 
-    const totalItems = await prisma.user.count({
+    const totalItems = await PRISMA.user.count({
       where: {
         OR: [
           {
@@ -286,7 +284,7 @@ export default class SearchController {
     const skip = (_page - 1) * _perPage;
 
     //retrieve collections that have privacy PUBLIC and FRIENDS_ONLY
-    const searchCollections = await prisma.collection.findMany({
+    const searchCollections = await PRISMA.collection.findMany({
       skip,
       take: _perPage,
       orderBy: {
@@ -339,7 +337,7 @@ export default class SearchController {
       }
     });
 
-    const totalItems = await prisma.collection.count({
+    const totalItems = await PRISMA.collection.count({
       where: {
         name: {
           search: query.toString().trim().split(" ").join(" & ")

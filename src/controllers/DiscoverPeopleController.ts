@@ -1,0 +1,49 @@
+import { Request, Response } from "express";
+import { RequestWithPayload } from "../utils/types/jwt";
+import { asyncHandler } from "../middleware/asyncHandler";
+import PRISMA from "../utils/constants/prismaInstance";
+
+export class DiscoverPeopleController {
+  public getDiscoverPeople = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithPayload;
+    const payload = req.jwtPayload;
+
+    //returns all users, except that it is sorted where the ones that the current user does not follow
+    //comes first.
+    const discoverPeople = await PRISMA.user.findMany({
+      where: {
+        id: {
+          not: payload.userId
+        }
+      },
+      select: {
+        id: true,
+        avatar: true,
+        username: true,
+        handle: true,
+        followers: {
+          where: {
+            followerId: payload.userId
+          }
+        }
+      },
+      orderBy: {
+        followers: {
+          _count: "asc"
+        }
+      }
+    });
+
+    res.status(200).json({
+      message: "success",
+      data: discoverPeople.map((user) => ({
+        id: user.id,
+        avatar: user.avatar,
+        username: user.username,
+        handle: user.handle,
+        //user.followers array only contains one item, currentUser. And that is if he follows the user, otherwise, its empty.
+        isFollowedByCurrentUser: user.followers.length === 0 ? false : true
+      }))
+    });
+  });
+}

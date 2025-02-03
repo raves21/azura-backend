@@ -12,6 +12,7 @@ import notificationsRouter from "./routes/notifications";
 import trendingRouter from "./routes/trending";
 import otcRouter from "./routes/otc";
 import profileRouter from "./routes/profile";
+import discoverPeopleRouter from "./routes/discoverPeople";
 import { verifyJWT } from "./middleware/verifyJWT";
 import { errorHandler } from "./middleware/errorHandler";
 import cors from "cors";
@@ -85,6 +86,9 @@ app.use("/api/trending", trendingRouter);
 
 // Profile route
 app.use("/api/profile", profileRouter);
+
+// Discover people route
+app.use("/api/discover-people", discoverPeopleRouter);
 
 //middleware for handling errors
 app.use(errorHandler);

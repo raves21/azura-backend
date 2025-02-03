@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import { NextFunction, Request, Response } from "express";
 import { verify, sign } from "jsonwebtoken";
 import { CustomJWTPayload } from "../utils/types/jwt";
@@ -6,8 +6,6 @@ import { TokenExpiredError } from "jsonwebtoken";
 import AppError from "../utils/types/errors";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { ACCESS_TOKEN_DURATION } from "../utils/constants/auth";
-
-const prisma = new PrismaClient();
 
 export default class RefreshTokenController {
   public grantNewAccessToken = asyncHandler(
@@ -21,7 +19,7 @@ export default class RefreshTokenController {
       const refreshTokenFromCookies = cookies.refreshToken as string;
 
       //find the userSession and user using the refreshToken (refreshToken is unique)
-      const foundUserSession = await prisma.userSession.findFirstOrThrow({
+      const foundUserSession = await PRISMA.userSession.findFirstOrThrow({
         where: {
           refreshToken: refreshTokenFromCookies
         },
@@ -41,7 +39,7 @@ export default class RefreshTokenController {
             if (err) {
               if (err instanceof TokenExpiredError) {
                 //if refresh token is expired, delete the session.
-                await prisma.userSession.delete({
+                await PRISMA.userSession.delete({
                   where: {
                     sessionId: foundUserSession.sessionId
                   }

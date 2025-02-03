@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/asyncHandler";
-import { PrismaClient, Prisma } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Prisma } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 
 export default class TrendingController {
   public getTrendingPosts = asyncHandler(
@@ -11,7 +10,7 @@ export default class TrendingController {
       const timeFilter = Prisma.sql`AND p."createdAt" >= NOW() - INTERVAL '${daysInterval} days'`;
 
       // Get trending hashtags
-      const trendingHashtags = await prisma.$queryRaw<
+      const trendingHashtags = await PRISMA.$queryRaw<
         { hashtag: string; count: bigint }[]
       >`
             SELECT 
@@ -26,7 +25,7 @@ export default class TrendingController {
             `;
 
       // Get trending media
-      const trendingMedia = await prisma.$queryRaw<
+      const trendingMedia = await PRISMA.$queryRaw<
         { title: string; count: bigint }[]
       >`
             SELECT 
@@ -46,13 +45,13 @@ export default class TrendingController {
         ...trendingHashtags.map((row) => ({
           type: "hashtag",
           content: row.hashtag,
-          count: Number(row.count),
+          count: Number(row.count)
         })),
         ...trendingMedia.map((row) => ({
           type: "media",
           content: row.title,
-          count: Number(row.count),
-        })),
+          count: Number(row.count)
+        }))
       ];
 
       const combinedResultSortedByCount = combinedResult.sort(
@@ -61,7 +60,7 @@ export default class TrendingController {
 
       res.status(200).json({
         message: "success",
-        data: combinedResultSortedByCount,
+        data: combinedResultSortedByCount
       });
     }
   );

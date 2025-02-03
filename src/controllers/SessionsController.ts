@@ -1,10 +1,7 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
-import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
-
-const prisma = new PrismaClient();
 
 export default class SessionsController {
   public getSessions = asyncHandler(async (_: Request, res: Response) => {
@@ -14,7 +11,7 @@ export default class SessionsController {
 
     //get all user sessions, and mark the current session as isCurrentSession: true
     const allUserSessions = (
-      await prisma.userSession.findMany({
+      await PRISMA.userSession.findMany({
         where: {
           userId: payload.userId
         },
@@ -41,7 +38,7 @@ export default class SessionsController {
     const { sessionId } = req.params;
 
     //Delete the row with the sessionId in the UserSession table
-    await prisma.userSession.delete({
+    await PRISMA.userSession.delete({
       where: {
         sessionId
       }
@@ -56,7 +53,7 @@ export default class SessionsController {
       const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
 
-      await prisma.userSession.deleteMany({
+      await PRISMA.userSession.deleteMany({
         where: {
           NOT: {
             sessionId: payload.sessionId
