@@ -1,11 +1,11 @@
 import { Response, Request } from "express-serve-static-core";
-import { Media, PrismaClient } from "@prisma/client";
+import { Media, MediaType, PrismaClient } from "@prisma/client";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
 import {
   checkResourcePrivacyAndUserOwnership,
   areTheyFriends,
-  updateExistingMedia
+  updateExistingMedia,
 } from "../utils/functions/reusablePrismaFunctions";
 import { RequestWithPayload } from "../utils/types/jwt";
 import { ENTITY_OWNER_SELECT } from "../utils/constants/queries";
@@ -28,10 +28,10 @@ export default class CollectionsController {
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order
+          updatedAt: order,
         },
         where: {
-          ownerId: payload.userId
+          ownerId: payload.userId,
         },
         include: {
           owner: ENTITY_OWNER_SELECT,
@@ -40,17 +40,17 @@ export default class CollectionsController {
             select: {
               media: {
                 select: {
-                  posterImage: true
-                }
-              }
-            }
-          }
-        }
+                  posterImage: true,
+                },
+              },
+            },
+          },
+        },
       });
       const totalItems = await PRISMA.collection.count({
         where: {
-          ownerId: payload.userId
-        }
+          ownerId: payload.userId,
+        },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -66,8 +66,8 @@ export default class CollectionsController {
           owner: collection.owner,
           previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
-          )
-        }))
+          ),
+        })),
       });
     }
   );
@@ -88,8 +88,8 @@ export default class CollectionsController {
       //find owner of collection based on user handle
       const foundOwner = await PRISMA.user.findFirstOrThrow({
         where: {
-          handle
-        }
+          handle,
+        },
       });
 
       //check if currentUser is friends with collection owner
@@ -103,15 +103,15 @@ export default class CollectionsController {
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order
+          updatedAt: order,
         },
         where: {
           ownerId: foundOwner.id,
           privacy: {
             in: isCurrentUserFriendsWithOwner
               ? ["FRIENDS_ONLY", "PUBLIC"]
-              : ["PUBLIC"]
-          }
+              : ["PUBLIC"],
+          },
         },
         include: {
           owner: ENTITY_OWNER_SELECT,
@@ -120,12 +120,12 @@ export default class CollectionsController {
             select: {
               media: {
                 select: {
-                  posterImage: true
-                }
-              }
-            }
-          }
-        }
+                  posterImage: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       const totalItems = await PRISMA.collection.count({
@@ -134,9 +134,9 @@ export default class CollectionsController {
           privacy: {
             in: isCurrentUserFriendsWithOwner
               ? ["FRIENDS_ONLY", "PUBLIC"]
-              : ["PUBLIC"]
-          }
-        }
+              : ["PUBLIC"],
+          },
+        },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -152,8 +152,8 @@ export default class CollectionsController {
           owner: collection.owner,
           previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
-          )
-        }))
+          ),
+        })),
       });
     }
   );
@@ -168,13 +168,13 @@ export default class CollectionsController {
         ownerId: payload.userId,
         name,
         description,
-        privacy
-      }
+        privacy,
+      },
     });
 
     res.status(201).json({
       message: "create collection successful.",
-      data: newCollection
+      data: newCollection,
     });
   });
 
@@ -186,12 +186,12 @@ export default class CollectionsController {
     const deletedCollection = await PRISMA.collection.delete({
       where: {
         id,
-        ownerId: payload.userId
-      }
+        ownerId: payload.userId,
+      },
     });
     res.status(200).json({
       message: "collection deleted successfuly.",
-      data: deletedCollection
+      data: deletedCollection,
     });
   });
 
@@ -207,7 +207,7 @@ export default class CollectionsController {
         coverImage,
         posterImage,
         rating,
-        status
+        status,
       } = req.body;
 
       if (
@@ -231,8 +231,8 @@ export default class CollectionsController {
       //check if media already exists in Media table
       const foundMedia = await PRISMA.media.findFirst({
         where: {
-          id: mediaId
-        }
+          id: mediaId,
+        },
       });
 
       if (foundMedia) {
@@ -250,20 +250,20 @@ export default class CollectionsController {
           rating,
           status,
           type: foundMedia.type,
-          createdAt: foundMedia.createdAt
+          createdAt: foundMedia.createdAt,
         };
         await updateExistingMedia(foundMedia, media);
         //proceed to creating the collection item
         const newCollectionItem = await PRISMA.collectionItem.create({
           data: {
             collectionId,
-            mediaId: foundMedia.id
-          }
+            mediaId: foundMedia.id,
+          },
         });
 
         res.status(201).json({
           message: "collection item created successfully.",
-          data: newCollectionItem
+          data: newCollectionItem,
         });
       } else {
         //if does not exist, create media and use it to create collectionItem
@@ -277,19 +277,19 @@ export default class CollectionsController {
             coverImage,
             posterImage,
             rating,
-            status
-          }
+            status,
+          },
         });
 
         const newCollectionItem = await PRISMA.collectionItem.create({
           data: {
             collectionId,
-            mediaId: newMedia.id
-          }
+            mediaId: newMedia.id,
+          },
         });
         res.status(201).json({
           message: "collection item created successfully",
-          data: newCollectionItem
+          data: newCollectionItem,
         });
       }
     }
@@ -307,22 +307,22 @@ export default class CollectionsController {
       const foundCollection = await PRISMA.collection.findFirstOrThrow({
         where: {
           id: collectionId,
-          ownerId: payload.userId
-        }
+          ownerId: payload.userId,
+        },
       });
 
       //delete all collectionItems with id that matches the collectionItemsToDelete ids
       const deletedCollectionItems = await PRISMA.collectionItem.deleteMany({
         where: {
           id: {
-            in: collectionItemsToDelete
-          }
-        }
+            in: collectionItemsToDelete,
+          },
+        },
       });
 
       res.status(200).json({
         message: "collection item/s successfully deleted.",
-        deletedCount: deletedCollectionItems.count
+        deletedCount: deletedCollectionItems.count,
       });
     }
   );
@@ -335,16 +335,16 @@ export default class CollectionsController {
 
     const foundCollection = await PRISMA.collection.findFirstOrThrow({
       where: {
-        id
+        id,
       },
       include: {
         owner: ENTITY_OWNER_SELECT,
         _count: {
           select: {
-            collectionItems: true
-          }
-        }
-      }
+            collectionItems: true,
+          },
+        },
+      },
     });
 
     const successData = {
@@ -353,7 +353,7 @@ export default class CollectionsController {
       description: foundCollection?.description,
       privacy: foundCollection?.privacy,
       owner: foundCollection?.owner,
-      totalCollectionItems: foundCollection?._count.collectionItems
+      totalCollectionItems: foundCollection?._count.collectionItems,
     };
 
     await checkResourcePrivacyAndUserOwnership({
@@ -361,7 +361,7 @@ export default class CollectionsController {
       ownerId: foundCollection.ownerId,
       privacy: foundCollection.privacy,
       successData,
-      res
+      res,
     });
   });
 
@@ -380,22 +380,22 @@ export default class CollectionsController {
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order
+          createdAt: order,
         },
         where: {
-          collectionId: id
+          collectionId: id,
         },
         select: {
           id: true,
           collectionId: true,
-          media: true
-        }
+          media: true,
+        },
       });
 
       const totalItems = await PRISMA.collectionItem.count({
         where: {
-          collectionId: id
-        }
+          collectionId: id,
+        },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -404,7 +404,7 @@ export default class CollectionsController {
         page: _page,
         perPage: _perPage,
         totalPages,
-        data: collectionItems
+        data: collectionItems,
       });
     }
   );
@@ -418,17 +418,17 @@ export default class CollectionsController {
       const foundCollectionItem = await PRISMA.collectionItem.findFirstOrThrow({
         where: {
           id,
-          collectionId
+          collectionId,
         },
         include: {
           collection: {
             select: {
               ownerId: true,
-              privacy: true
-            }
+              privacy: true,
+            },
           },
-          media: true
-        }
+          media: true,
+        },
       });
 
       await checkResourcePrivacyAndUserOwnership({
@@ -439,8 +439,8 @@ export default class CollectionsController {
         successData: {
           id: foundCollectionItem.id,
           ownerId: foundCollectionItem.collection.ownerId,
-          media: foundCollectionItem.media
-        }
+          media: foundCollectionItem.media,
+        },
       });
     }
   );
@@ -454,17 +454,17 @@ export default class CollectionsController {
     const updatedCollection = await PRISMA.collection.update({
       where: {
         id,
-        ownerId: payload.userId
+        ownerId: payload.userId,
       },
       data: {
         name,
         description,
-        privacy
-      }
+        privacy,
+      },
     });
     res.status(200).json({
       message: "collection updated successfully.",
-      data: updatedCollection
+      data: updatedCollection,
     });
   });
 
@@ -473,32 +473,65 @@ export default class CollectionsController {
       const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
       const { mediaId } = req.params;
+      const { type, page, perPage, ascending } = req.query;
 
-      //retrieve all user's collections
+      const order = ascending == "true" ? "asc" : "desc";
+      const _page = Number(page) || 1;
+      const _perPage = Number(perPage) || 10;
+      const skip = (_page - 1) * _perPage;
+
+      if (!type) {
+        throw new AppError(
+          422,
+          "Invalid Format.",
+          "Media type not provided.",
+          true
+        );
+      }
+
+      //retrieve all user's collections where mediaId matches the given mediaId in params
       const currentUserCollections = await PRISMA.collection.findMany({
+        skip,
+        take: _perPage,
+        orderBy: {
+          updatedAt: order,
+        },
         where: {
-          ownerId: payload.userId
+          ownerId: payload.userId,
         },
         select: {
           id: true,
           name: true,
           collectionItems: {
-            select: {
-              mediaId: true
-            }
-          }
-        }
+            where: {
+              mediaId,
+              AND: {
+                media: {
+                  type: type.toString() as MediaType,
+                },
+              },
+            },
+          },
+        },
       });
+
+      const totalItems = await PRISMA.collection.count({
+        where: {
+          ownerId: payload.userId,
+        },
+      });
+      const totalPages = Math.ceil(totalItems / _perPage);
 
       res.status(200).json({
         message: "success",
+        page: _page,
+        perPage: _perPage,
+        totalPages,
         data: currentUserCollections.map((collection) => ({
           id: collection.id,
           name: collection.name,
-          doesGivenMediaExist: collection.collectionItems
-            .map((collectionItem) => collectionItem.mediaId)
-            .includes(mediaId.toString())
-        }))
+          doesGivenMediaExist: collection.collectionItems.length > 0,
+        })),
       });
     }
   );
