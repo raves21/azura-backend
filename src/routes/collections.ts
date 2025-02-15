@@ -25,13 +25,15 @@ router
   //post
   .post("/", collectionsController.createCollection)
   .post("/:id/collection-items", collectionsController.addCollectionItem)
+  //delete MANY collection items by providing array of ids
+  .post("/:id/collection-items", collectionsController.deleteCollectionItems)
 
   //put
   .put("/:id", collectionsController.updateCollection)
 
   //delete (can delete one collection)
   .delete("/:id", collectionsController.deleteCollection)
-  //delete (can delete multiple collectionItems)
-  .delete("/:id/collection-items", collectionsController.deleteCollectionItems);
+  //delete ONE collection item using the media id
+  .delete("/:id/collection-items", collectionsController.deleteCollectionItem);
 
 export default router;

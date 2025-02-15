@@ -120,12 +120,13 @@ model CollectionItem {
   collectionId String     @db.Uuid
   collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   mediaId      String
-  media        Media      @relation(fields: [mediaId], references: [id])
+  mediaType    MediaType
+  media        Media      @relation(fields: [mediaId], references: [id], onDelete: Cascade)
   createdAt    DateTime   @default(now())
 
   //ensures that only one instance of an anime/tv/movie in a collection
   //ex: a collection cant have two Inception (2010). Only one.
-  @@unique([collectionId, mediaId])
+  @@unique([collectionId, mediaId, mediaType])
 }
 
 enum MediaType {
@@ -170,7 +171,7 @@ model Post {
   //ex: user wants to share about the movie Inception (2010), 
   //or user wants to share their personal collection of horror movies
   mediaId      String?
-  media        Media?         @relation(fields: [mediaId], references: [id])
+  media        Media?         @relation(fields: [mediaId], references: [id], onDelete: Cascade)
   collectionId String?        @db.Uuid
   collection   Collection?    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   Notification Notification[]

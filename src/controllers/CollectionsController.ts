@@ -258,6 +258,7 @@ export default class CollectionsController {
           data: {
             collectionId,
             mediaId: foundMedia.id,
+            mediaType: foundMedia.type,
           },
         });
 
@@ -285,6 +286,7 @@ export default class CollectionsController {
           data: {
             collectionId,
             mediaId: newMedia.id,
+            mediaType: newMedia.type,
           },
         });
         res.status(201).json({
@@ -295,6 +297,45 @@ export default class CollectionsController {
     }
   );
 
+  //delete one
+  public deleteCollectionItem = asyncHandler(
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
+      const payload = req.jwtPayload;
+
+      const { id: collectionId } = req.params;
+      const { mediaId, mediaType } = req.query;
+
+      if (!mediaId || !mediaType) {
+        throw new AppError(
+          422,
+          "Invalid format.",
+          "Please provide all credentials.",
+          true
+        );
+      }
+
+      //check if collection exists, and if owner owns the collection
+      await PRISMA.collection.findFirstOrThrow({
+        where: {
+          id: collectionId,
+          ownerId: payload.userId,
+        },
+      });
+
+      await PRISMA.collectionItem.deleteMany({
+        where: {
+          mediaId: mediaId.toString(),
+          collectionId,
+          mediaType: mediaType as MediaType,
+        },
+      });
+
+      res.status(200).json({ message: "deleted successfully." });
+    }
+  );
+
+  //delete many
   public deleteCollectionItems = asyncHandler(
     async (_: Request, res: Response) => {
       const req = _ as RequestWithPayload;
