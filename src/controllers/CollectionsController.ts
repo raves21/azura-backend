@@ -304,7 +304,7 @@ export default class CollectionsController {
       const payload = req.jwtPayload;
 
       //check if collection exists, and if owner owns the collection
-      const foundCollection = await PRISMA.collection.findFirstOrThrow({
+      await PRISMA.collection.findFirstOrThrow({
         where: {
           id: collectionId,
           ownerId: payload.userId,

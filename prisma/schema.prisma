@@ -138,12 +138,12 @@ model Media {
   //id should be provided by frontend (anilistId of the anime, or tmdbId of the movie/tv)
   id          String    @id
   type        MediaType
-  coverImage  String
-  posterImage String
-  title       String
-  description String
-  year        String
-  rating      String
+  coverImage  String?
+  posterImage String?
+  title       String?
+  description String?
+  year        String?
+  rating      String?
   status      String?
   createdAt   DateTime  @default(now())
 
