@@ -140,7 +140,7 @@ model Media {
   type        MediaType
   coverImage  String?
   posterImage String?
-  title       String?
+  title       String
   description String?
   year        String?
   rating      String?
