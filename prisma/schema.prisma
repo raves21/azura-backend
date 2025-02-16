@@ -104,7 +104,7 @@ model Collection {
   owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId         String           @db.Uuid
   name            String
-  description     String
+  description     String?
   privacy         Privacy
   collectionItems CollectionItem[]
   posts           Post[]
