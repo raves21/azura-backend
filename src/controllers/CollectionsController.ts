@@ -160,7 +160,7 @@ export default class CollectionsController {
 
   public createCollection = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithPayload;
-    const { name, description, privacy } = req.body;
+    const { name, description, privacy, photo } = req.body;
     const payload = req.jwtPayload;
 
     const newCollection = await PRISMA.collection.create({
@@ -169,6 +169,7 @@ export default class CollectionsController {
         name,
         description,
         privacy,
+        photo
       },
     });
 
