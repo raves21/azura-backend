@@ -13,24 +13,23 @@ export default class SessionsController {
     const allUserSessions = (
       await PRISMA.userSession.findMany({
         where: {
-          userId: payload.userId
+          userId: payload.userId,
         },
         select: {
           userId: true,
           sessionId: true,
           deviceName: true,
-          createdAt: true
-        }
+          createdAt: true,
+        },
       })
     ).map((userSession) => ({
       ...userSession,
-      isCurrentSession:
-        userSession.sessionId === payload.sessionId ? true : false
+      isCurrentSession: userSession.sessionId === payload.sessionId,
     }));
 
     res.status(200).json({
       message: "success",
-      data: allUserSessions
+      data: allUserSessions,
     });
   });
 
@@ -40,8 +39,8 @@ export default class SessionsController {
     //Delete the row with the sessionId in the UserSession table
     await PRISMA.userSession.delete({
       where: {
-        sessionId
-      }
+        sessionId,
+      },
     });
     res
       .status(200)
@@ -56,13 +55,13 @@ export default class SessionsController {
       await PRISMA.userSession.deleteMany({
         where: {
           NOT: {
-            sessionId: payload.sessionId
-          }
-        }
+            sessionId: payload.sessionId,
+          },
+        },
       });
 
       res.status(200).json({
-        message: "sessions except current session logged out successfully."
+        message: "sessions except current session logged out successfully.",
       });
     }
   );
