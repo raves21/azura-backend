@@ -64,6 +64,7 @@ export default class CollectionsController {
           name: collection.name,
           photo: collection.photo,
           owner: collection.owner,
+          description: collection.description,
           previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
           ),
@@ -150,6 +151,7 @@ export default class CollectionsController {
           name: collection.name,
           photo: collection.photo,
           owner: collection.owner,
+          description: collection.description,
           previewMedias: collection.collectionItems.map(
             (collectionItem) => collectionItem.media
           ),
@@ -169,7 +171,7 @@ export default class CollectionsController {
         name,
         description,
         privacy,
-        photo
+        photo,
       },
     });
 
