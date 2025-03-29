@@ -5,7 +5,7 @@ import {
   areTheyFriends,
   checkResourcePrivacyAndUserOwnership,
   updateExistingMedia,
-  upsertNotification
+  upsertNotification,
 } from "../utils/functions/reusablePrismaFunctions";
 import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
@@ -26,20 +26,20 @@ export default class PostsController {
 
       const currentUserPosts = await PRISMA.post.findMany({
         where: {
-          ownerId: payload.userId
+          ownerId: payload.userId,
         },
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order
+          createdAt: order,
         },
-        include: POSTS_INCLUDE(payload.userId)
+        include: POSTS_INCLUDE(payload.userId),
       });
 
       const totalItems = await PRISMA.post.count({
         where: {
-          ownerId: payload.userId
-        }
+          ownerId: payload.userId,
+        },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -69,11 +69,11 @@ export default class PostsController {
                 privacy: post.collection.privacy,
                 previewMedias: post.collection.collectionItems.map(
                   (collectionItem) => collectionItem.media
-                )
+                ),
               }
             : null,
-          createdAt: post.createdAt
-        }))
+          createdAt: post.createdAt,
+        })),
       });
     }
   );
@@ -92,8 +92,8 @@ export default class PostsController {
 
     const foundOwner = await PRISMA.user.findFirstOrThrow({
       where: {
-        handle
-      }
+        handle,
+      },
     });
 
     //check if currentUser is friends with owner
@@ -109,15 +109,15 @@ export default class PostsController {
         privacy: {
           in: isCurrentUserFriendsWithOwner
             ? ["FRIENDS_ONLY", "PUBLIC"]
-            : ["PUBLIC"]
-        }
+            : ["PUBLIC"],
+        },
       },
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order
+        createdAt: order,
       },
-      include: POSTS_INCLUDE(payload.userId)
+      include: POSTS_INCLUDE(payload.userId),
     });
 
     const totalItems = await PRISMA.post.count({
@@ -126,9 +126,9 @@ export default class PostsController {
         privacy: {
           in: isCurrentUserFriendsWithOwner
             ? ["FRIENDS_ONLY", "PUBLIC"]
-            : ["PUBLIC"]
-        }
-      }
+            : ["PUBLIC"],
+        },
+      },
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -158,11 +158,11 @@ export default class PostsController {
               privacy: post.collection.privacy,
               previewMedias: post.collection.collectionItems.map(
                 (collectionItem) => collectionItem.media
-              )
+              ),
             }
           : null,
-        createdAt: post.createdAt
-      }))
+        createdAt: post.createdAt,
+      })),
     });
   });
 
@@ -174,19 +174,19 @@ export default class PostsController {
 
     const foundPost = await PRISMA.post.findFirstOrThrow({
       where: {
-        id
+        id,
       },
-      include: POSTS_INCLUDE(payload.userId)
+      include: POSTS_INCLUDE(payload.userId),
     });
 
     const postFirstLikers = await PRISMA.post.findFirstOrThrow({
       where: {
-        id
+        id,
       },
       select: {
         likes: {
           orderBy: {
-            createdAt: "asc"
+            createdAt: "asc",
           },
           take: 2,
           select: {
@@ -194,12 +194,12 @@ export default class PostsController {
               select: {
                 id: true,
                 avatar: true,
-                username: true
-              }
-            }
-          }
-        }
-      }
+                username: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     const successData = {
@@ -227,10 +227,10 @@ export default class PostsController {
             privacy: foundPost.collection.privacy,
             previewMedias: foundPost.collection.collectionItems.map(
               (collectionItem) => collectionItem.media
-            )
+            ),
           }
         : null,
-      createdAt: foundPost.createdAt
+      createdAt: foundPost.createdAt,
     };
 
     await checkResourcePrivacyAndUserOwnership({
@@ -238,7 +238,7 @@ export default class PostsController {
       ownerId: foundPost.owner.id,
       privacy: foundPost.privacy,
       res,
-      successData
+      successData,
     });
   });
 
@@ -252,8 +252,8 @@ export default class PostsController {
       //check if media exists in Media table
       const foundMedia = await PRISMA.media.findFirst({
         where: {
-          id: media.id
-        }
+          id: media.id,
+        },
       });
       if (!foundMedia) {
         //if not found, create the media
@@ -267,8 +267,8 @@ export default class PostsController {
             coverImage: media.coverImage,
             posterImage: media.posterImage,
             rating: media.rating,
-            status: media.status
-          }
+            status: media.status,
+          },
         });
         //proceed to creating the post with newMedia
         const newPostWithNewMedia = await PRISMA.post.create({
@@ -276,14 +276,14 @@ export default class PostsController {
             content,
             privacy,
             mediaId: newMedia.id,
-            ownerId: payload.userId
+            ownerId: payload.userId,
           },
-          select: CREATE_POST_SELECT
+          select: CREATE_POST_SELECT,
         });
 
         res.status(201).json({
           message: "Post (with new media) successfully created.",
-          data: { ...newPostWithNewMedia, collection: null }
+          data: { ...newPostWithNewMedia, collection: null },
         });
         return;
       }
@@ -297,13 +297,13 @@ export default class PostsController {
           content,
           privacy,
           mediaId: foundMedia.id,
-          ownerId: payload.userId
+          ownerId: payload.userId,
         },
-        select: CREATE_POST_SELECT
+        select: CREATE_POST_SELECT,
       });
       res.status(201).json({
         message: "Post (with found media) successfully created.",
-        data: { ...newPostWithExistingMedia, collection: null }
+        data: { ...newPostWithExistingMedia, collection: null },
       });
       return;
     }
@@ -316,7 +316,7 @@ export default class PostsController {
           ownerId: payload.userId,
           content,
           privacy,
-          collectionId
+          collectionId,
         },
         include: {
           collection: {
@@ -336,14 +336,14 @@ export default class PostsController {
                       year: true,
                       type: true,
                       posterImage: true,
-                      coverImage: true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+                      coverImage: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
       res.status(201).json({
         message: "Post (with collection) successfully created.",
@@ -360,10 +360,10 @@ export default class PostsController {
                 previewMedias:
                   newPostWithCollection.collection.collectionItems.map(
                     (collectionItem) => collectionItem.media
-                  )
+                  ),
               }
-            : null
-        }
+            : null,
+        },
       });
       return;
     }
@@ -375,14 +375,14 @@ export default class PostsController {
       data: {
         ownerId: payload.userId,
         content,
-        privacy
+        privacy,
       },
-      select: CREATE_POST_SELECT
+      select: CREATE_POST_SELECT,
     });
 
     res.status(201).json({
       message: "Post (without attachments) created successfully.",
-      data: { ...newPostWithNoAttachments, collection: null }
+      data: { ...newPostWithNoAttachments, collection: null },
     });
     return;
   });
@@ -395,12 +395,12 @@ export default class PostsController {
     await PRISMA.post.delete({
       where: {
         id,
-        ownerId: payload.userId
-      }
+        ownerId: payload.userId,
+      },
     });
 
     res.status(200).json({
-      message: "Post deleted successfully."
+      message: "Post deleted successfully.",
     });
   });
 
@@ -416,8 +416,8 @@ export default class PostsController {
       //check if media exists in Media table
       const foundMedia = await PRISMA.media.findFirst({
         where: {
-          id: media.id
-        }
+          id: media.id,
+        },
       });
       if (!foundMedia) {
         //if not found, create new media
@@ -431,23 +431,23 @@ export default class PostsController {
             coverImage: media.coverImage,
             posterImage: media.posterImage,
             rating: media.rating,
-            status: media.status
-          }
+            status: media.status,
+          },
         });
         //proceed to updating the post with the new media
         await PRISMA.post.update({
           where: {
-            id
+            id,
           },
           data: {
             content,
             privacy,
             mediaId: newMedia.id,
-            ownerId: payload.userId
-          }
+            ownerId: payload.userId,
+          },
         });
         res.status(200).json({
-          message: "Post (with new media) updated succesfully."
+          message: "Post (with new media) updated succesfully.",
         });
         return;
       }
@@ -458,17 +458,17 @@ export default class PostsController {
       await updateExistingMedia(foundMedia, media);
       await PRISMA.post.update({
         where: {
-          id
+          id,
         },
         data: {
           content,
           privacy,
           mediaId: foundMedia.id,
-          ownerId: payload.userId
-        }
+          ownerId: payload.userId,
+        },
       });
       res.status(201).json({
-        message: "Post (with found media) updated successfully."
+        message: "Post (with found media) updated successfully.",
       });
       return;
     }
@@ -477,17 +477,17 @@ export default class PostsController {
       //use the collectionId to create the new post
       await PRISMA.post.update({
         where: {
-          id
+          id,
         },
         data: {
           ownerId: payload.userId,
           content,
           privacy,
-          collectionId
-        }
+          collectionId,
+        },
       });
       res.status(201).json({
-        message: "Post (with collection) updated successfully."
+        message: "Post (with collection) updated successfully.",
       });
       return;
     }
@@ -496,17 +496,17 @@ export default class PostsController {
     //that has no attachments (no media or collection attached)
     await PRISMA.post.update({
       where: {
-        id
+        id,
       },
       data: {
         ownerId: payload.userId,
         content,
-        privacy
-      }
+        privacy,
+      },
     });
 
     res.status(201).json({
-      message: "Post (without attachments) updated successfully."
+      message: "Post (without attachments) updated successfully.",
     });
     return;
   });
@@ -526,10 +526,10 @@ export default class PostsController {
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order
+        createdAt: order,
       },
       where: {
-        postId: id
+        postId: id,
       },
       select: {
         id: true,
@@ -541,16 +541,16 @@ export default class PostsController {
             id: true,
             avatar: true,
             username: true,
-            handle: true
-          }
-        }
-      }
+            handle: true,
+          },
+        },
+      },
     });
 
     const totalItems = await PRISMA.comment.count({
       where: {
-        postId: id
-      }
+        postId: id,
+      },
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -564,8 +564,8 @@ export default class PostsController {
         postId: comment.postId,
         content: comment.content,
         author: comment.author,
-        createdAt: comment.createdAt
-      }))
+        createdAt: comment.createdAt,
+      })),
     });
   });
 
@@ -580,30 +580,30 @@ export default class PostsController {
       data: {
         authorId: payload.userId,
         postId: id,
-        content
+        content,
       },
       select: {
         id: true,
         post: {
           select: {
-            ownerId: true
-          }
-        }
-      }
+            ownerId: true,
+          },
+        },
+      },
     });
 
     await upsertNotification({
       recipientId: newComment.post.ownerId,
       actorId: payload.userId,
       postId: id,
-      type: "COMMENT"
+      type: "COMMENT",
     });
 
     res.status(201).json({
       message: "Comment created successfully.",
       data: {
-        id: newComment.id
-      }
+        id: newComment.id,
+      },
     });
   });
 
@@ -617,15 +617,15 @@ export default class PostsController {
       where: {
         id: commentId,
         postId,
-        authorId: payload.userId
+        authorId: payload.userId,
       },
       data: {
-        content
-      }
+        content,
+      },
     });
 
     res.status(200).json({
-      message: "Comment updated successfully."
+      message: "Comment updated successfully.",
     });
   });
 
@@ -636,11 +636,11 @@ export default class PostsController {
 
     const foundPostOwner = await PRISMA.post.findFirst({
       where: {
-        id: postId
+        id: postId,
       },
       select: {
-        ownerId: true
-      }
+        ownerId: true,
+      },
     });
 
     if (!foundPostOwner) {
@@ -659,15 +659,15 @@ export default class PostsController {
     await PRISMA.comment.delete({
       where: {
         id: commentId,
-        postId
+        postId,
       },
       select: {
-        id: true
-      }
+        id: true,
+      },
     });
 
     res.status(200).json({
-      message: "Post deleted successfully."
+      message: "Post deleted successfully.",
     });
   });
 
@@ -686,10 +686,10 @@ export default class PostsController {
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order
+        createdAt: order,
       },
       where: {
-        postId: id
+        postId: id,
       },
       select: {
         postId: true,
@@ -701,18 +701,18 @@ export default class PostsController {
             handle: true,
             following: {
               select: {
-                followerId: true
-              }
-            }
-          }
-        }
-      }
+                followerId: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     const totalItems = await PRISMA.postLike.count({
       where: {
-        postId: id
-      }
+        postId: id,
+      },
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -730,9 +730,9 @@ export default class PostsController {
           handle: postLike.user.handle,
           isFollowedByCurrentUser: postLike.user.following
             .map((follow) => follow.followerId)
-            .includes(payload.userId)
-        }
-      }))
+            .includes(payload.userId),
+        },
+      })),
     });
   });
 
@@ -744,26 +744,26 @@ export default class PostsController {
     const newPostLike = await PRISMA.postLike.create({
       data: {
         userId: payload.userId,
-        postId: id
+        postId: id,
       },
       select: {
         post: {
           select: {
-            ownerId: true
-          }
-        }
-      }
+            ownerId: true,
+          },
+        },
+      },
     });
 
     await upsertNotification({
       recipientId: newPostLike.post.ownerId,
       actorId: payload.userId,
       postId: id,
-      type: "LIKE"
+      type: "LIKE",
     });
 
     res.status(200).json({
-      message: "Post liked successfully."
+      message: "Post liked successfully.",
     });
   });
 
@@ -776,13 +776,13 @@ export default class PostsController {
       where: {
         userId_postId: {
           userId: payload.userId,
-          postId: id
-        }
-      }
+          postId: id,
+        },
+      },
     });
 
     res.status(200).json({
-      message: "Post unliked successfully."
+      message: "Post unliked successfully.",
     });
   });
 }
