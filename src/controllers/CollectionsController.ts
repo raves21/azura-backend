@@ -8,7 +8,10 @@ import {
   updateExistingMedia,
 } from "../utils/functions/reusablePrismaFunctions";
 import { RequestWithPayload } from "../utils/types/jwt";
-import { ENTITY_OWNER_SELECT } from "../utils/constants/queries";
+import {
+  COLLECTION_PREVIEW_MEDIAS_INCLUDE,
+  ENTITY_OWNER_SELECT,
+} from "../utils/constants/queries";
 import PRISMA from "../utils/constants/prismaInstance";
 
 export default class CollectionsController {
@@ -35,20 +38,7 @@ export default class CollectionsController {
         },
         include: {
           owner: ENTITY_OWNER_SELECT,
-          collectionItems: {
-            take: 4,
-            select: {
-              media: {
-                select: {
-                  title: true,
-                  year: true,
-                  type: true,
-                  posterImage: true,
-                  coverImage: true,
-                },
-              },
-            },
-          },
+          collectionItems: COLLECTION_PREVIEW_MEDIAS_INCLUDE,
         },
       });
       const totalItems = await PRISMA.collection.count({
@@ -120,20 +110,7 @@ export default class CollectionsController {
         },
         include: {
           owner: ENTITY_OWNER_SELECT,
-          collectionItems: {
-            take: 4,
-            select: {
-              media: {
-                select: {
-                  title: true,
-                  year: true,
-                  type: true,
-                  posterImage: true,
-                  coverImage: true,
-                },
-              },
-            },
-          },
+          collectionItems: COLLECTION_PREVIEW_MEDIAS_INCLUDE,
         },
       });
 
@@ -391,15 +368,20 @@ export default class CollectionsController {
       },
       include: {
         owner: ENTITY_OWNER_SELECT,
+        collectionItems: COLLECTION_PREVIEW_MEDIAS_INCLUDE,
       },
     });
 
     const successData = {
       id,
       name: foundCollection?.name,
+      photo: foundCollection?.photo,
       description: foundCollection?.description,
       privacy: foundCollection?.privacy,
       owner: foundCollection?.owner,
+      previewMedias: foundCollection.collectionItems.map(
+        (collectionItem) => collectionItem.media
+      ),
     };
 
     await checkResourcePrivacyAndUserOwnership({

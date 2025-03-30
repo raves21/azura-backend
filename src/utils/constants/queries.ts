@@ -25,20 +25,7 @@ export const POSTS_INCLUDE = (currentUserId: string) => ({
       description: true,
       owner: ENTITY_OWNER_SELECT,
       privacy: true,
-      collectionItems: {
-        take: 3,
-        select: {
-          media: {
-            select: {
-              title: true,
-              year: true,
-              type: true,
-              posterImage: true,
-              coverImage: true,
-            },
-          },
-        },
-      },
+      collectionItems: COLLECTION_PREVIEW_MEDIAS_INCLUDE,
     },
   },
   owner: ENTITY_OWNER_SELECT,
@@ -52,4 +39,18 @@ export const POSTS_INCLUDE = (currentUserId: string) => ({
 
 export const CREATE_POST_SELECT = {
   id: true,
+};
+
+export const COLLECTION_PREVIEW_MEDIAS_INCLUDE = {
+  take: 4,
+  select: {
+    media: {
+      select: {
+        title: true,
+        year: true,
+        type: true,
+        posterImage: true,
+      },
+    },
+  },
 };

@@ -3,7 +3,11 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import PRISMA from "../utils/constants/prismaInstance";
 import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
-import { ENTITY_OWNER_SELECT, POSTS_INCLUDE } from "../utils/constants/queries";
+import {
+  COLLECTION_PREVIEW_MEDIAS_INCLUDE,
+  ENTITY_OWNER_SELECT,
+  POSTS_INCLUDE,
+} from "../utils/constants/queries";
 
 export default class SearchController {
   public searchPosts = asyncHandler(async (_: Request, res: Response) => {
@@ -24,24 +28,24 @@ export default class SearchController {
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order
+        createdAt: order,
       },
       where: {
         OR: [
           // search in post content
           {
             content: {
-              search: query.toString().trim().split(" ").join(" & ")
-            }
+              search: query.toString().trim().split(" ").join(" & "),
+            },
           },
           // search in related media title
           {
             media: {
               title: {
-                search: query.toString().trim().split(" ").join(" & ")
-              }
-            }
-          }
+                search: query.toString().trim().split(" ").join(" & "),
+              },
+            },
+          },
         ],
         AND: [
           // privacy filters
@@ -49,11 +53,11 @@ export default class SearchController {
             OR: [
               // public posts
               {
-                privacy: "PUBLIC"
+                privacy: "PUBLIC",
               },
               //all friends-only posts from the current user
               {
-                AND: [{ ownerId: payload.userId }, { privacy: "FRIENDS_ONLY" }]
+                AND: [{ ownerId: payload.userId }, { privacy: "FRIENDS_ONLY" }],
               },
               //all friends-only posts from the current user's friends
               {
@@ -65,27 +69,27 @@ export default class SearchController {
                         {
                           followers: {
                             some: {
-                              followedId: payload.userId
-                            }
-                          }
+                              followedId: payload.userId,
+                            },
+                          },
                         },
                         {
                           following: {
                             some: {
-                              followerId: payload.userId
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+                              followerId: payload.userId,
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       },
-      include: POSTS_INCLUDE(payload.userId)
+      include: POSTS_INCLUDE(payload.userId),
     });
 
     const totalItems = await PRISMA.post.count({
@@ -94,17 +98,17 @@ export default class SearchController {
           // search in post content
           {
             content: {
-              search: query.toString().trim().split(" ").join(" & ")
-            }
+              search: query.toString().trim().split(" ").join(" & "),
+            },
           },
           // search in related media title
           {
             media: {
               title: {
-                search: query.toString().trim().split(" ").join(" & ")
-              }
-            }
-          }
+                search: query.toString().trim().split(" ").join(" & "),
+              },
+            },
+          },
         ],
         AND: [
           // privacy filters
@@ -112,11 +116,11 @@ export default class SearchController {
             OR: [
               // public posts
               {
-                privacy: "PUBLIC"
+                privacy: "PUBLIC",
               },
               //all friends-only posts from the current user
               {
-                AND: [{ ownerId: payload.userId }, { privacy: "FRIENDS_ONLY" }]
+                AND: [{ ownerId: payload.userId }, { privacy: "FRIENDS_ONLY" }],
               },
               //all friends-only posts from the current user's friends
               {
@@ -128,26 +132,26 @@ export default class SearchController {
                         {
                           followers: {
                             some: {
-                              followedId: payload.userId
-                            }
-                          }
+                              followedId: payload.userId,
+                            },
+                          },
                         },
                         {
                           following: {
                             some: {
-                              followerId: payload.userId
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
+                              followerId: payload.userId,
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -176,10 +180,10 @@ export default class SearchController {
               privacy: post.collection.privacy,
               previewMedias: post.collection.collectionItems.map(
                 (collectionItem) => collectionItem.media
-              )
+              ),
             }
-          : null
-      }))
+          : null,
+      })),
     });
   });
 
@@ -201,21 +205,21 @@ export default class SearchController {
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order
+        createdAt: order,
       },
       where: {
         OR: [
           {
             username: {
-              search: query.toString().trim().split(" ").join(" & ")
-            }
+              search: query.toString().trim().split(" ").join(" & "),
+            },
           },
           {
             handle: {
-              search: query.toString().trim().split(" ").join(" & ")
-            }
-          }
-        ]
+              search: query.toString().trim().split(" ").join(" & "),
+            },
+          },
+        ],
       },
       select: {
         id: true,
@@ -225,10 +229,10 @@ export default class SearchController {
         handle: true,
         following: {
           select: {
-            followerId: true
-          }
-        }
-      }
+            followerId: true,
+          },
+        },
+      },
     });
 
     const totalItems = await PRISMA.user.count({
@@ -236,16 +240,16 @@ export default class SearchController {
         OR: [
           {
             username: {
-              search: query.toString().trim().split(" ").join(" & ")
-            }
+              search: query.toString().trim().split(" ").join(" & "),
+            },
           },
           {
             handle: {
-              search: query.toString().trim().split(" ").join(" & ")
-            }
-          }
-        ]
-      }
+              search: query.toString().trim().split(" ").join(" & "),
+            },
+          },
+        ],
+      },
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -264,8 +268,8 @@ export default class SearchController {
           .map((follow) => follow.followerId)
           .includes(payload.userId)
           ? true
-          : false
-      }))
+          : false,
+      })),
     });
   });
 
@@ -288,16 +292,16 @@ export default class SearchController {
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order
+        createdAt: order,
       },
       where: {
         name: {
-          search: query.toString().trim().split(" ").join(" & ")
+          search: query.toString().trim().split(" ").join(" & "),
         },
         OR: [
           //all public collections
           {
-            privacy: "PUBLIC"
+            privacy: "PUBLIC",
           },
 
           //all friends-only collections from the current user's friends
@@ -306,46 +310,33 @@ export default class SearchController {
             owner: {
               followers: {
                 some: {
-                  followedId: payload.userId
-                }
+                  followedId: payload.userId,
+                },
               },
               following: {
                 some: {
-                  followerId: payload.userId
-                }
-              }
-            }
-          }
-        ]
+                  followerId: payload.userId,
+                },
+              },
+            },
+          },
+        ],
       },
       include: {
-        collectionItems: {
-          take: 3,
-          select: {
-            media: {
-              select: {
-                title: true,
-                year: true,
-                type: true,
-                posterImage: true,
-                coverImage: true
-              }
-            }
-          }
-        },
-        owner: ENTITY_OWNER_SELECT
-      }
+        collectionItems: COLLECTION_PREVIEW_MEDIAS_INCLUDE,
+        owner: ENTITY_OWNER_SELECT,
+      },
     });
 
     const totalItems = await PRISMA.collection.count({
       where: {
         name: {
-          search: query.toString().trim().split(" ").join(" & ")
+          search: query.toString().trim().split(" ").join(" & "),
         },
         OR: [
           //all public collections
           {
-            privacy: "PUBLIC"
+            privacy: "PUBLIC",
           },
 
           //all friends-only collections from the current user's friends
@@ -354,18 +345,18 @@ export default class SearchController {
             owner: {
               followers: {
                 some: {
-                  followedId: payload.userId
-                }
+                  followedId: payload.userId,
+                },
               },
               following: {
                 some: {
-                  followerId: payload.userId
-                }
-              }
-            }
-          }
-        ]
-      }
+                  followerId: payload.userId,
+                },
+              },
+            },
+          },
+        ],
+      },
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -382,8 +373,8 @@ export default class SearchController {
         privacy: collection.privacy,
         previewMedias: collection.collectionItems.map(
           (collectionItem) => collectionItem.media
-        )
-      }))
+        ),
+      })),
     });
   });
 }

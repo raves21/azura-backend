@@ -9,7 +9,11 @@ import {
 } from "../utils/functions/reusablePrismaFunctions";
 import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
-import { CREATE_POST_SELECT, POSTS_INCLUDE } from "../utils/constants/queries";
+import {
+  COLLECTION_PREVIEW_MEDIAS_INCLUDE,
+  CREATE_POST_SELECT,
+  POSTS_INCLUDE,
+} from "../utils/constants/queries";
 
 export default class PostsController {
   public getCurrentUserPosts = asyncHandler(
@@ -327,20 +331,7 @@ export default class PostsController {
               description: true,
               owner: true,
               privacy: true,
-              collectionItems: {
-                take: 3,
-                select: {
-                  media: {
-                    select: {
-                      title: true,
-                      year: true,
-                      type: true,
-                      posterImage: true,
-                      coverImage: true,
-                    },
-                  },
-                },
-              },
+              collectionItems: COLLECTION_PREVIEW_MEDIAS_INCLUDE,
             },
           },
         },
