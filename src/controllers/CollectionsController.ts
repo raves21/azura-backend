@@ -391,11 +391,6 @@ export default class CollectionsController {
       },
       include: {
         owner: ENTITY_OWNER_SELECT,
-        _count: {
-          select: {
-            collectionItems: true,
-          },
-        },
       },
     });
 
@@ -405,7 +400,6 @@ export default class CollectionsController {
       description: foundCollection?.description,
       privacy: foundCollection?.privacy,
       owner: foundCollection?.owner,
-      totalCollectionItems: foundCollection?._count.collectionItems,
     };
 
     await checkResourcePrivacyAndUserOwnership({
