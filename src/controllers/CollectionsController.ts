@@ -395,7 +395,7 @@ export default class CollectionsController {
 
   public getCollectionCollectionItems = asyncHandler(
     async (req: Request, res: Response) => {
-      const { id } = req.params;
+      const { collectionId } = req.params;
 
       const { page, perPage, ascending } = req.query;
 
@@ -411,7 +411,7 @@ export default class CollectionsController {
           createdAt: order,
         },
         where: {
-          collectionId: id,
+          collectionId,
         },
         select: {
           id: true,
@@ -422,7 +422,7 @@ export default class CollectionsController {
 
       const totalItems = await PRISMA.collectionItem.count({
         where: {
-          collectionId: id,
+          collectionId,
         },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
