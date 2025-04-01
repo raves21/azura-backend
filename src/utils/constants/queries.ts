@@ -50,6 +50,7 @@ export const COLLECTION_PREVIEW_MEDIAS_INCLUDE = {
         year: true,
         type: true,
         posterImage: true,
+        coverImage: true,
       },
     },
   },
