@@ -46,6 +46,7 @@ export const COLLECTION_PREVIEW_MEDIAS_INCLUDE = {
   select: {
     media: {
       select: {
+        id: true,
         title: true,
         year: true,
         type: true,
