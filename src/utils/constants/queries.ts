@@ -51,6 +51,8 @@ export const COLLECTION_PREVIEW_MEDIAS_INCLUDE = {
         type: true,
         posterImage: true,
         coverImage: true,
+        rating: true,
+        description: true,
       },
     },
   },
