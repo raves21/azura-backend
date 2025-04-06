@@ -9,8 +9,8 @@ export default class CronController {
       const allMedia = await PRISMA.media.findMany({
         include: {
           posts: true,
-          collectionItems: true
-        }
+          collectionItems: true,
+        },
       });
 
       //retrieve all media ids that are not referenced by any post or collectionItem
@@ -26,17 +26,17 @@ export default class CronController {
         await PRISMA.media.deleteMany({
           where: {
             id: {
-              in: unusedMediaIds
-            }
-          }
+              in: unusedMediaIds,
+            },
+          },
         });
         res.status(200).json({
           message: "Success. Deleted unused media/s",
-          deletedMedia: unusedMediaIds
+          deletedMedias: unusedMediaIds,
         });
       } else {
         res.status(200).json({
-          message: "Success. No unused media/s to delete."
+          message: "Success. No unused media/s to delete.",
         });
       }
     }
@@ -49,13 +49,17 @@ export default class CronController {
       await PRISMA.oTC.deleteMany({
         where: {
           expiresAt: {
-            lt: oneHourAgo //otcs that are less than one hour ago
-          }
-        }
+            lt: oneHourAgo, //otcs that are less than one hour ago
+          },
+        },
       });
       res.status(200).json({
-        message: "Success. Cleared expired otcs."
+        message: "Success. Cleared expired otcs.",
       });
     }
   );
+
+  //todo CLEAR READ NOTIFICATIONS THAT ARE >= ONE WEEK
+
+  //todo CLEAR UNREAD NOTIFICATIONS THAT ARE >= TWO WEEKS
 }

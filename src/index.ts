@@ -25,7 +25,7 @@ const cookieParser = require("cookie-parser");
 app.use(
   cors({
     origin: "http://localhost:5173",
-    credentials: true
+    credentials: true,
   })
 );
 
@@ -50,7 +50,7 @@ app.use("/api/otc", otcRouter);
 app.use("/api/refresh", refreshRouter);
 
 // Route for cron-jobs
-app.use("/cron", cronRouter);
+app.use("/api/cron", cronRouter);
 
 //* Apply JWT verification middleware
 app.use(verifyJWT);
