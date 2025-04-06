@@ -241,6 +241,7 @@ export default class CollectionsController {
           createdAt: foundMedia.createdAt,
         };
         await updateExistingMedia(foundMedia, media);
+
         //proceed to creating the collection item
         const newCollectionItem = await PRISMA.collectionItem.create({
           data: {
@@ -275,6 +276,16 @@ export default class CollectionsController {
             collectionId,
             mediaId: newMedia.id,
             mediaType: newMedia.type,
+          },
+        });
+
+        //update collection's updatedAt
+        await PRISMA.collection.update({
+          where: {
+            id: collectionId,
+          },
+          data: {
+            updatedAt: new Date(),
           },
         });
         res.status(201).json({
