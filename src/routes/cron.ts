@@ -5,7 +5,7 @@ const router = express.Router();
 const cronController = new CronController();
 
 router
-  .post("/clear-unused-media", cronController.clearUnusedMedia)
-  .post("/clear-expired-otcs", cronController.clearExpiredOtcs);
+  .get("/clear-unused-media", cronController.clearUnusedMedia)
+  .get("/clear-expired-otcs", cronController.clearExpiredOtcs);
 
 export default router;
