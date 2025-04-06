@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 export const ENTITY_OWNER_SELECT = {
   select: {
     id: true,
@@ -43,6 +45,9 @@ export const CREATE_POST_SELECT = {
 
 export const COLLECTION_PREVIEW_MEDIAS_INCLUDE = {
   take: 4,
+  orderBy: {
+    createdAt: "asc" as Prisma.SortOrder,
+  },
   select: {
     media: {
       select: {
