@@ -6,6 +6,7 @@ import {
   checkResourcePrivacyAndUserOwnership,
   areTheyFriends,
   updateExistingMedia,
+  updateCollectionUpdatedAt,
 } from "../utils/functions/reusablePrismaFunctions";
 import { RequestWithPayload } from "../utils/types/jwt";
 import {
@@ -251,6 +252,9 @@ export default class CollectionsController {
           },
         });
 
+        //update collection's updatedAt
+        updateCollectionUpdatedAt(collectionId);
+
         res.status(201).json({
           message: "collection item created successfully.",
           data: newCollectionItem,
@@ -280,14 +284,8 @@ export default class CollectionsController {
         });
 
         //update collection's updatedAt
-        await PRISMA.collection.update({
-          where: {
-            id: collectionId,
-          },
-          data: {
-            updatedAt: new Date(),
-          },
-        });
+        updateCollectionUpdatedAt(collectionId);
+
         res.status(201).json({
           message: "collection item created successfully",
           data: newCollectionItem,

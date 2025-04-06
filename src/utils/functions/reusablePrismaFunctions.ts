@@ -5,13 +5,13 @@ import { sign } from "jsonwebtoken";
 import {
   CheckResourcePrivacyAndUserRelationshipArgs,
   DeleteExpiredSessionsAndLoginArgs,
-  UpsertNotificationArgs
+  UpsertNotificationArgs,
 } from "../types/prisma";
 import {
   ACCESS_TOKEN_DURATION,
   REFRESH_TOKEN_COOKIE_MAXAGE,
   REFRESH_TOKEN_DURATION,
-  REFRESH_TOKEN_EXPIRY_DATE
+  REFRESH_TOKEN_EXPIRY_DATE,
 } from "../constants/auth";
 import PRISMA from "../constants/prismaInstance";
 
@@ -20,7 +20,7 @@ export const checkResourcePrivacyAndUserOwnership = async ({
   ownerId,
   privacy,
   successData,
-  res
+  res,
 }: CheckResourcePrivacyAndUserRelationshipArgs) => {
   if (currentUserId !== ownerId) {
     let isValid = false;
@@ -35,7 +35,7 @@ export const checkResourcePrivacyAndUserOwnership = async ({
     if (isValid) {
       res.status(200).json({
         message: "success",
-        data: { ...successData }
+        data: { ...successData },
       });
     } else {
       //if validation does not pass, throw 404
@@ -46,7 +46,7 @@ export const checkResourcePrivacyAndUserOwnership = async ({
     //if current user owns the resource
     res.status(200).json({
       message: "success",
-      data: { ...successData }
+      data: { ...successData },
     });
   }
 };
@@ -57,14 +57,14 @@ export const areTheyFriends = async (userAId: string, userBId: string) => {
       OR: [
         {
           followerId: userAId,
-          followedId: userBId
+          followedId: userBId,
         },
         {
           followedId: userAId,
-          followerId: userBId
-        }
-      ]
-    }
+          followerId: userBId,
+        },
+      ],
+    },
   });
 
   if (followBack.length === 2) return true;
@@ -90,7 +90,7 @@ export const updateExistingMedia = async (
   ) {
     await PRISMA.media.update({
       where: {
-        id: foundMedia.id
+        id: foundMedia.id,
       },
       data: {
         title: mediaWithNewValues.title,
@@ -99,8 +99,8 @@ export const updateExistingMedia = async (
         coverImage: mediaWithNewValues.coverImage,
         posterImage: mediaWithNewValues.posterImage,
         rating: mediaWithNewValues.rating,
-        status: mediaWithNewValues.status
-      }
+        status: mediaWithNewValues.status,
+      },
     });
   }
 };
@@ -109,7 +109,7 @@ export const upsertNotification = async ({
   recipientId,
   actorId,
   type,
-  postId
+  postId,
 }: UpsertNotificationArgs) => {
   //dont do anything if actor is the user himself
   if (actorId === recipientId) return;
@@ -123,10 +123,10 @@ export const upsertNotification = async ({
         type,
         actors: {
           some: {
-            actorId
-          }
-        }
-      }
+            actorId,
+          },
+        },
+      },
     });
 
     //if a follow notification that has the actor in it already exists, dont do anything.
@@ -140,11 +140,11 @@ export const upsertNotification = async ({
         recipientId,
         actors: {
           create: {
-            actorId
-          }
+            actorId,
+          },
         },
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
     return;
   } else {
@@ -153,8 +153,8 @@ export const upsertNotification = async ({
       where: {
         recipientId,
         postId,
-        type
-      }
+        type,
+      },
     });
 
     if (existingNotification) {
@@ -162,8 +162,8 @@ export const upsertNotification = async ({
       const existingActor = await PRISMA.notificationActor.findFirst({
         where: {
           notificationId: existingNotification.id,
-          actorId
-        }
+          actorId,
+        },
       });
 
       if (!existingActor) {
@@ -174,18 +174,18 @@ export const upsertNotification = async ({
         await PRISMA.notificationActor.create({
           data: {
             notificationId: existingNotification.id,
-            actorId
-          }
+            actorId,
+          },
         });
 
         await PRISMA.notification.update({
           where: {
-            id: existingNotification.id
+            id: existingNotification.id,
           },
           data: {
             isRead: false,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
         return;
       } else return;
@@ -198,11 +198,11 @@ export const upsertNotification = async ({
           type,
           actors: {
             create: {
-              actorId
-            }
+              actorId,
+            },
           },
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
     }
   }
@@ -212,14 +212,14 @@ export const deleteExpiredSessionsAndLogin = async ({
   password,
   foundUser,
   currentDate,
-  res
+  res,
 }: DeleteExpiredSessionsAndLoginArgs) => {
   await PRISMA.userSession.deleteMany({
     where: {
       refreshTokenExpiresAt: {
-        lt: currentDate
-      }
-    }
+        lt: currentDate,
+      },
+    },
   });
   //evaluate password
   const matchedPassword = await bcrypt.compare(password, foundUser.password);
@@ -239,7 +239,7 @@ export const deleteExpiredSessionsAndLogin = async ({
     {
       userId: foundUser.id,
       email: foundUser.email,
-      handle: foundUser.handle
+      handle: foundUser.handle,
     },
     process.env.REFRESH_TOKEN_SECRET as string,
     { expiresIn: REFRESH_TOKEN_DURATION }
@@ -251,8 +251,8 @@ export const deleteExpiredSessionsAndLogin = async ({
       userId: foundUser.id,
       deviceName: `unknown device`,
       refreshToken,
-      refreshTokenExpiresAt: REFRESH_TOKEN_EXPIRY_DATE
-    }
+      refreshTokenExpiresAt: REFRESH_TOKEN_EXPIRY_DATE,
+    },
   });
 
   //create accessToken, including sessionId in its payload
@@ -261,7 +261,7 @@ export const deleteExpiredSessionsAndLogin = async ({
       userId: foundUser.id,
       sessionId: newlyCreatedUserSession.sessionId,
       email: foundUser.email,
-      handle: foundUser.handle
+      handle: foundUser.handle,
     },
     process.env.ACCESS_TOKEN_SECRET as string,
     { expiresIn: ACCESS_TOKEN_DURATION }
@@ -269,7 +269,7 @@ export const deleteExpiredSessionsAndLogin = async ({
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    maxAge: REFRESH_TOKEN_COOKIE_MAXAGE
+    maxAge: REFRESH_TOKEN_COOKIE_MAXAGE,
     //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
   });
 
@@ -281,10 +281,21 @@ export const deleteExpiredSessionsAndLogin = async ({
         username: foundUser.username,
         email: foundUser.email,
         handle: foundUser.handle,
-        avatar: foundUser.avatar
+        avatar: foundUser.avatar,
       },
       isDetachedMode: false,
-      accessToken
-    }
+      accessToken,
+    },
+  });
+};
+
+export const updateCollectionUpdatedAt = async (collectionId: string) => {
+  await PRISMA.collection.update({
+    where: {
+      id: collectionId,
+    },
+    data: {
+      updatedAt: new Date(),
+    },
   });
 };
