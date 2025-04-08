@@ -486,7 +486,7 @@ export default class CollectionsController {
     const req = _ as RequestWithPayload;
     const payload = req.jwtPayload;
     const { id } = req.params;
-    const { name, description, privacy } = req.body;
+    const { name, description, privacy, photo } = req.body;
 
     const updatedCollection = await PRISMA.collection.update({
       where: {
@@ -497,6 +497,7 @@ export default class CollectionsController {
         name,
         description,
         privacy,
+        photo,
       },
     });
     res.status(200).json({
