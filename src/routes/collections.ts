@@ -18,8 +18,12 @@ router
     collectionsController.getCollectionItemInfo
   )
   .get(
-    "/check-media-existence/:mediaId",
+    "/check-media-existence",
     collectionsController.checkMediaExistenceInCollections
+  )
+  .get(
+    "/:id/check-media-existence",
+    collectionsController.checkMediaExistenceInCollection
   )
 
   //post

@@ -510,19 +510,18 @@ export default class CollectionsController {
     async (_: Request, res: Response) => {
       const req = _ as RequestWithPayload;
       const payload = req.jwtPayload;
-      const { mediaId } = req.params;
-      const { type, page, perPage, ascending } = req.query;
+      const { mediaId, type, page, perPage, ascending } = req.query;
 
       const order = ascending == "true" ? "asc" : "desc";
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
       const skip = (_page - 1) * _perPage;
 
-      if (!type) {
+      if (!type || !mediaId) {
         throw new AppError(
           422,
           "Invalid Format.",
-          "Media type not provided.",
+          "Please provide all needed parameters.",
           true
         );
       }
@@ -542,11 +541,9 @@ export default class CollectionsController {
           name: true,
           collectionItems: {
             where: {
-              mediaId,
               AND: {
-                media: {
-                  type: type.toString() as MediaType,
-                },
+                mediaId: mediaId.toString(),
+                mediaType: type.toString() as MediaType,
               },
             },
           },
@@ -570,6 +567,52 @@ export default class CollectionsController {
           name: collection.name,
           doesGivenMediaExist: collection.collectionItems.length > 0,
         })),
+      });
+    }
+  );
+
+  public checkMediaExistenceInCollection = asyncHandler(
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithPayload;
+      const payload = req.jwtPayload;
+      const { id } = req.params;
+      const { mediaId, type } = req.query;
+
+      if (!type || !mediaId) {
+        throw new AppError(
+          422,
+          "Invalid Format.",
+          "Please provide all needed parameters.",
+          true
+        );
+      }
+
+      const mediaInCollection = await PRISMA.collection.findFirst({
+        where: {
+          id,
+          ownerId: payload.userId,
+          collectionItems: {
+            some: {
+              mediaId: mediaId.toString(),
+              mediaType: type.toString() as MediaType,
+            },
+          },
+        },
+      });
+
+      if (mediaInCollection) {
+        res.json({
+          message: "media already exists in collection",
+          data: {
+            doesGivenMediaExist: true,
+          },
+        });
+      }
+      res.json({
+        message: "media does not exist in collection",
+        data: {
+          doesGivenMediaExist: false,
+        },
       });
     }
   );
