@@ -39,10 +39,6 @@ export const POSTS_INCLUDE = (currentUserId: string) => ({
   },
 });
 
-export const CREATE_POST_SELECT = {
-  id: true,
-};
-
 export const COLLECTION_PREVIEW_MEDIAS_INCLUDE = {
   take: 4,
   orderBy: {
@@ -60,6 +56,33 @@ export const COLLECTION_PREVIEW_MEDIAS_INCLUDE = {
         rating: true,
         description: true,
       },
+    },
+  },
+};
+
+export const CREATE_POST_INCLUDE = {
+  collection: {
+    select: {
+      id: true,
+      photo: true,
+      name: true,
+      description: true,
+      owner: true,
+      privacy: true,
+      collectionItems: COLLECTION_PREVIEW_MEDIAS_INCLUDE,
+    },
+  },
+  media: {
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      description: true,
+      coverImage: true,
+      posterImage: true,
+      year: true,
+      rating: true,
+      status: true,
     },
   },
 };

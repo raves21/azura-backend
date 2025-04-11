@@ -11,7 +11,7 @@ import AppError from "../utils/types/errors";
 import { RequestWithPayload } from "../utils/types/jwt";
 import {
   COLLECTION_PREVIEW_MEDIAS_INCLUDE,
-  CREATE_POST_SELECT,
+  CREATE_POST_INCLUDE,
   POSTS_INCLUDE,
 } from "../utils/constants/queries";
 
@@ -282,7 +282,7 @@ export default class PostsController {
             mediaId: newMedia.id,
             ownerId: payload.userId,
           },
-          select: CREATE_POST_SELECT,
+          include: CREATE_POST_INCLUDE,
         });
 
         res.status(201).json({
@@ -303,11 +303,14 @@ export default class PostsController {
           mediaId: foundMedia.id,
           ownerId: payload.userId,
         },
-        select: CREATE_POST_SELECT,
+        include: CREATE_POST_INCLUDE,
       });
       res.status(201).json({
         message: "Post (with found media) successfully created.",
-        data: { ...newPostWithExistingMedia, collection: null },
+        data: {
+          ...newPostWithExistingMedia,
+          collection: null,
+        },
       });
       return;
     }
@@ -322,19 +325,7 @@ export default class PostsController {
           privacy,
           collectionId,
         },
-        include: {
-          collection: {
-            select: {
-              id: true,
-              photo: true,
-              name: true,
-              description: true,
-              owner: true,
-              privacy: true,
-              collectionItems: COLLECTION_PREVIEW_MEDIAS_INCLUDE,
-            },
-          },
-        },
+        include: CREATE_POST_INCLUDE,
       });
       res.status(201).json({
         message: "Post (with collection) successfully created.",
@@ -368,7 +359,7 @@ export default class PostsController {
         content,
         privacy,
       },
-      select: CREATE_POST_SELECT,
+      select: CREATE_POST_INCLUDE,
     });
 
     res.status(201).json({
