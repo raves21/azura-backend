@@ -72,6 +72,14 @@ export const CREATE_POST_INCLUDE = {
       collectionItems: COLLECTION_PREVIEW_MEDIAS_INCLUDE,
     },
   },
+  owner: {
+    select: {
+      username: true,
+      id: true,
+      handle: true,
+      avatar: true,
+    },
+  },
   media: {
     select: {
       id: true,

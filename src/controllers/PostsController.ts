@@ -359,7 +359,7 @@ export default class PostsController {
         content,
         privacy,
       },
-      select: CREATE_POST_INCLUDE,
+      include: CREATE_POST_INCLUDE,
     });
 
     res.status(201).json({
