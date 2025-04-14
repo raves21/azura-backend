@@ -18,43 +18,44 @@ export default class NotificationsController {
       skip,
       take: _perPage,
       orderBy: {
-        updatedAt: "desc"
+        updatedAt: "desc",
       },
       where: {
-        recipientId: payload.userId
+        recipientId: payload.userId,
       },
       include: {
         post: {
           select: {
-            id: true
-          }
+            id: true,
+          },
         },
         actors: {
           take: 2,
           orderBy: {
-            createdAt: "desc"
+            createdAt: "desc",
           },
           select: {
             actor: {
               select: {
+                id: true,
                 avatar: true,
-                username: true
-              }
-            }
-          }
+                username: true,
+              },
+            },
+          },
         },
         _count: {
           select: {
-            actors: true
-          }
-        }
-      }
+            actors: true,
+          },
+        },
+      },
     });
 
     const totalItems = await PRISMA.notification.count({
       where: {
-        recipientId: payload.userId
-      }
+        recipientId: payload.userId,
+      },
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -70,12 +71,13 @@ export default class NotificationsController {
         postId: notif.postId,
         type: notif.type,
         actorsPreview: notif.actors.map((item) => ({
+          id: item.actor.id,
           username: item.actor.username,
-          avatar: item.actor.avatar
+          avatar: item.actor.avatar,
         })),
         totalActors: notif._count.actors,
-        updatedAt: notif.updatedAt
-      }))
+        updatedAt: notif.updatedAt,
+      })),
     });
   });
 
@@ -96,19 +98,19 @@ export default class NotificationsController {
       const _isRead = isRead == "true";
       const updatedNotification = await PRISMA.notification.update({
         where: {
-          id
+          id,
         },
         data: {
-          isRead: _isRead
+          isRead: _isRead,
         },
         select: {
-          isRead: true
-        }
+          isRead: true,
+        },
       });
 
       res.status(200).json({
         message: "isRead updated",
-        data: updatedNotification
+        data: updatedNotification,
       });
     }
   );
@@ -119,8 +121,8 @@ export default class NotificationsController {
 
       await PRISMA.notification.delete({
         where: {
-          id
-        }
+          id,
+        },
       });
 
       res.status(200).json("successfully deleted notification.");
