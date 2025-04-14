@@ -38,6 +38,7 @@ export default class NotificationsController {
             actor: {
               select: {
                 id: true,
+                handle: true,
                 avatar: true,
                 username: true,
               },
@@ -72,6 +73,7 @@ export default class NotificationsController {
         type: notif.type,
         actorsPreview: notif.actors.map((item) => ({
           id: item.actor.id,
+          handle: item.actor.handle,
           username: item.actor.username,
           avatar: item.actor.avatar,
         })),
