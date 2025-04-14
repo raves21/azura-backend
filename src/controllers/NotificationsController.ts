@@ -70,7 +70,7 @@ export default class NotificationsController {
         postId: notif.postId,
         type: notif.type,
         actorsPreview: notif.actors.map((item) => ({
-          name: item.actor.username,
+          username: item.actor.username,
           avatar: item.actor.avatar
         })),
         totalActors: notif._count.actors,
