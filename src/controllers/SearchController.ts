@@ -167,6 +167,7 @@ export default class SearchController {
         owner: post.owner,
         totalLikes: post._count.likes,
         totalComments: post._count.comments,
+        createdAt: post.createdAt,
         isLikedByCurrentUser: post.likes
           .map((like) => like.userId)
           .includes(payload.userId.toString()),

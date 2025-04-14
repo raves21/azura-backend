@@ -21,8 +21,8 @@ export class DiscoverPeopleController {
       take: _perPage,
       where: {
         id: {
-          not: payload.userId
-        }
+          not: payload.userId,
+        },
       },
       select: {
         id: true,
@@ -32,23 +32,23 @@ export class DiscoverPeopleController {
         bio: true,
         following: {
           where: {
-            followerId: payload.userId
-          }
-        }
+            followerId: payload.userId,
+          },
+        },
       },
       orderBy: {
         following: {
-          _count: "asc"
-        }
-      }
+          _count: "asc",
+        },
+      },
     });
 
     const totalItems = await PRISMA.user.count({
       where: {
         id: {
-          not: payload.userId
-        }
-      }
+          not: payload.userId,
+        },
+      },
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -63,8 +63,8 @@ export class DiscoverPeopleController {
         username: user.username,
         handle: user.handle,
         bio: user.bio,
-        isFollowedByCurrentUser: user.following.length === 0 ? false : true
-      }))
+        isFollowedByCurrentUser: user.following.length === 0 ? false : true,
+      })),
     });
   });
 }
