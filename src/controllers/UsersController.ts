@@ -281,7 +281,7 @@ export default class UsersController {
         data: currentUserFollowingList.map((item) => ({
           id: item.followed.id,
           username: item.followed.username,
-          handle: item.followed.username,
+          handle: item.followed.handle,
           bio: item.followed.bio,
           avatar: item.followed.avatar,
           isFollowedByCurrentUser: true,
