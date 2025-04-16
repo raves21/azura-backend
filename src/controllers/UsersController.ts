@@ -21,7 +21,7 @@ export default class UsersController {
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order
+        createdAt: order,
       },
       select: {
         id: true,
@@ -32,10 +32,10 @@ export default class UsersController {
         bio: true,
         following: {
           select: {
-            followerId: true
-          }
-        }
-      }
+            followerId: true,
+          },
+        },
+      },
     });
     const totalItems = await PRISMA.user.count();
     const totalPages = Math.ceil(totalItems / _perPage);
@@ -53,8 +53,8 @@ export default class UsersController {
         bio: user.bio,
         isFollowedByCurrentUser: user.following
           .map((follow) => follow.followerId)
-          .includes(payload.userId)
-      }))
+          .includes(payload.userId),
+      })),
     });
   }
 
@@ -65,7 +65,7 @@ export default class UsersController {
 
       const currentUser = await PRISMA.user.findFirstOrThrow({
         where: {
-          id: payload.userId
+          id: payload.userId,
         },
         select: {
           id: true,
@@ -80,10 +80,10 @@ export default class UsersController {
           _count: {
             select: {
               followers: true,
-              following: true
-            }
-          }
-        }
+              following: true,
+            },
+          },
+        },
       });
 
       res.status(200).json({
@@ -99,8 +99,8 @@ export default class UsersController {
           //*idk why but ts needs to be inverted ⬇️
           totalFollowers: currentUser._count.following,
           totalFollowing: currentUser._count.followers,
-          sessionId: payload.sessionId
-        }
+          sessionId: payload.sessionId,
+        },
       });
     }
   );
@@ -112,7 +112,7 @@ export default class UsersController {
 
     const foundUser = await PRISMA.user.findFirstOrThrow({
       where: {
-        handle
+        handle,
       },
       select: {
         id: true,
@@ -126,24 +126,24 @@ export default class UsersController {
         _count: {
           select: {
             followers: true,
-            following: true
-          }
-        }
-      }
+            following: true,
+          },
+        },
+      },
     });
 
     const followsCurrentUser = await PRISMA.follow.findFirst({
       where: {
         followerId: foundUser.id,
-        followedId: payload.userId
-      }
+        followedId: payload.userId,
+      },
     });
 
     const followedByCurrentUser = await PRISMA.follow.findFirst({
       where: {
         followerId: payload.userId,
-        followedId: foundUser.id
-      }
+        followedId: foundUser.id,
+      },
     });
 
     res.status(200).json({
@@ -160,8 +160,8 @@ export default class UsersController {
         totalFollowers: foundUser._count.following,
         totalFollowing: foundUser._count.followers,
         followsYou: followsCurrentUser ? true : false,
-        followedByYou: followedByCurrentUser ? true : false
-      }
+        followedByYou: followedByCurrentUser ? true : false,
+      },
     });
   });
 
@@ -182,17 +182,17 @@ export default class UsersController {
     await PRISMA.follow.create({
       data: {
         followerId: payload.userId,
-        followedId: userToFollow
-      }
+        followedId: userToFollow,
+      },
     });
 
     await upsertNotification({
       recipientId: userToFollow,
       actorId: payload.userId,
-      type: "FOLLOW"
+      type: "FOLLOW",
     });
     res.status(201).json({
-      message: `Success, you have successfully followed user ${userToFollow}`
+      message: `Success, you have successfully followed user ${userToFollow}`,
     });
   });
 
@@ -205,8 +205,8 @@ export default class UsersController {
     const foundRelationship = await PRISMA.follow.findFirst({
       where: {
         followerId: payload.userId,
-        followedId: userToUnfollow
-      }
+        followedId: userToUnfollow,
+      },
     });
 
     if (!foundRelationship) {
@@ -223,13 +223,13 @@ export default class UsersController {
       where: {
         followerId_followedId: {
           followerId: payload.userId,
-          followedId: userToUnfollow
-        }
-      }
+          followedId: userToUnfollow,
+        },
+      },
     });
 
     res.status(200).json({
-      message: `Successfully unfollowed user ${userToUnfollow}`
+      message: `Successfully unfollowed user ${userToUnfollow}`,
     });
   });
   public getCurrentUserFollowingList = asyncHandler(
@@ -246,12 +246,12 @@ export default class UsersController {
 
       const currentUserFollowingList = await PRISMA.follow.findMany({
         where: {
-          followerId: payload.userId
+          followerId: payload.userId,
         },
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order
+          createdAt: order,
         },
         select: {
           followed: {
@@ -260,16 +260,16 @@ export default class UsersController {
               username: true,
               avatar: true,
               handle: true,
-              bio: true
-            }
-          }
-        }
+              bio: true,
+            },
+          },
+        },
       });
 
       const totalItems = await PRISMA.follow.count({
         where: {
-          followerId: payload.userId
-        }
+          followerId: payload.userId,
+        },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -284,8 +284,8 @@ export default class UsersController {
           handle: item.followed.username,
           bio: item.followed.bio,
           avatar: item.followed.avatar,
-          isFollowedByCurrentUser: true
-        }))
+          isFollowedByCurrentUser: true,
+        })),
       });
     }
   );
@@ -304,12 +304,12 @@ export default class UsersController {
 
       const currentUserFollowerList = await PRISMA.follow.findMany({
         where: {
-          followedId: payload.userId
+          followedId: payload.userId,
         },
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order
+          createdAt: order,
         },
         select: {
           follower: {
@@ -321,17 +321,17 @@ export default class UsersController {
               bio: true,
               following: {
                 where: {
-                  followerId: payload.userId
-                }
-              }
-            }
-          }
-        }
+                  followerId: payload.userId,
+                },
+              },
+            },
+          },
+        },
       });
       const totalItems = await PRISMA.follow.count({
         where: {
-          followedId: payload.userId
-        }
+          followedId: payload.userId,
+        },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
       res.status(200).json({
@@ -345,8 +345,9 @@ export default class UsersController {
           handle: item.follower.handle,
           bio: item.follower.bio,
           avatar: item.follower.avatar,
-          isFollowedByCurrentUser: item.follower.following.length === 0 ? false : true
-        }))
+          isFollowedByCurrentUser:
+            item.follower.following.length === 0 ? false : true,
+        })),
       });
     }
   );
@@ -354,7 +355,7 @@ export default class UsersController {
   public getUserFollowingList = asyncHandler(
     async (_: Request, res: Response) => {
       const req = _ as RequestWithPayload;
-      const { id } = req.params;
+      const { handle } = req.params;
       const payload = req.jwtPayload;
       const { page, perPage, ascending } = req.query;
 
@@ -365,12 +366,14 @@ export default class UsersController {
 
       const userFollowingList = await PRISMA.follow.findMany({
         where: {
-          followerId: id
+          follower: {
+            handle,
+          },
         },
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order
+          createdAt: order,
         },
         select: {
           followed: {
@@ -382,18 +385,20 @@ export default class UsersController {
               bio: true,
               followers: {
                 where: {
-                  followedId: payload.userId
-                }
-              }
-            }
-          }
-        }
+                  followedId: payload.userId,
+                },
+              },
+            },
+          },
+        },
       });
 
       const totalItems = await PRISMA.follow.count({
         where: {
-          followerId: id
-        }
+          follower: {
+            handle,
+          },
+        },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
       res.status(200).json({
@@ -407,8 +412,9 @@ export default class UsersController {
           handle: item.followed.handle,
           bio: item.followed.bio,
           avatar: item.followed.avatar,
-          isFollowedByCurrentUser: item.followed.followers.length === 0 ? false : true
-        }))
+          isFollowedByCurrentUser:
+            item.followed.followers.length === 0 ? false : true,
+        })),
       });
     }
   );
@@ -416,7 +422,7 @@ export default class UsersController {
   public getUserFollowerList = asyncHandler(
     async (_: Request, res: Response) => {
       const req = _ as RequestWithPayload;
-      const { id } = req.params;
+      const { handle } = req.params;
       const { page, perPage, ascending } = req.query;
       const payload = req.jwtPayload;
       const order = ascending == "true" ? "asc" : "desc";
@@ -426,12 +432,14 @@ export default class UsersController {
 
       const userFollowerList = await PRISMA.follow.findMany({
         where: {
-          followedId: id
+          followed: {
+            handle,
+          },
         },
         skip,
         take: _perPage,
         orderBy: {
-          createdAt: order
+          createdAt: order,
         },
         select: {
           follower: {
@@ -443,18 +451,20 @@ export default class UsersController {
               bio: true,
               following: {
                 where: {
-                  followerId: payload.userId
-                }
-              }
-            }
-          }
-        }
+                  followerId: payload.userId,
+                },
+              },
+            },
+          },
+        },
       });
 
       const totalItems = await PRISMA.follow.count({
         where: {
-          followedId: id
-        }
+          followed: {
+            handle,
+          },
+        },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
       res.status(200).json({
@@ -468,8 +478,9 @@ export default class UsersController {
           handle: item.follower.handle,
           bio: item.follower.bio,
           avatar: item.follower.avatar,
-          isFollowedByCurrentUser: item.follower.following.length === 0 ? false : true
-        }))
+          isFollowedByCurrentUser:
+            item.follower.following.length === 0 ? false : true,
+        })),
       });
     }
   );

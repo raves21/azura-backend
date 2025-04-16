@@ -11,8 +11,8 @@ router
   .get("/:handle", usersController.getUserInfo)
   .get("/me/following", usersController.getCurrentUserFollowingList)
   .get("/me/followers", usersController.getCurrentUserFollowerList)
-  .get("/:id/following", usersController.getUserFollowingList)
-  .get("/:id/followers", usersController.getUserFollowerList)
+  .get("/:handle/following", usersController.getUserFollowingList)
+  .get("/:handle/followers", usersController.getUserFollowerList)
 
   //post
   .post("/:id/follow", usersController.followUser)
