@@ -8,6 +8,10 @@ router
   //get
   .get("/user/me", collectionsController.getCurrentUserCollections)
   .get("/user/:handle", collectionsController.getUserCollections)
+  .get(
+    "/check-media-existence",
+    collectionsController.checkMediaExistenceInCollections
+  )
   .get("/:id", collectionsController.getCollectionInfo)
   .get(
     "/:collectionId/collection-items",
@@ -16,10 +20,6 @@ router
   .get(
     "/:collectionId/collection-items/:id",
     collectionsController.getCollectionItemInfo
-  )
-  .get(
-    "/check-media-existence",
-    collectionsController.checkMediaExistenceInCollections
   )
   .get(
     "/:id/check-media-existence",
