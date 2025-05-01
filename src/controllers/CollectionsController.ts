@@ -8,7 +8,7 @@ import {
   updateExistingMedia,
   updateCollectionUpdatedAt,
 } from "../utils/functions/reusablePrismaFunctions";
-import { RequestWithPayload } from "../utils/types/jwt";
+import { RequestWithSession } from "../utils/types/session";
 import {
   COLLECTION_PREVIEW_MEDIAS_INCLUDE,
   ENTITY_OWNER_SELECT,
@@ -18,8 +18,8 @@ import PRISMA from "../utils/constants/prismaInstance";
 export default class CollectionsController {
   public getCurrentUserCollections = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
 
       const { page, perPage, ascending } = req.query;
 
@@ -35,7 +35,7 @@ export default class CollectionsController {
           updatedAt: order,
         },
         where: {
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
         include: {
           owner: ENTITY_OWNER_SELECT,
@@ -44,7 +44,7 @@ export default class CollectionsController {
       });
       const totalItems = await PRISMA.collection.count({
         where: {
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
@@ -70,9 +70,9 @@ export default class CollectionsController {
 
   public getUserCollections = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
+      const req = _ as RequestWithSession;
       const { handle } = req.params;
-      const payload = req.jwtPayload;
+      const session = req.session;
 
       const { page, perPage, ascending } = req.query;
 
@@ -90,7 +90,7 @@ export default class CollectionsController {
 
       //check if currentUser is friends with collection owner
       const isCurrentUserFriendsWithOwner = await areTheyFriends(
-        payload.userId as string,
+        session.userId as string,
         foundOwner.id
       );
 
@@ -147,13 +147,13 @@ export default class CollectionsController {
   );
 
   public createCollection = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { name, description, privacy, photo } = req.body;
-    const payload = req.jwtPayload;
+    const session = req.session;
 
     const newCollection = await PRISMA.collection.create({
       data: {
-        ownerId: payload.userId,
+        ownerId: session.userId,
         name,
         description,
         privacy,
@@ -168,14 +168,14 @@ export default class CollectionsController {
   });
 
   public deleteCollection = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { id } = req.params;
 
     const deletedCollection = await PRISMA.collection.delete({
       where: {
         id,
-        ownerId: payload.userId,
+        ownerId: session.userId,
       },
     });
     res.status(200).json({
@@ -297,8 +297,8 @@ export default class CollectionsController {
   //delete one
   public deleteCollectionItem = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
 
       const { id: collectionId } = req.params;
       const { mediaId, mediaType } = req.query;
@@ -316,7 +316,7 @@ export default class CollectionsController {
       await PRISMA.collection.findFirstOrThrow({
         where: {
           id: collectionId,
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
       });
 
@@ -335,17 +335,17 @@ export default class CollectionsController {
   //delete many
   public deleteCollectionItems = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
+      const req = _ as RequestWithSession;
       //array of collectionItemIds
       const { collectionItemsToDelete } = req.body;
       const { id: collectionId } = req.params;
-      const payload = req.jwtPayload;
+      const session = req.session;
 
       //check if collection exists, and if owner owns the collection
       await PRISMA.collection.findFirstOrThrow({
         where: {
           id: collectionId,
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
       });
 
@@ -366,10 +366,10 @@ export default class CollectionsController {
   );
 
   public getCollectionInfo = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     //collection id
     const { id } = req.params;
-    const payload = req.jwtPayload;
+    const session = req.session;
 
     const foundCollection = await PRISMA.collection.findFirstOrThrow({
       where: {
@@ -394,7 +394,7 @@ export default class CollectionsController {
     };
 
     await checkResourcePrivacyAndUserOwnership({
-      currentUserId: payload.userId,
+      currentUserId: session.userId,
       ownerId: foundCollection.ownerId,
       privacy: foundCollection.privacy,
       successData,
@@ -448,8 +448,8 @@ export default class CollectionsController {
 
   public getCollectionItemInfo = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
       const { collectionId, id } = req.params;
 
       const foundCollectionItem = await PRISMA.collectionItem.findFirstOrThrow({
@@ -469,7 +469,7 @@ export default class CollectionsController {
       });
 
       await checkResourcePrivacyAndUserOwnership({
-        currentUserId: payload.userId,
+        currentUserId: session.userId,
         ownerId: foundCollectionItem.collection.ownerId,
         privacy: foundCollectionItem.collection.privacy,
         res,
@@ -483,15 +483,15 @@ export default class CollectionsController {
   );
 
   public updateCollection = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { id } = req.params;
     const { name, description, privacy, photo } = req.body;
 
     const updatedCollection = await PRISMA.collection.update({
       where: {
         id,
-        ownerId: payload.userId,
+        ownerId: session.userId,
       },
       data: {
         name,
@@ -508,8 +508,8 @@ export default class CollectionsController {
 
   public checkMediaExistenceInCollections = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
       const { mediaId, type, page, perPage, ascending } = req.query;
 
       const order = ascending == "true" ? "asc" : "desc";
@@ -534,7 +534,7 @@ export default class CollectionsController {
           updatedAt: order,
         },
         where: {
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
         select: {
           id: true,
@@ -552,7 +552,7 @@ export default class CollectionsController {
 
       const totalItems = await PRISMA.collection.count({
         where: {
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
@@ -573,8 +573,8 @@ export default class CollectionsController {
 
   public checkMediaExistenceInCollection = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
       const { id } = req.params;
       const { mediaId, type } = req.query;
 
@@ -590,7 +590,7 @@ export default class CollectionsController {
       const mediaInCollection = await PRISMA.collection.findFirst({
         where: {
           id,
-          ownerId: payload.userId,
+          ownerId: session.userId,
           collectionItems: {
             some: {
               mediaId: mediaId.toString(),

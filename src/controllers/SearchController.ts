@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/asyncHandler";
 import PRISMA from "../utils/constants/prismaInstance";
 import AppError from "../utils/types/errors";
-import { RequestWithPayload } from "../utils/types/jwt";
+import { RequestWithSession } from "../utils/types/session";
 import {
   COLLECTION_PREVIEW_MEDIAS_INCLUDE,
   ENTITY_OWNER_SELECT,
@@ -11,8 +11,8 @@ import {
 
 export default class SearchController {
   public searchPosts = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { page, perPage, ascending, query } = req.query;
 
     if (!query) {
@@ -57,7 +57,7 @@ export default class SearchController {
               },
               //all friends-only posts from the current user
               {
-                AND: [{ ownerId: payload.userId }, { privacy: "FRIENDS_ONLY" }],
+                AND: [{ ownerId: session.userId }, { privacy: "FRIENDS_ONLY" }],
               },
               //all friends-only posts from the current user's friends
               {
@@ -69,14 +69,14 @@ export default class SearchController {
                         {
                           followers: {
                             some: {
-                              followedId: payload.userId,
+                              followedId: session.userId,
                             },
                           },
                         },
                         {
                           following: {
                             some: {
-                              followerId: payload.userId,
+                              followerId: session.userId,
                             },
                           },
                         },
@@ -89,7 +89,7 @@ export default class SearchController {
           },
         ],
       },
-      include: POSTS_INCLUDE(payload.userId),
+      include: POSTS_INCLUDE(session.userId),
     });
 
     const totalItems = await PRISMA.post.count({
@@ -120,7 +120,7 @@ export default class SearchController {
               },
               //all friends-only posts from the current user
               {
-                AND: [{ ownerId: payload.userId }, { privacy: "FRIENDS_ONLY" }],
+                AND: [{ ownerId: session.userId }, { privacy: "FRIENDS_ONLY" }],
               },
               //all friends-only posts from the current user's friends
               {
@@ -132,14 +132,14 @@ export default class SearchController {
                         {
                           followers: {
                             some: {
-                              followedId: payload.userId,
+                              followedId: session.userId,
                             },
                           },
                         },
                         {
                           following: {
                             some: {
-                              followerId: payload.userId,
+                              followerId: session.userId,
                             },
                           },
                         },
@@ -170,7 +170,7 @@ export default class SearchController {
         createdAt: post.createdAt,
         isLikedByCurrentUser: post.likes
           .map((like) => like.userId)
-          .includes(payload.userId.toString()),
+          .includes(session.userId.toString()),
         media: post.media,
         collection: post.collection
           ? {
@@ -189,8 +189,8 @@ export default class SearchController {
   });
 
   public searchUsers = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { page, perPage, ascending, query } = req.query;
 
     if (!query) {
@@ -267,7 +267,7 @@ export default class SearchController {
         handle: user.handle,
         isFollowedByCurrentUser: user.following
           .map((follow) => follow.followerId)
-          .includes(payload.userId)
+          .includes(session.userId)
           ? true
           : false,
       })),
@@ -275,8 +275,8 @@ export default class SearchController {
   });
 
   public searchCollections = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { page, perPage, ascending, query } = req.query;
 
     if (!query) {
@@ -311,12 +311,12 @@ export default class SearchController {
             owner: {
               followers: {
                 some: {
-                  followedId: payload.userId,
+                  followedId: session.userId,
                 },
               },
               following: {
                 some: {
-                  followerId: payload.userId,
+                  followerId: session.userId,
                 },
               },
             },
@@ -346,12 +346,12 @@ export default class SearchController {
             owner: {
               followers: {
                 some: {
-                  followedId: payload.userId,
+                  followedId: session.userId,
                 },
               },
               following: {
                 some: {
-                  followerId: payload.userId,
+                  followerId: session.userId,
                 },
               },
             },

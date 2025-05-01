@@ -23,19 +23,18 @@ type FoundUser = {
   email: string;
   handle: string;
   avatar: string | null;
-  createdAt: Date;
-  userSessions: {
-    createdAt: Date;
-    sessionId: string;
-    userId: string;
-    refreshTokenExpiresAt: Date;
-    deviceName: string;
-  }[];
+};
+
+type UserAgentInfo = {
+  os: string | null;
+  browser: string | null;
+  platform: string | null;
 };
 
 export type DeleteExpiredSessionsAndLoginArgs = {
   password: string;
   foundUser: FoundUser;
+  userAgentInfo: UserAgentInfo;
   currentDate: Date;
   res: Response;
 };

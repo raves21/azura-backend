@@ -1,13 +1,13 @@
 import { Response, Request } from "express";
 import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
-import { RequestWithPayload } from "../utils/types/jwt";
+import { RequestWithSession } from "../utils/types/session";
 import { POSTS_INCLUDE } from "../utils/constants/queries";
 
 export default class FeedController {
   public getForYouPosts = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
 
     const { page, perPage, ascending } = req.query;
 
@@ -20,19 +20,19 @@ export default class FeedController {
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order
+        createdAt: order,
       },
       where: {
         OR: [
           //all public posts
           {
-            privacy: "PUBLIC"
+            privacy: "PUBLIC",
           },
 
           //all friends-only posts from the current user
           {
-            ownerId: payload.userId,
-            privacy: "FRIENDS_ONLY"
+            ownerId: session.userId,
+            privacy: "FRIENDS_ONLY",
           },
 
           //all friends-only posts from the current user's friends
@@ -41,19 +41,19 @@ export default class FeedController {
             owner: {
               followers: {
                 some: {
-                  followedId: payload.userId
-                }
+                  followedId: session.userId,
+                },
               },
               following: {
                 some: {
-                  followerId: payload.userId
-                }
-              }
-            }
-          }
-        ]
+                  followerId: session.userId,
+                },
+              },
+            },
+          },
+        ],
       },
-      include: POSTS_INCLUDE(payload.userId)
+      include: POSTS_INCLUDE(session.userId),
     });
 
     const totalItems = await PRISMA.post.count({
@@ -61,13 +61,13 @@ export default class FeedController {
         OR: [
           //all public posts
           {
-            privacy: "PUBLIC"
+            privacy: "PUBLIC",
           },
 
           //all friends-only posts from the current user
           {
-            ownerId: payload.userId,
-            privacy: "FRIENDS_ONLY"
+            ownerId: session.userId,
+            privacy: "FRIENDS_ONLY",
           },
 
           //all friends-only posts from the current user's friends
@@ -76,18 +76,18 @@ export default class FeedController {
             owner: {
               followers: {
                 some: {
-                  followedId: payload.userId
-                }
+                  followedId: session.userId,
+                },
               },
               following: {
                 some: {
-                  followerId: payload.userId
-                }
-              }
-            }
-          }
-        ]
-      }
+                  followerId: session.userId,
+                },
+              },
+            },
+          },
+        ],
+      },
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
@@ -105,7 +105,7 @@ export default class FeedController {
         totalComments: post._count.comments,
         isLikedByCurrentUser: post.likes
           .map((like) => like.userId)
-          .includes(payload.userId.toString()),
+          .includes(session.userId.toString()),
         media: post.media,
         collection: post.collection
           ? {
@@ -117,17 +117,17 @@ export default class FeedController {
               owner: post.collection.owner,
               previewMedias: post.collection.collectionItems.map(
                 (collectionItem) => collectionItem.media
-              )
+              ),
             }
           : null,
-        createdAt: post.createdAt
-      }))
+        createdAt: post.createdAt,
+      })),
     });
   });
 
   public getFollowingPosts = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
 
     const { page, perPage, ascending } = req.query;
 
@@ -140,7 +140,7 @@ export default class FeedController {
       skip,
       take: _perPage,
       orderBy: {
-        createdAt: order
+        createdAt: order,
       },
       where: {
         OR: [
@@ -150,15 +150,15 @@ export default class FeedController {
             owner: {
               followers: {
                 some: {
-                  followedId: payload.userId
-                }
+                  followedId: session.userId,
+                },
               },
               following: {
                 some: {
-                  followerId: payload.userId
-                }
-              }
-            }
+                  followerId: session.userId,
+                },
+              },
+            },
           },
           //all public posts from users that the current user follow
           //this includes all public posts from the current user's friends
@@ -167,14 +167,14 @@ export default class FeedController {
             owner: {
               following: {
                 some: {
-                  followerId: payload.userId
-                }
-              }
-            }
-          }
-        ]
+                  followerId: session.userId,
+                },
+              },
+            },
+          },
+        ],
       },
-      include: POSTS_INCLUDE(payload.userId)
+      include: POSTS_INCLUDE(session.userId),
     });
 
     const totalItems = await PRISMA.post.count({
@@ -186,15 +186,15 @@ export default class FeedController {
             owner: {
               followers: {
                 some: {
-                  followedId: payload.userId
-                }
+                  followedId: session.userId,
+                },
               },
               following: {
                 some: {
-                  followerId: payload.userId
-                }
-              }
-            }
+                  followerId: session.userId,
+                },
+              },
+            },
           },
           //all public posts from users that the current user follow
           //this includes all public posts from the current user's friends
@@ -203,13 +203,13 @@ export default class FeedController {
             owner: {
               following: {
                 some: {
-                  followerId: payload.userId
-                }
-              }
-            }
-          }
-        ]
-      }
+                  followerId: session.userId,
+                },
+              },
+            },
+          },
+        ],
+      },
     });
 
     const totalPages = Math.ceil(totalItems / _perPage);
@@ -228,7 +228,7 @@ export default class FeedController {
         totalComments: post._count.comments,
         isLikedByCurrentUser: post.likes
           .map((like) => like.userId)
-          .includes(payload.userId.toString()),
+          .includes(session.userId.toString()),
         media: post.media,
         collection: post.collection
           ? {
@@ -240,11 +240,11 @@ export default class FeedController {
               privacy: post.collection.privacy,
               previewMedias: post.collection.collectionItems.map(
                 (collectionItem) => collectionItem.media
-              )
+              ),
             }
           : null,
-        createdAt: post.createdAt
-      }))
+        createdAt: post.createdAt,
+      })),
     });
   });
 }

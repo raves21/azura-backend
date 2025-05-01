@@ -1,7 +1,6 @@
 import express, { Express } from "express";
 import usersRouter from "./routes/users";
 import authRouter from "./routes/auth";
-import refreshRouter from "./routes/refresh";
 import sessionsRouter from "./routes/sessions";
 import collectionsRouter from "./routes/collections";
 import cronRouter from "./routes/cron";
@@ -13,7 +12,7 @@ import trendingRouter from "./routes/trending";
 import otcRouter from "./routes/otc";
 import profileRouter from "./routes/profile";
 import discoverPeopleRouter from "./routes/discoverPeople";
-import { verifyJWT } from "./middleware/verifyJWT";
+import { verifySessionToken } from "./middleware/verifySessionToken";
 import { errorHandler } from "./middleware/errorHandler";
 import cors from "cors";
 
@@ -46,14 +45,11 @@ app.use("/api/auth", authRouter);
 // OTC route
 app.use("/api/otc", otcRouter);
 
-// Refresh route
-app.use("/api/refresh", refreshRouter);
-
 // Route for cron-jobs
 app.use("/api/cron", cronRouter);
 
-//* Apply JWT verification middleware
-app.use(verifyJWT);
+//* Apply token verification middleware
+app.use(verifySessionToken);
 
 // Route for checking token validity in the frontend
 app.get("/api/check-token", (_, res) => {

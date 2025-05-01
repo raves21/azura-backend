@@ -8,7 +8,7 @@ import {
   upsertNotification,
 } from "../utils/functions/reusablePrismaFunctions";
 import AppError from "../utils/types/errors";
-import { RequestWithPayload } from "../utils/types/jwt";
+import { RequestWithSession } from "../utils/types/session";
 import {
   COLLECTION_PREVIEW_MEDIAS_INCLUDE,
   CREATE_POST_INCLUDE,
@@ -18,8 +18,8 @@ import {
 export default class PostsController {
   public getCurrentUserPosts = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
 
       const { page, perPage, ascending } = req.query;
 
@@ -30,19 +30,19 @@ export default class PostsController {
 
       const currentUserPosts = await PRISMA.post.findMany({
         where: {
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
         skip,
         take: _perPage,
         orderBy: {
           createdAt: order,
         },
-        include: POSTS_INCLUDE(payload.userId),
+        include: POSTS_INCLUDE(session.userId),
       });
 
       const totalItems = await PRISMA.post.count({
         where: {
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
@@ -60,7 +60,7 @@ export default class PostsController {
           totalComments: post._count.comments,
           isLikedByCurrentUser: post.likes
             .map((like) => like.userId)
-            .includes(payload.userId.toString()),
+            .includes(session.userId.toString()),
           owner: post.owner,
           media: post.media,
           collection: post.collection
@@ -83,9 +83,9 @@ export default class PostsController {
   );
 
   public getUserPosts = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { handle } = req.params;
-    const payload = req.jwtPayload;
+    const session = req.session;
 
     const { page, perPage, ascending } = req.query;
 
@@ -102,7 +102,7 @@ export default class PostsController {
 
     //check if currentUser is friends with owner
     const isCurrentUserFriendsWithOwner = await areTheyFriends(
-      payload.userId,
+      session.userId,
       foundOwner.id
     );
 
@@ -121,7 +121,7 @@ export default class PostsController {
       orderBy: {
         createdAt: order,
       },
-      include: POSTS_INCLUDE(payload.userId),
+      include: POSTS_INCLUDE(session.userId),
     });
 
     const totalItems = await PRISMA.post.count({
@@ -149,7 +149,7 @@ export default class PostsController {
         totalComments: post._count.comments,
         isLikedByCurrentUser: post.likes
           .map((like) => like.userId)
-          .includes(payload.userId.toString()),
+          .includes(session.userId.toString()),
         owner: post.owner,
         media: post.media,
         collection: post.collection
@@ -171,16 +171,16 @@ export default class PostsController {
   });
 
   public getPostInfo = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     //post id
     const { id } = req.params;
-    const payload = req.jwtPayload;
+    const session = req.session;
 
     const foundPost = await PRISMA.post.findFirstOrThrow({
       where: {
         id,
       },
-      include: POSTS_INCLUDE(payload.userId),
+      include: POSTS_INCLUDE(session.userId),
     });
 
     const postFirstLikers = await PRISMA.post.findFirstOrThrow({
@@ -214,7 +214,7 @@ export default class PostsController {
       totalComments: foundPost._count.comments,
       isLikedByCurrentUser: foundPost.likes
         .map((like) => like.userId)
-        .includes(payload.userId),
+        .includes(session.userId),
       owner: foundPost.owner,
       media: foundPost.media,
       postFirstLikers:
@@ -238,7 +238,7 @@ export default class PostsController {
     };
 
     await checkResourcePrivacyAndUserOwnership({
-      currentUserId: payload.userId,
+      currentUserId: session.userId,
       ownerId: foundPost.owner.id,
       privacy: foundPost.privacy,
       res,
@@ -247,8 +247,8 @@ export default class PostsController {
   });
 
   public createPost = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { content, privacy, media, collectionId } = req.body;
 
     //check if media exists in req.body
@@ -280,7 +280,7 @@ export default class PostsController {
             content,
             privacy,
             mediaId: newMedia.id,
-            ownerId: payload.userId,
+            ownerId: session.userId,
           },
           include: CREATE_POST_INCLUDE,
         });
@@ -301,7 +301,7 @@ export default class PostsController {
           content,
           privacy,
           mediaId: foundMedia.id,
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
         include: CREATE_POST_INCLUDE,
       });
@@ -320,7 +320,7 @@ export default class PostsController {
       //use the collectionId to create the new post
       const newPostWithCollection = await PRISMA.post.create({
         data: {
-          ownerId: payload.userId,
+          ownerId: session.userId,
           content,
           privacy,
           collectionId,
@@ -355,7 +355,7 @@ export default class PostsController {
 
     const newPostWithNoAttachments = await PRISMA.post.create({
       data: {
-        ownerId: payload.userId,
+        ownerId: session.userId,
         content,
         privacy,
       },
@@ -370,14 +370,14 @@ export default class PostsController {
   });
 
   public deletePost = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { id } = req.params;
 
     await PRISMA.post.delete({
       where: {
         id,
-        ownerId: payload.userId,
+        ownerId: session.userId,
       },
     });
 
@@ -387,8 +387,8 @@ export default class PostsController {
   });
 
   public updatePost = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { id } = req.params;
     //! NEEDS REFACTOR: make proper validation for req.body
     const { content, privacy, media, collectionId } = req.body;
@@ -425,7 +425,7 @@ export default class PostsController {
             content,
             privacy,
             mediaId: newMedia.id,
-            ownerId: payload.userId,
+            ownerId: session.userId,
           },
         });
         res.status(200).json({
@@ -446,7 +446,7 @@ export default class PostsController {
           content,
           privacy,
           mediaId: foundMedia.id,
-          ownerId: payload.userId,
+          ownerId: session.userId,
         },
       });
       res.status(201).json({
@@ -462,7 +462,7 @@ export default class PostsController {
           id,
         },
         data: {
-          ownerId: payload.userId,
+          ownerId: session.userId,
           content,
           privacy,
           collectionId,
@@ -481,7 +481,7 @@ export default class PostsController {
         id,
       },
       data: {
-        ownerId: payload.userId,
+        ownerId: session.userId,
         content,
         privacy,
       },
@@ -494,7 +494,7 @@ export default class PostsController {
   });
 
   public getPostComments = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { id } = req.params;
 
     const { page, perPage, ascending } = req.query;
@@ -552,15 +552,15 @@ export default class PostsController {
   });
 
   public createPostComment = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     //postId
     const { id } = req.params;
     const { content } = req.body;
 
     const newComment = await PRISMA.comment.create({
       data: {
-        authorId: payload.userId,
+        authorId: session.userId,
         postId: id,
         content,
       },
@@ -576,7 +576,7 @@ export default class PostsController {
 
     await upsertNotification({
       recipientId: newComment.post.ownerId,
-      actorId: payload.userId,
+      actorId: session.userId,
       postId: id,
       type: "COMMENT",
     });
@@ -590,16 +590,16 @@ export default class PostsController {
   });
 
   public updatePostComment = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { postId, commentId } = req.params;
     const { content } = req.body;
-    const payload = req.jwtPayload;
+    const session = req.session;
 
     await PRISMA.comment.update({
       where: {
         id: commentId,
         postId,
-        authorId: payload.userId,
+        authorId: session.userId,
       },
       data: {
         content,
@@ -612,9 +612,9 @@ export default class PostsController {
   });
 
   public deletePostComment = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { postId, commentId } = req.params;
-    const payload = req.jwtPayload;
+    const session = req.session;
 
     const foundPostOwner = await PRISMA.post.findFirst({
       where: {
@@ -629,7 +629,7 @@ export default class PostsController {
       throw new AppError(404, "NotFound", "Post not found.", true);
     }
 
-    if (foundPostOwner.ownerId !== payload.userId) {
+    if (foundPostOwner.ownerId !== session.userId) {
       throw new AppError(
         403,
         "Forbidden",
@@ -654,9 +654,9 @@ export default class PostsController {
   });
 
   public getPostLikes = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { id } = req.params;
-    const payload = req.jwtPayload;
+    const session = req.session;
     const { page, perPage, ascending } = req.query;
 
     const order = ascending == "true" ? "asc" : "desc";
@@ -712,20 +712,20 @@ export default class PostsController {
           handle: postLike.user.handle,
           isFollowedByCurrentUser: postLike.user.following
             .map((follow) => follow.followerId)
-            .includes(payload.userId),
+            .includes(session.userId),
         },
       })),
     });
   });
 
   public likePost = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { id } = req.params;
 
     const newPostLike = await PRISMA.postLike.create({
       data: {
-        userId: payload.userId,
+        userId: session.userId,
         postId: id,
       },
       select: {
@@ -739,7 +739,7 @@ export default class PostsController {
 
     await upsertNotification({
       recipientId: newPostLike.post.ownerId,
-      actorId: payload.userId,
+      actorId: session.userId,
       postId: id,
       type: "LIKE",
     });
@@ -750,14 +750,14 @@ export default class PostsController {
   });
 
   public unlikePost = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { id } = req.params;
 
     await PRISMA.postLike.delete({
       where: {
         userId_postId: {
-          userId: payload.userId,
+          userId: session.userId,
           postId: id,
         },
       },

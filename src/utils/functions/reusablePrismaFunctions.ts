@@ -1,19 +1,14 @@
 import { Media } from "@prisma/client";
 import AppError from "../types/errors";
 import bcrypt from "bcrypt";
-import { sign } from "jsonwebtoken";
 import {
   CheckResourcePrivacyAndUserRelationshipArgs,
   DeleteExpiredSessionsAndLoginArgs,
   UpsertNotificationArgs,
 } from "../types/prisma";
-import {
-  ACCESS_TOKEN_DURATION,
-  REFRESH_TOKEN_COOKIE_MAXAGE,
-  REFRESH_TOKEN_DURATION,
-  REFRESH_TOKEN_EXPIRY_DATE,
-} from "../constants/auth";
+import { TOKEN_COOKIE_MAXAGE, TOKEN_EXPIRY_DATE } from "../constants/auth";
 import PRISMA from "../constants/prismaInstance";
+import { v4 as uuidv4 } from "uuid";
 
 export const checkResourcePrivacyAndUserOwnership = async ({
   currentUserId,
@@ -209,14 +204,16 @@ export const upsertNotification = async ({
 };
 
 export const deleteExpiredSessionsAndLogin = async ({
+  userAgentInfo,
   password,
   foundUser,
   currentDate,
   res,
 }: DeleteExpiredSessionsAndLoginArgs) => {
+  //delete expired sessions
   await PRISMA.userSession.deleteMany({
     where: {
-      refreshTokenExpiresAt: {
+      expiresAt: {
         lt: currentDate,
       },
     },
@@ -234,42 +231,25 @@ export const deleteExpiredSessionsAndLogin = async ({
     );
   }
 
-  //if passwords DO match, then create refreshToken
-  const refreshToken = sign(
-    {
-      userId: foundUser.id,
-      email: foundUser.email,
-      handle: foundUser.handle,
-    },
-    process.env.REFRESH_TOKEN_SECRET as string,
-    { expiresIn: REFRESH_TOKEN_DURATION }
-  );
+  //if passwords DO match, then create sessionToken
+  const sessionToken = uuidv4();
 
-  //save user's session in the UserSession table, along with their refreshToken
-  const newlyCreatedUserSession = await PRISMA.userSession.create({
+  //save user's session in the UserSession table, along with their sessionToken
+  const newUserSession = await PRISMA.userSession.create({
     data: {
       userId: foundUser.id,
-      deviceName: `unknown device`,
-      refreshToken,
-      refreshTokenExpiresAt: REFRESH_TOKEN_EXPIRY_DATE,
+      browser: userAgentInfo.browser,
+      os: userAgentInfo.os,
+      platform: userAgentInfo.platform,
+      token: sessionToken,
+      expiresAt: TOKEN_EXPIRY_DATE,
     },
   });
 
-  //create accessToken, including sessionId in its payload
-  const accessToken = sign(
-    {
-      userId: foundUser.id,
-      sessionId: newlyCreatedUserSession.sessionId,
-      email: foundUser.email,
-      handle: foundUser.handle,
-    },
-    process.env.ACCESS_TOKEN_SECRET as string,
-    { expiresIn: ACCESS_TOKEN_DURATION }
-  );
-
-  res.cookie("refreshToken", refreshToken, {
+  //set sessionToken cookie
+  res.cookie("sessionToken", sessionToken, {
     httpOnly: true,
-    maxAge: REFRESH_TOKEN_COOKIE_MAXAGE,
+    maxAge: TOKEN_COOKIE_MAXAGE,
     //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
   });
 
@@ -283,8 +263,13 @@ export const deleteExpiredSessionsAndLogin = async ({
         handle: foundUser.handle,
         avatar: foundUser.avatar,
       },
+      session: {
+        os: newUserSession.os,
+        platform: newUserSession.platform,
+        browser: newUserSession.browser,
+        expiresAt: newUserSession.expiresAt,
+      },
       isDetachedMode: false,
-      accessToken,
     },
   });
 };

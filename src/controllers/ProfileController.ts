@@ -3,43 +3,43 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import PRISMA from "../utils/constants/prismaInstance";
 import AppError from "../utils/types/errors";
 import { compare, hash } from "bcrypt";
-import { RequestWithPayload } from "../utils/types/jwt";
+import { RequestWithSession } from "../utils/types/session";
 
 export default class ProfileController {
   public updateUserDetails = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { avatar, banner, username, bio } = req.body;
 
     const updatedUserDetails = await PRISMA.user.update({
       where: {
-        id: payload.userId
+        id: session.userId,
       },
       data: {
         avatar,
         banner,
         username,
-        bio
+        bio,
       },
       select: {
         id: true,
         avatar: true,
         banner: true,
         username: true,
-        bio: true
-      }
+        bio: true,
+      },
     });
 
     res.status(200).json({
       message: "profile updated successfully.",
-      data: updatedUserDetails
+      data: updatedUserDetails,
     });
   });
 
   public verifyPassword = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { password } = req.query;
-    const payload = req.jwtPayload;
+    const session = req.session;
     if (!password) {
       throw new AppError(
         422,
@@ -51,8 +51,8 @@ export default class ProfileController {
 
     const foundUser = await PRISMA.user.findFirstOrThrow({
       where: {
-        id: payload.userId
-      }
+        id: session.userId,
+      },
     });
 
     const matchedPassword = await compare(
@@ -70,13 +70,13 @@ export default class ProfileController {
     }
 
     res.status(200).json({
-      message: "Password verified."
+      message: "Password verified.",
     });
   });
 
   public updatePassword = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { password } = req.body;
 
     if (!password) {
@@ -88,49 +88,49 @@ export default class ProfileController {
 
     await PRISMA.user.update({
       where: {
-        id: payload.userId
+        id: session.userId,
       },
       data: {
-        password: hashedPassword
-      }
+        password: hashedPassword,
+      },
     });
 
     res.status(200).json({
-      message: "password updated successfully."
+      message: "password updated successfully.",
     });
   });
 
   public updateEmail = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { email } = req.body;
 
     await PRISMA.user.update({
       where: {
-        id: payload.userId
+        id: session.userId,
       },
       data: {
-        email
-      }
+        email,
+      },
     });
 
     res.status(200).json({
-      message: "email updated successfully."
+      message: "email updated successfully.",
     });
   });
 
   public deleteAccount = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
 
     await PRISMA.user.delete({
       where: {
-        id: payload.userId
-      }
+        id: session.userId,
+      },
     });
 
     res.status(200).json({
-      message: "account deleted successfully."
+      message: "account deleted successfully.",
     });
   });
 }
