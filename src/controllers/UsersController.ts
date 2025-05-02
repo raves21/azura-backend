@@ -91,6 +91,7 @@ export default class UsersController {
         data: {
           id: currentUser.id,
           username: currentUser.username,
+          email: currentUser.email,
           avatar: currentUser.avatar,
           banner: currentUser.banner,
           bio: currentUser.bio,
