@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { RequestWithPayload } from "../utils/types/jwt";
+import { RequestWithSession } from "../utils/types/session";
 import { asyncHandler } from "../middleware/asyncHandler";
 import PRISMA from "../utils/constants/prismaInstance";
 
 export class DiscoverPeopleController {
   public getDiscoverPeople = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
 
     const { page, perPage } = req.query;
 
@@ -21,7 +21,7 @@ export class DiscoverPeopleController {
       take: _perPage,
       where: {
         id: {
-          not: payload.userId,
+          not: session.userId,
         },
       },
       select: {
@@ -32,7 +32,7 @@ export class DiscoverPeopleController {
         bio: true,
         following: {
           where: {
-            followerId: payload.userId,
+            followerId: session.userId,
           },
         },
       },
@@ -46,7 +46,7 @@ export class DiscoverPeopleController {
     const totalItems = await PRISMA.user.count({
       where: {
         id: {
-          not: payload.userId,
+          not: session.userId,
         },
       },
     });

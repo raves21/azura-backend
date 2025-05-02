@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import AppError from "../utils/types/errors";
-import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 type ErrorResponse = {
@@ -24,7 +23,7 @@ export const errorHandler = (
   let response: ErrorResponse = {
     httpCode: 500,
     name: error.name,
-    message: "An error occured in the server."
+    message: "An error occured in the server.",
   };
 
   if (error instanceof AppError) {
@@ -39,12 +38,6 @@ export const errorHandler = (
       response.message = "A database operation failed.";
     }
     response.errors = error;
-  } else if (error instanceof JsonWebTokenError) {
-    response.httpCode = 401;
-    response.message = "Your JWT is invalid.";
-  } else if (error instanceof TokenExpiredError) {
-    response.httpCode = 401;
-    response.message = error.message;
   } else {
     response.message = error.message;
     response.name = error.name;

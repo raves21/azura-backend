@@ -1,30 +1,32 @@
 import { Request, Response } from "express";
 import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
-import { RequestWithPayload } from "../utils/types/jwt";
+import { RequestWithSession } from "../utils/types/session";
 
 export default class SessionsController {
   public getSessions = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    //extract the user/userinfo from the payload (given by verifyJWT)
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
 
     //get all user sessions, and mark the current session as isCurrentSession: true
     const allUserSessions = (
       await PRISMA.userSession.findMany({
         where: {
-          userId: payload.userId,
+          userId: session.userId,
         },
         select: {
+          id: true,
           userId: true,
-          sessionId: true,
-          deviceName: true,
+          browser: true,
+          expiresAt: true,
+          os: true,
+          platform: true,
           createdAt: true,
         },
       })
     ).map((userSession) => ({
       ...userSession,
-      isCurrentSession: userSession.sessionId === payload.sessionId,
+      isCurrentSession: userSession.id === session.sessionId,
     }));
 
     res.status(200).json({
@@ -39,7 +41,7 @@ export default class SessionsController {
     //Delete the row with the sessionId in the UserSession table
     await PRISMA.userSession.delete({
       where: {
-        sessionId,
+        id: sessionId,
       },
     });
     res
@@ -49,13 +51,13 @@ export default class SessionsController {
 
   public logoutSessionsExceptCurrent = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
 
       await PRISMA.userSession.deleteMany({
         where: {
           NOT: {
-            sessionId: payload.sessionId,
+            id: session.sessionId,
           },
         },
       });

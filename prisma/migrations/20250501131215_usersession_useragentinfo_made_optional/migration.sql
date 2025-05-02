@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "UserSession" ALTER COLUMN "browser" DROP NOT NULL,
+ALTER COLUMN "os" DROP NOT NULL,
+ALTER COLUMN "platform" DROP NOT NULL;

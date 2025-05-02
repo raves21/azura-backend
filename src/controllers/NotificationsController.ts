@@ -2,12 +2,12 @@ import { Request, Response } from "express";
 import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
-import { RequestWithPayload } from "../utils/types/jwt";
+import { RequestWithSession } from "../utils/types/session";
 
 export default class NotificationsController {
   public getNotifications = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
 
     const { page, perPage } = req.query;
     const _page = Number(page) || 1;
@@ -21,7 +21,7 @@ export default class NotificationsController {
         updatedAt: "desc",
       },
       where: {
-        recipientId: payload.userId,
+        recipientId: session.userId,
       },
       include: {
         post: {
@@ -55,7 +55,7 @@ export default class NotificationsController {
 
     const totalItems = await PRISMA.notification.count({
       where: {
-        recipientId: payload.userId,
+        recipientId: session.userId,
       },
     });
     const totalPages = Math.ceil(totalItems / _perPage);

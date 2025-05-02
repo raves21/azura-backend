@@ -83,13 +83,15 @@ model Follow {
 }
 
 model UserSession {
-  sessionId             String   @id @default(uuid()) @db.Uuid
-  userId                String   @db.Uuid
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refreshToken          String   @unique
-  refreshTokenExpiresAt DateTime
-  deviceName            String
-  createdAt             DateTime @default(now())
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  browser   String?
+  os        String?
+  platform  String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 enum Privacy {

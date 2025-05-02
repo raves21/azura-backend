@@ -4,13 +4,13 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
 import { upsertNotification } from "../utils/functions/reusablePrismaFunctions";
-import { RequestWithPayload } from "../utils/types/jwt";
+import { RequestWithSession } from "../utils/types/session";
 
 export default class UsersController {
   public async getAllUsers(_: Request, res: Response) {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { page, perPage, ascending } = req.query;
-    const payload = req.jwtPayload;
+    const session = req.session;
 
     const order = ascending == "true" ? "asc" : "desc";
     const _page = Number(page) || 1;
@@ -53,19 +53,19 @@ export default class UsersController {
         bio: user.bio,
         isFollowedByCurrentUser: user.following
           .map((follow) => follow.followerId)
-          .includes(payload.userId),
+          .includes(session.userId),
       })),
     });
   }
 
   public getCurrentUserInfo = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
 
       const currentUser = await PRISMA.user.findFirstOrThrow({
         where: {
-          id: payload.userId,
+          id: session.userId,
         },
         select: {
           id: true,
@@ -99,16 +99,16 @@ export default class UsersController {
           //*idk why but ts needs to be inverted ⬇️
           totalFollowers: currentUser._count.following,
           totalFollowing: currentUser._count.followers,
-          sessionId: payload.sessionId,
+          sessionId: session.sessionId,
         },
       });
     }
   );
 
   public getUserInfo = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { handle } = req.params;
-    const payload = req.jwtPayload;
+    const session = req.session;
 
     const foundUser = await PRISMA.user.findFirstOrThrow({
       where: {
@@ -135,13 +135,13 @@ export default class UsersController {
     const followsCurrentUser = await PRISMA.follow.findFirst({
       where: {
         followerId: foundUser.id,
-        followedId: payload.userId,
+        followedId: session.userId,
       },
     });
 
     const followedByCurrentUser = await PRISMA.follow.findFirst({
       where: {
-        followerId: payload.userId,
+        followerId: session.userId,
         followedId: foundUser.id,
       },
     });
@@ -166,11 +166,11 @@ export default class UsersController {
   });
 
   public followUser = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
+    const req = _ as RequestWithSession;
     const { id: userToFollow } = req.params;
-    const payload = req.jwtPayload;
+    const session = req.session;
 
-    if (userToFollow === payload.userId) {
+    if (userToFollow === session.userId) {
       throw new AppError(
         400,
         "BadRequest",
@@ -181,14 +181,14 @@ export default class UsersController {
 
     await PRISMA.follow.create({
       data: {
-        followerId: payload.userId,
+        followerId: session.userId,
         followedId: userToFollow,
       },
     });
 
     await upsertNotification({
       recipientId: userToFollow,
-      actorId: payload.userId,
+      actorId: session.userId,
       type: "FOLLOW",
     });
     res.status(201).json({
@@ -197,14 +197,14 @@ export default class UsersController {
   });
 
   public unfollowUser = asyncHandler(async (_: Request, res: Response) => {
-    const req = _ as RequestWithPayload;
-    const payload = req.jwtPayload;
+    const req = _ as RequestWithSession;
+    const session = req.session;
     const { id: userToUnfollow } = req.params;
 
     //check if the relationship between currentUser and userToUnfollow exists
     const foundRelationship = await PRISMA.follow.findFirst({
       where: {
-        followerId: payload.userId,
+        followerId: session.userId,
         followedId: userToUnfollow,
       },
     });
@@ -222,7 +222,7 @@ export default class UsersController {
     await PRISMA.follow.delete({
       where: {
         followerId_followedId: {
-          followerId: payload.userId,
+          followerId: session.userId,
           followedId: userToUnfollow,
         },
       },
@@ -234,8 +234,8 @@ export default class UsersController {
   });
   public getCurrentUserFollowingList = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
 
       const { page, perPage, ascending } = req.query;
 
@@ -246,7 +246,7 @@ export default class UsersController {
 
       const currentUserFollowingList = await PRISMA.follow.findMany({
         where: {
-          followerId: payload.userId,
+          followerId: session.userId,
         },
         skip,
         take: _perPage,
@@ -268,7 +268,7 @@ export default class UsersController {
 
       const totalItems = await PRISMA.follow.count({
         where: {
-          followerId: payload.userId,
+          followerId: session.userId,
         },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
@@ -292,8 +292,8 @@ export default class UsersController {
 
   public getCurrentUserFollowerList = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
-      const payload = req.jwtPayload;
+      const req = _ as RequestWithSession;
+      const session = req.session;
 
       const { page, perPage, ascending } = req.query;
 
@@ -304,7 +304,7 @@ export default class UsersController {
 
       const currentUserFollowerList = await PRISMA.follow.findMany({
         where: {
-          followedId: payload.userId,
+          followedId: session.userId,
         },
         skip,
         take: _perPage,
@@ -321,7 +321,7 @@ export default class UsersController {
               bio: true,
               following: {
                 where: {
-                  followerId: payload.userId,
+                  followerId: session.userId,
                 },
               },
             },
@@ -330,7 +330,7 @@ export default class UsersController {
       });
       const totalItems = await PRISMA.follow.count({
         where: {
-          followedId: payload.userId,
+          followedId: session.userId,
         },
       });
       const totalPages = Math.ceil(totalItems / _perPage);
@@ -354,9 +354,9 @@ export default class UsersController {
 
   public getUserFollowingList = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
+      const req = _ as RequestWithSession;
       const { handle } = req.params;
-      const payload = req.jwtPayload;
+      const session = req.session;
       const { page, perPage, ascending } = req.query;
 
       const order = ascending == "true" ? "asc" : "desc";
@@ -385,7 +385,7 @@ export default class UsersController {
               bio: true,
               followers: {
                 where: {
-                  followedId: payload.userId,
+                  followedId: session.userId,
                 },
               },
             },
@@ -421,10 +421,10 @@ export default class UsersController {
 
   public getUserFollowerList = asyncHandler(
     async (_: Request, res: Response) => {
-      const req = _ as RequestWithPayload;
+      const req = _ as RequestWithSession;
       const { handle } = req.params;
       const { page, perPage, ascending } = req.query;
-      const payload = req.jwtPayload;
+      const session = req.session;
       const order = ascending == "true" ? "asc" : "desc";
       const _page = Number(page) || 1;
       const _perPage = Number(perPage) || 10;
@@ -451,7 +451,7 @@ export default class UsersController {
               bio: true,
               following: {
                 where: {
-                  followerId: payload.userId,
+                  followerId: session.userId,
                 },
               },
             },
