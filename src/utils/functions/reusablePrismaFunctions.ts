@@ -8,7 +8,7 @@ import {
 } from "../types/prisma";
 import { TOKEN_COOKIE_MAXAGE, TOKEN_EXPIRY_DATE } from "../constants/auth";
 import PRISMA from "../constants/prismaInstance";
-import { v4 as uuidv4 } from "uuid";
+import * as crypto from "crypto";
 
 export const checkResourcePrivacyAndUserOwnership = async ({
   currentUserId,
@@ -232,7 +232,7 @@ export const deleteExpiredSessionsAndLogin = async ({
   }
 
   //if passwords DO match, then create sessionToken
-  const sessionToken = uuidv4();
+  const sessionToken = crypto.randomBytes(64).toString("hex");
 
   //save user's session in the UserSession table, along with their sessionToken
   const newUserSession = await PRISMA.userSession.create({
