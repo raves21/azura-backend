@@ -89,12 +89,7 @@ export default class NotificationsController {
       const { isRead } = req.query;
 
       if (!isRead) {
-        throw new AppError(
-          400,
-          "BadRequest",
-          "No isRead query provided.",
-          true
-        );
+        throw new AppError(400, "No isRead query provided.", true);
       }
 
       const _isRead = isRead == "true";

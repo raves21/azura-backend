@@ -11,8 +11,8 @@ const transporter = createTransport({
   secure: true,
   auth: {
     user: process.env.OTC_EMAIL,
-    pass: process.env.OTC_PASSWORD
-  }
+    pass: process.env.OTC_PASSWORD,
+  },
 });
 
 const getExpirationTime = (): Date => {
@@ -25,7 +25,7 @@ export default class OTCController {
     const { email } = req.body;
 
     if (!email) {
-      throw new AppError(422, "Invalid Format.", "No email given.", true);
+      throw new AppError(422, "No email given.", true);
     }
 
     const otc = `${Math.floor(100000 + Math.random() * 900000)}`;
@@ -35,14 +35,14 @@ export default class OTCController {
       from: process.env.OTC_EMAIL,
       to: email,
       subject: "Verification code from AZURA",
-      html: `<p>Here is your verification code: <strong>${otc}</strong></p><br><p>This code will expire in 1 hour.</p>`
+      html: `<p>Here is your verification code: <strong>${otc}</strong></p><br><p>This code will expire in 1 hour.</p>`,
     });
 
     //delete record of the user in otc table (if it exists)
     await PRISMA.oTC.deleteMany({
       where: {
-        email
-      }
+        email,
+      },
     });
 
     //*only store record in the db if the sendMail succeeds.
@@ -54,11 +54,11 @@ export default class OTCController {
       data: {
         email,
         otc: hashedOTC,
-        expiresAt: getExpirationTime()
-      }
+        expiresAt: getExpirationTime(),
+      },
     });
     res.status(200).json({
-      message: "otc sent."
+      message: "otc sent.",
     });
   });
 
@@ -66,19 +66,14 @@ export default class OTCController {
     const { email, otc } = req.query;
 
     if (!otc || !email) {
-      throw new AppError(
-        422,
-        "Invalid Format.",
-        "Please provide all credentials.",
-        true
-      );
+      throw new AppError(422, "Please provide all credentials.", true);
     }
 
     //find the otc record using the email
     const foundOTCRecord = await PRISMA.oTC.findFirstOrThrow({
       where: {
-        email: email.toString()
-      }
+        email: email.toString(),
+      },
     });
 
     //verify if the otc is expired
@@ -86,38 +81,28 @@ export default class OTCController {
       //if code is expired, delete it in the db
       await PRISMA.oTC.delete({
         where: {
-          id: foundOTCRecord.id
-        }
+          id: foundOTCRecord.id,
+        },
       });
-      throw new AppError(
-        410,
-        "OTC Expired.",
-        "The code you provided is expired.",
-        true
-      );
+      throw new AppError(410, "The code you provided is expired.", true);
     }
 
     //check if given OTC and the OTC from the database matches
     const matchedOTC = await compare(otc.toString(), foundOTCRecord.otc);
 
     if (!matchedOTC) {
-      throw new AppError(
-        400,
-        "Invalid OTC.",
-        "The verification code is incorrect.",
-        true
-      );
+      throw new AppError(400, "The verification code is incorrect.", true);
     }
 
     //if OTC matches, delete the record in db
     await PRISMA.oTC.delete({
       where: {
-        id: foundOTCRecord.id
-      }
+        id: foundOTCRecord.id,
+      },
     });
 
     res.status(200).json({
-      message: "success. the otc is correct."
+      message: "success. the otc is correct.",
     });
   });
 }

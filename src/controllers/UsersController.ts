@@ -172,12 +172,7 @@ export default class UsersController {
     const session = req.session;
 
     if (userToFollow === session.userId) {
-      throw new AppError(
-        400,
-        "BadRequest",
-        "You cannot follow yourself.",
-        true
-      );
+      throw new AppError(400, "You cannot follow yourself.", true);
     }
 
     await PRISMA.follow.create({
@@ -211,12 +206,7 @@ export default class UsersController {
     });
 
     if (!foundRelationship) {
-      throw new AppError(
-        404,
-        "Relationship not found.",
-        `User relationship not found.`,
-        true
-      );
+      throw new AppError(404, `User relationship not found.`, true);
     }
 
     //delete the relationship

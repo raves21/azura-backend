@@ -209,12 +209,7 @@ export default class CollectionsController {
         !posterImage ||
         !rating
       ) {
-        throw new AppError(
-          422,
-          "Invalid Format.",
-          "Please provide all needed credentials.",
-          true
-        );
+        throw new AppError(422, "Please provide all needed credentials.", true);
       }
 
       //check if media already exists in Media table
@@ -304,12 +299,7 @@ export default class CollectionsController {
       const { mediaId, mediaType } = req.query;
 
       if (!mediaId || !mediaType) {
-        throw new AppError(
-          422,
-          "Invalid format.",
-          "Please provide all credentials.",
-          true
-        );
+        throw new AppError(422, "Please provide all credentials.", true);
       }
 
       //check if collection exists, and if owner owns the collection
@@ -518,12 +508,7 @@ export default class CollectionsController {
       const skip = (_page - 1) * _perPage;
 
       if (!type || !mediaId) {
-        throw new AppError(
-          422,
-          "Invalid Format.",
-          "Please provide all needed parameters.",
-          true
-        );
+        throw new AppError(422, "Please provide all needed parameters.", true);
       }
 
       //retrieve all user's collections where mediaId matches the given mediaId in params
@@ -579,12 +564,7 @@ export default class CollectionsController {
       const { mediaId, type } = req.query;
 
       if (!type || !mediaId) {
-        throw new AppError(
-          422,
-          "Invalid Format.",
-          "Please provide all needed parameters.",
-          true
-        );
+        throw new AppError(422, "Please provide all needed parameters.", true);
       }
 
       const mediaInCollection = await PRISMA.collection.findFirst({

@@ -38,20 +38,18 @@ export default class ProfileController {
 
   public verifyPassword = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithSession;
-    const { password } = req.query;
+    const { password } = req.body;
     const session = req.session;
     if (!password) {
-      throw new AppError(
-        422,
-        "Invalid format.",
-        "No password provided. ",
-        true
-      );
+      throw new AppError(422, "No password provided. ", true);
     }
 
     const foundUser = await PRISMA.user.findFirstOrThrow({
       where: {
         id: session.userId,
+      },
+      select: {
+        password: true,
       },
     });
 
@@ -61,12 +59,7 @@ export default class ProfileController {
     );
 
     if (!matchedPassword) {
-      throw new AppError(
-        400,
-        "Incorrect",
-        "Given password is incorrect.",
-        true
-      );
+      throw new AppError(400, "Given password is incorrect.", true);
     }
 
     res.status(200).json({
@@ -80,7 +73,7 @@ export default class ProfileController {
     const { password } = req.body;
 
     if (!password) {
-      throw new AppError(422, "Invalid format.", "No password provided.", true);
+      throw new AppError(422, "No password provided.", true);
     }
 
     //hash the password

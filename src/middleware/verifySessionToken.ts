@@ -10,12 +10,7 @@ export const verifySessionToken = asyncHandler(
     const cookies = req.cookies;
 
     if (!cookies?.sessionToken) {
-      throw new AppError(
-        401,
-        "Unauthorized.",
-        "No session token in cookies!",
-        true
-      );
+      throw new AppError(401, "No session token in cookies!", true);
     }
 
     const tokenFromCookies = cookies.sessionToken;
@@ -30,7 +25,7 @@ export const verifySessionToken = asyncHandler(
     });
 
     if (!foundSession) {
-      throw new AppError(404, "Not Found.", "Session not found.", true);
+      throw new AppError(404, "Session not found.", true);
     }
 
     req.session = {

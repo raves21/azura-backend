@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import AppError from "../utils/types/errors";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { ERROR_CODES_WITH_ERROR_NAME } from "../utils/constants/errorCodes";
 
 type ErrorResponse = {
   httpCode: number;
@@ -22,17 +23,17 @@ export const errorHandler = (
   //default error configuration
   let response: ErrorResponse = {
     httpCode: 500,
-    name: error.name,
+    name: ERROR_CODES_WITH_ERROR_NAME[500],
     message: "An error occured in the server.",
   };
 
   if (error instanceof AppError) {
     response.httpCode = error.httpCode;
-    response.message = error.message;
+    response.message = ERROR_CODES_WITH_ERROR_NAME[error.httpCode];
   } else if (error instanceof PrismaClientKnownRequestError) {
     if (error.code === "P2025") {
       response.httpCode = 404;
-      response.message = "Not found.";
+      response.message = ERROR_CODES_WITH_ERROR_NAME[404];
     } else {
       response.httpCode = 400;
       response.message = "A database operation failed.";

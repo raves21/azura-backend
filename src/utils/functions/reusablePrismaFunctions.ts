@@ -35,7 +35,7 @@ export const checkResourcePrivacyAndUserOwnership = async ({
     } else {
       //if validation does not pass, throw 404
       //so user does not know the resource exists
-      throw new AppError(404, "NotFound", "Resource not found.", true);
+      throw new AppError(404, "Resource not found.", true);
     }
   } else {
     //if current user owns the resource
@@ -223,12 +223,7 @@ export const deleteExpiredSessionsAndLogin = async ({
 
   //if passwords dont match throw error.
   if (!matchedPassword) {
-    throw new AppError(
-      422,
-      "Invalid Format.",
-      "Incorrect Email or Password",
-      true
-    );
+    throw new AppError(422, "Incorrect Email or Password", true);
   }
 
   //if passwords DO match, then create sessionToken

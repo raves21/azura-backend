@@ -16,7 +16,7 @@ export default class SearchController {
     const { page, perPage, ascending, query } = req.query;
 
     if (!query) {
-      throw new AppError(422, "Invalid Format.", "No query provided.", true);
+      throw new AppError(422, "No query provided.", true);
     }
 
     const order = ascending == "true" ? "asc" : "desc";
@@ -194,7 +194,7 @@ export default class SearchController {
     const { page, perPage, ascending, query } = req.query;
 
     if (!query) {
-      throw new AppError(422, "Invalid Format.", "No query provided.", true);
+      throw new AppError(422, "No query provided.", true);
     }
 
     const order = ascending == "true" ? "asc" : "desc";
@@ -280,7 +280,7 @@ export default class SearchController {
     const { page, perPage, ascending, query } = req.query;
 
     if (!query) {
-      throw new AppError(422, "Invalid Format", "No query provided.", true);
+      throw new AppError(422, "No query provided.", true);
     }
 
     const order = ascending == "true" ? "asc" : "desc";

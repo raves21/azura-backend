@@ -626,13 +626,12 @@ export default class PostsController {
     });
 
     if (!foundPostOwner) {
-      throw new AppError(404, "NotFound", "Post not found.", true);
+      throw new AppError(404, "Post not found.", true);
     }
 
     if (foundPostOwner.ownerId !== session.userId) {
       throw new AppError(
         403,
-        "Forbidden",
         "You cannot delete a comment from a post you do not own.",
         true
       );

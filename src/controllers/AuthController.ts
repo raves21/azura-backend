@@ -13,7 +13,6 @@ export default class AuthController {
     if (!email || !password) {
       throw new AppError(
         422,
-        "Invalid Format.",
         "Login Invalid. Please provide all needed credentials.",
         true
       );
@@ -99,7 +98,6 @@ export default class AuthController {
     if (!username || !email || !password || !handle) {
       throw new AppError(
         422,
-        "Invalid Format.",
         "Signup invalid. Please provide all the needed credentials.",
         true
       );
@@ -141,7 +139,7 @@ export default class AuthController {
       });
 
       if (!foundUserSession) {
-        throw new AppError(404, "Not found.", "Session not found.", true);
+        throw new AppError(404, "Session not found.", true);
       }
 
       //if user session found,
@@ -179,7 +177,7 @@ export default class AuthController {
       const { handle } = req.query;
 
       if (!handle) {
-        throw new AppError(422, "Invalid Format", "Handle not provided.", true);
+        throw new AppError(422, "Handle not provided.", true);
       }
 
       const foundHandleDupe = await PRISMA.user.findFirst({
@@ -191,7 +189,6 @@ export default class AuthController {
       if (foundHandleDupe) {
         throw new AppError(
           409,
-          "Conflict",
           "This handle is already associated with another account.",
           true
         );
@@ -208,7 +205,7 @@ export default class AuthController {
       const { email } = req.query;
 
       if (!email) {
-        throw new AppError(422, "Invalid Format.", "No email provided.", true);
+        throw new AppError(422, "No email provided.", true);
       }
 
       const foundEmailDupe = await PRISMA.user.findFirst({
@@ -220,7 +217,6 @@ export default class AuthController {
       if (foundEmailDupe) {
         throw new AppError(
           409,
-          "Conflict",
           "This email is already associated with another account.",
           true
         );
@@ -236,7 +232,7 @@ export default class AuthController {
     const { email } = req.query;
 
     if (!email) {
-      throw new AppError(422, "Invalid Format.", "Email not provided", true);
+      throw new AppError(422, "Email not provided", true);
     }
 
     const foundUser = await PRISMA.user.findFirstOrThrow({
