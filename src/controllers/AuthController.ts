@@ -19,7 +19,7 @@ export default class AuthController {
     }
 
     //find the user by email (email is unique)
-    const foundUser = await PRISMA.user.findFirstOrThrow({
+    const foundUser = await PRISMA.user.findFirst({
       where: {
         email,
       },
@@ -34,6 +34,10 @@ export default class AuthController {
         createdAt: true,
       },
     });
+
+    if (!foundUser) {
+      throw new AppError(422, "Incorrect Email or Password", true);
+    }
 
     const currentDateTime = new Date();
     //if session limit has been exceeded, look for the user's sessions that have

@@ -29,7 +29,7 @@ export const errorHandler = (
 
   if (error instanceof AppError) {
     response.httpCode = error.httpCode;
-    response.message = ERROR_CODES_WITH_ERROR_NAME[error.httpCode];
+    response.message = error.message;
   } else if (error instanceof PrismaClientKnownRequestError) {
     if (error.code === "P2025") {
       response.httpCode = 404;
