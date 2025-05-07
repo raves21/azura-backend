@@ -10,7 +10,7 @@ import searchRouter from "./routes/search";
 import notificationsRouter from "./routes/notifications";
 import trendingRouter from "./routes/trending";
 import otcRouter from "./routes/otc";
-import profileRouter from "./routes/profile";
+import accountRouter from "./routes/account";
 import discoverPeopleRouter from "./routes/discoverPeople";
 import { verifySessionToken } from "./middleware/verifySessionToken";
 import { errorHandler } from "./middleware/errorHandler";
@@ -80,8 +80,8 @@ app.use("/api/notifications", notificationsRouter);
 // Trending route
 app.use("/api/trending", trendingRouter);
 
-// Profile route
-app.use("/api/profile", profileRouter);
+// Account route
+app.use("/api/account", accountRouter);
 
 // Discover people route
 app.use("/api/discover-people", discoverPeopleRouter);

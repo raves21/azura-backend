@@ -5,7 +5,7 @@ import AppError from "../utils/types/errors";
 import { compare, hash } from "bcrypt";
 import { RequestWithSession } from "../utils/types/session";
 
-export default class ProfileController {
+export default class AccountController {
   public updateUserDetails = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithSession;
     const session = req.session;
@@ -109,6 +109,25 @@ export default class ProfileController {
 
     res.status(200).json({
       message: "email updated successfully.",
+    });
+  });
+
+  public updateHandle = asyncHandler(async (_: Request, res: Response) => {
+    const req = _ as RequestWithSession;
+    const session = req.session;
+    const { email: handle } = req.body;
+
+    await PRISMA.user.update({
+      where: {
+        id: session.userId,
+      },
+      data: {
+        handle,
+      },
+    });
+
+    res.status(200).json({
+      message: "handle updated successfully.",
     });
   });
 
