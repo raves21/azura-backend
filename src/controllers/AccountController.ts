@@ -98,6 +98,10 @@ export default class AccountController {
     const session = req.session;
     const { email } = req.body;
 
+    if (!email) {
+      throw new AppError(400, "Email not provided.", true);
+    }
+
     await PRISMA.user.update({
       where: {
         id: session.userId,
@@ -115,7 +119,11 @@ export default class AccountController {
   public updateHandle = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithSession;
     const session = req.session;
-    const { email: handle } = req.body;
+    const { handle } = req.body;
+
+    if (!handle) {
+      throw new AppError(400, "Handle not provied.", true);
+    }
 
     await PRISMA.user.update({
       where: {
