@@ -86,6 +86,10 @@ export default class UsersController {
         },
       });
 
+      res.header(
+        "Cache-Control",
+        "private, no-cache, no-store, must-revalidate"
+      );
       res.status(200).json({
         message: "success",
         data: {
