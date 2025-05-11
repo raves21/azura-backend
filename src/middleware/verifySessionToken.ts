@@ -27,7 +27,7 @@ export const verifySessionToken = asyncHandler(
     if (!foundSession) {
       res.clearCookie("sessionToken", {
         httpOnly: true,
-        //! TODO IN PRODUCTION: provide 'secure: true' in the clearCookie options
+        secure: !!Number(process.env.IS_PROD),
       });
       throw new AppError(401, "Unauthenticated", true);
     }
