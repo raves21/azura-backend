@@ -8,6 +8,7 @@ import {
   ENTITY_OWNER_SELECT,
   POSTS_INCLUDE,
 } from "../utils/constants/queries";
+import { getPaginationParameters } from "../utils/functions/shared";
 
 export default class SearchController {
   public searchPosts = asyncHandler(async (_: Request, res: Response) => {
@@ -19,10 +20,7 @@ export default class SearchController {
       throw new AppError(422, "No query provided.", true);
     }
 
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const searchPosts = await PRISMA.post.findMany({
       skip,
@@ -197,10 +195,7 @@ export default class SearchController {
       throw new AppError(422, "No query provided.", true);
     }
 
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const searchUsers = await PRISMA.user.findMany({
       skip,
@@ -283,10 +278,7 @@ export default class SearchController {
       throw new AppError(422, "No query provided.", true);
     }
 
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     //retrieve collections that have privacy PUBLIC and FRIENDS_ONLY
     const searchCollections = await PRISMA.collection.findMany({

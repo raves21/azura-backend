@@ -14,6 +14,7 @@ import {
   CREATE_POST_INCLUDE,
   POSTS_INCLUDE,
 } from "../utils/constants/queries";
+import { getPaginationParameters } from "../utils/functions/shared";
 
 export default class PostsController {
   public getCurrentUserPosts = asyncHandler(
@@ -21,12 +22,7 @@ export default class PostsController {
       const req = _ as RequestWithSession;
       const session = req.session;
 
-      const { page, perPage, ascending } = req.query;
-
-      const order = ascending == "true" ? "asc" : "desc";
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+      const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
       const currentUserPosts = await PRISMA.post.findMany({
         where: {
@@ -87,12 +83,7 @@ export default class PostsController {
     const { handle } = req.params;
     const session = req.session;
 
-    const { page, perPage, ascending } = req.query;
-
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const foundOwner = await PRISMA.user.findFirstOrThrow({
       where: {
@@ -497,12 +488,7 @@ export default class PostsController {
     const req = _ as RequestWithSession;
     const { id } = req.params;
 
-    const { page, perPage, ascending } = req.query;
-
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const postComments = await PRISMA.comment.findMany({
       skip,
@@ -656,12 +642,7 @@ export default class PostsController {
     const req = _ as RequestWithSession;
     const { id } = req.params;
     const session = req.session;
-    const { page, perPage, ascending } = req.query;
-
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const postLikes = await PRISMA.postLike.findMany({
       skip,

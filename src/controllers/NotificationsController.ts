@@ -3,16 +3,14 @@ import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
 import { RequestWithSession } from "../utils/types/session";
+import { getPaginationParameters } from "../utils/functions/shared";
 
 export default class NotificationsController {
   public getNotifications = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithSession;
     const session = req.session;
 
-    const { page, perPage } = req.query;
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, skip } = getPaginationParameters(req);
 
     const notifications = await PRISMA.notification.findMany({
       skip,

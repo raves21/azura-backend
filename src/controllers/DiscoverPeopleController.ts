@@ -2,17 +2,14 @@ import { Request, Response } from "express";
 import { RequestWithSession } from "../utils/types/session";
 import { asyncHandler } from "../middleware/asyncHandler";
 import PRISMA from "../utils/constants/prismaInstance";
+import { getPaginationParameters } from "../utils/functions/shared";
 
 export class DiscoverPeopleController {
   public getDiscoverPeople = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithSession;
     const session = req.session;
 
-    const { page, perPage } = req.query;
-
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { skip, _page, _perPage } = getPaginationParameters(req);
 
     //returns all users, except that it is sorted where the ones that the current user does not follow
     //comes first.

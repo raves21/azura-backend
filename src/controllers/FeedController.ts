@@ -3,18 +3,14 @@ import PRISMA from "../utils/constants/prismaInstance";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { RequestWithSession } from "../utils/types/session";
 import { POSTS_INCLUDE } from "../utils/constants/queries";
+import { getPaginationParameters } from "../utils/functions/shared";
 
 export default class FeedController {
   public getForYouPosts = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithSession;
     const session = req.session;
 
-    const { page, perPage, ascending } = req.query;
-
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const forYouPosts = await PRISMA.post.findMany({
       skip,
@@ -129,12 +125,7 @@ export default class FeedController {
     const req = _ as RequestWithSession;
     const session = req.session;
 
-    const { page, perPage, ascending } = req.query;
-
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const followingPosts = await PRISMA.post.findMany({
       skip,

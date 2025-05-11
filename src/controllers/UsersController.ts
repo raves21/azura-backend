@@ -5,17 +5,14 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
 import { upsertNotification } from "../utils/functions/reusablePrismaFunctions";
 import { RequestWithSession } from "../utils/types/session";
+import { getPaginationParameters } from "../utils/functions/shared";
 
 export default class UsersController {
   public async getAllUsers(_: Request, res: Response) {
     const req = _ as RequestWithSession;
-    const { page, perPage, ascending } = req.query;
     const session = req.session;
 
-    const order = ascending == "true" ? "asc" : "desc";
-    const _page = Number(page) || 1;
-    const _perPage = Number(perPage) || 10;
-    const skip = (_page - 1) * _perPage;
+    const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const allUsers = await PRISMA.user.findMany({
       skip,
@@ -232,12 +229,7 @@ export default class UsersController {
       const req = _ as RequestWithSession;
       const session = req.session;
 
-      const { page, perPage, ascending } = req.query;
-
-      const order = ascending == "true" ? "asc" : "desc";
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+      const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
       const currentUserFollowingList = await PRISMA.follow.findMany({
         where: {
@@ -290,12 +282,7 @@ export default class UsersController {
       const req = _ as RequestWithSession;
       const session = req.session;
 
-      const { page, perPage, ascending } = req.query;
-
-      const order = ascending == "true" ? "asc" : "desc";
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+      const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
       const currentUserFollowerList = await PRISMA.follow.findMany({
         where: {
@@ -352,12 +339,7 @@ export default class UsersController {
       const req = _ as RequestWithSession;
       const { handle } = req.params;
       const session = req.session;
-      const { page, perPage, ascending } = req.query;
-
-      const order = ascending == "true" ? "asc" : "desc";
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+      const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
       const userFollowingList = await PRISMA.follow.findMany({
         where: {
@@ -418,12 +400,8 @@ export default class UsersController {
     async (_: Request, res: Response) => {
       const req = _ as RequestWithSession;
       const { handle } = req.params;
-      const { page, perPage, ascending } = req.query;
       const session = req.session;
-      const order = ascending == "true" ? "asc" : "desc";
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+      const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
       const userFollowerList = await PRISMA.follow.findMany({
         where: {

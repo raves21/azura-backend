@@ -14,6 +14,7 @@ import {
   ENTITY_OWNER_SELECT,
 } from "../utils/constants/queries";
 import PRISMA from "../utils/constants/prismaInstance";
+import { getPaginationParameters } from "../utils/functions/shared";
 
 export default class CollectionsController {
   public getCurrentUserCollections = asyncHandler(
@@ -21,12 +22,7 @@ export default class CollectionsController {
       const req = _ as RequestWithSession;
       const session = req.session;
 
-      const { page, perPage, ascending } = req.query;
-
-      const order = ascending == "true" ? "asc" : "desc";
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+      const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
       const currentUserCollections = await PRISMA.collection.findMany({
         skip,
@@ -74,12 +70,7 @@ export default class CollectionsController {
       const { handle } = req.params;
       const session = req.session;
 
-      const { page, perPage, ascending } = req.query;
-
-      const order = ascending == "true" ? "asc" : "desc";
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+      const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
       //find owner of collection based on user handle
       const foundOwner = await PRISMA.user.findFirstOrThrow({
@@ -396,12 +387,7 @@ export default class CollectionsController {
     async (req: Request, res: Response) => {
       const { collectionId } = req.params;
 
-      const { page, perPage, ascending } = req.query;
-
-      const order = ascending == "true" ? "asc" : "desc";
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+      const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
       const collectionItems = await PRISMA.collectionItem.findMany({
         skip,
@@ -502,10 +488,7 @@ export default class CollectionsController {
       const session = req.session;
       const { mediaId, type, page, perPage, ascending } = req.query;
 
-      const order = ascending == "true" ? "asc" : "desc";
-      const _page = Number(page) || 1;
-      const _perPage = Number(perPage) || 10;
-      const skip = (_page - 1) * _perPage;
+      const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
       if (!type || !mediaId) {
         throw new AppError(422, "Please provide all needed parameters.", true);
