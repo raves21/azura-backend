@@ -149,6 +149,11 @@ export default class AccountController {
       },
     });
 
+    res.clearCookie("sessionToken", {
+      httpOnly: true,
+      secure: !!Number(process.env.IS_PROD),
+    });
+
     res.status(200).json({
       message: "account deleted successfully.",
     });
