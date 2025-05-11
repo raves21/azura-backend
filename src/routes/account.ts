@@ -10,6 +10,6 @@ router
   .put("/password", accountController.updatePassword)
   .put("/email", accountController.updateEmail)
   .put("/handle", accountController.updateHandle)
-  .delete("/account", accountController.deleteAccount);
+  .post("/delete-account", accountController.deleteAccount);
 
 export default router;
