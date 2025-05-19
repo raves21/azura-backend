@@ -64,6 +64,7 @@ export default class AuthController {
               email: foundUser.email,
               handle: foundUser.handle,
               avatar: foundUser.avatar,
+              password: foundUser.password,
             },
             sessions: foundUser.userSessions,
           },
