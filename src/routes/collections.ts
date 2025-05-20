@@ -30,7 +30,10 @@ router
   .post("/", collectionsController.createCollection)
   .post("/:id/collection-items", collectionsController.addCollectionItem)
   //delete MANY collection items by providing array of ids
-  .post("/:id/collection-items", collectionsController.deleteCollectionItems)
+  .post(
+    "/:id/delete-collection-items",
+    collectionsController.deleteCollectionItems
+  )
 
   //put
   .put("/:id", collectionsController.updateCollection)
