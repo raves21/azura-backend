@@ -662,8 +662,8 @@ export default class PostsController {
             avatar: true,
             handle: true,
             following: {
-              select: {
-                followerId: true,
+              where: {
+                followerId: req.session.userId,
               },
             },
           },
@@ -690,9 +690,8 @@ export default class PostsController {
           username: postLike.user.username,
           avatar: postLike.user.avatar,
           handle: postLike.user.handle,
-          isFollowedByCurrentUser: postLike.user.following
-            .map((follow) => follow.followerId)
-            .includes(session.userId),
+          isFollowedByCurrentUser:
+            postLike.user.following.length === 0 ? false : true,
         },
       })),
     });

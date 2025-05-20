@@ -28,8 +28,8 @@ export default class UsersController {
         handle: true,
         bio: true,
         following: {
-          select: {
-            followerId: true,
+          where: {
+            followerId: session.userId,
           },
         },
       },
@@ -48,9 +48,7 @@ export default class UsersController {
         email: user.email,
         handle: user.handle,
         bio: user.bio,
-        isFollowedByCurrentUser: user.following
-          .map((follow) => follow.followerId)
-          .includes(session.userId),
+        isFollowedByCurrentUser: user.following.length === 0 ? false : true,
       })),
     });
   }

@@ -14,7 +14,7 @@ export default class SearchController {
   public searchPosts = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithSession;
     const session = req.session;
-    const { page, perPage, ascending, query } = req.query;
+    const { query } = req.query;
 
     if (!query) {
       throw new AppError(422, "No query provided.", true);
@@ -189,7 +189,7 @@ export default class SearchController {
   public searchUsers = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithSession;
     const session = req.session;
-    const { page, perPage, ascending, query } = req.query;
+    const { query } = req.query;
 
     if (!query) {
       throw new AppError(422, "No query provided.", true);
@@ -224,8 +224,8 @@ export default class SearchController {
         bio: true,
         handle: true,
         following: {
-          select: {
-            followerId: true,
+          where: {
+            followerId: session.userId,
           },
         },
       },
@@ -260,11 +260,7 @@ export default class SearchController {
         avatar: user.avatar,
         bio: user.bio,
         handle: user.handle,
-        isFollowedByCurrentUser: user.following
-          .map((follow) => follow.followerId)
-          .includes(session.userId)
-          ? true
-          : false,
+        isFollowedByCurrentUser: user.following.length === 0 ? false : true,
       })),
     });
   });
@@ -272,7 +268,7 @@ export default class SearchController {
   public searchCollections = asyncHandler(async (_: Request, res: Response) => {
     const req = _ as RequestWithSession;
     const session = req.session;
-    const { page, perPage, ascending, query } = req.query;
+    const { query } = req.query;
 
     if (!query) {
       throw new AppError(422, "No query provided.", true);
