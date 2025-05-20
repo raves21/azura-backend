@@ -7,7 +7,7 @@ export default class TrendingController {
   public getTrendingPosts = asyncHandler(
     async (req: Request, res: Response) => {
       const daysInterval = 7; //weekly trending
-      const timeFilter = Prisma.sql`AND p."createdAt" >= NOW() - INTERVAL '${daysInterval} days'`;
+      const timeFilter = Prisma.sql`AND p."createdAt" >= (NOW() AT TIME ZONE 'UTC') - INTERVAL '${daysInterval} days'`;
 
       // Get trending hashtags
       const trendingHashtags = await PRISMA.$queryRaw<
@@ -45,13 +45,13 @@ export default class TrendingController {
         ...trendingHashtags.map((row) => ({
           type: "hashtag",
           content: row.hashtag,
-          count: Number(row.count)
+          count: Number(row.count),
         })),
         ...trendingMedia.map((row) => ({
           type: "media",
           content: row.title,
-          count: Number(row.count)
-        }))
+          count: Number(row.count),
+        })),
       ];
 
       const combinedResultSortedByCount = combinedResult.sort(
@@ -60,7 +60,7 @@ export default class TrendingController {
 
       res.status(200).json({
         message: "success",
-        data: combinedResultSortedByCount
+        data: combinedResultSortedByCount,
       });
     }
   );
