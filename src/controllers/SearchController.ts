@@ -20,6 +20,13 @@ export default class SearchController {
       throw new AppError(422, "No query provided.", true);
     }
 
+    const sanitizedQuery = query
+      .toString()
+      .trim()
+      .replace(/[^a-zA-Z0-9 ]/g, "")
+      .split(/\s+/)
+      .join(" & ");
+
     const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const searchPosts = await PRISMA.post.findMany({
@@ -33,14 +40,19 @@ export default class SearchController {
           // search in post content
           {
             content: {
-              search: query.toString().trim().split(" ").join(" & "),
+              search: sanitizedQuery,
             },
           },
           // search in related media title
           {
             media: {
               title: {
-                search: query.toString().trim().split(" ").join(" & "),
+                search: query
+                  .toString()
+                  .trim()
+                  .replace(/[^a-zA-Z0-9 ]/g, "")
+                  .split(/\s+/)
+                  .join(" & "),
               },
             },
           },
@@ -96,14 +108,19 @@ export default class SearchController {
           // search in post content
           {
             content: {
-              search: query.toString().trim().split(" ").join(" & "),
+              search: sanitizedQuery,
             },
           },
           // search in related media title
           {
             media: {
               title: {
-                search: query.toString().trim().split(" ").join(" & "),
+                search: query
+                  .toString()
+                  .trim()
+                  .replace(/[^a-zA-Z0-9 ]/g, "")
+                  .split(/\s+/)
+                  .join(" & "),
               },
             },
           },
@@ -195,6 +212,13 @@ export default class SearchController {
       throw new AppError(422, "No query provided.", true);
     }
 
+    const sanitizedQuery = query
+      .toString()
+      .trim()
+      .replace(/[^a-zA-Z0-9 ]/g, "")
+      .split(/\s+/)
+      .join(" & ");
+
     const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     const searchUsers = await PRISMA.user.findMany({
@@ -207,12 +231,12 @@ export default class SearchController {
         OR: [
           {
             username: {
-              search: query.toString().trim().split(" ").join(" & "),
+              search: sanitizedQuery,
             },
           },
           {
             handle: {
-              search: query.toString().trim().split(" ").join(" & "),
+              search: sanitizedQuery,
             },
           },
         ],
@@ -236,12 +260,12 @@ export default class SearchController {
         OR: [
           {
             username: {
-              search: query.toString().trim().split(" ").join(" & "),
+              search: sanitizedQuery,
             },
           },
           {
             handle: {
-              search: query.toString().trim().split(" ").join(" & "),
+              search: sanitizedQuery,
             },
           },
         ],
@@ -274,6 +298,13 @@ export default class SearchController {
       throw new AppError(422, "No query provided.", true);
     }
 
+    const sanitizedQuery = query
+      .toString()
+      .trim()
+      .replace(/[^a-zA-Z0-9 ]/g, "")
+      .split(/\s+/)
+      .join(" & ");
+
     const { _page, _perPage, order, skip } = getPaginationParameters(req);
 
     //retrieve collections that have privacy PUBLIC and FRIENDS_ONLY
@@ -285,7 +316,7 @@ export default class SearchController {
       },
       where: {
         name: {
-          search: query.toString().trim().split(" ").join(" & "),
+          search: sanitizedQuery,
         },
         OR: [
           //all public collections
@@ -320,7 +351,7 @@ export default class SearchController {
     const totalItems = await PRISMA.collection.count({
       where: {
         name: {
-          search: query.toString().trim().split(" ").join(" & "),
+          search: sanitizedQuery,
         },
         OR: [
           //all public collections
