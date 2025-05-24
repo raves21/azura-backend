@@ -149,6 +149,17 @@ export default class AccountController {
       },
     });
 
+    //delete notifs where the notification actor is solely the current user
+    await PRISMA.notification.deleteMany({
+      where: {
+        actors: {
+          every: {
+            actorId: session.userId
+          }
+        },
+      },
+    })
+
     res.clearCookie("sessionToken", {
       httpOnly: true,
       secure: !!Number(process.env.IS_PROD),

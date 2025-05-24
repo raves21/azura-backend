@@ -1,6 +1,5 @@
 import { Response, Request } from "express-serve-static-core";
 import PRISMA from "../utils/constants/prismaInstance";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
 import { upsertNotification } from "../utils/functions/reusablePrismaFunctions";

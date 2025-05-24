@@ -62,4 +62,6 @@ export default class CronController {
   //todo CLEAR READ NOTIFICATIONS THAT ARE >= ONE WEEK
 
   //todo CLEAR UNREAD NOTIFICATIONS THAT ARE >= TWO WEEKS
+
+  //todo CLEAR expires OTCs
 }
