@@ -338,7 +338,6 @@ export const postsSetCollectionAttachmentIsViewableProp = async ({
     }
   }
 
-  console.log("POSTSWITHSC", postsWithIsCollectionAttachmentViewableProp);
   return postsWithIsCollectionAttachmentViewableProp;
 };
 
