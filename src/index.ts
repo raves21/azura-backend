@@ -23,7 +23,7 @@ const cookieParser = require("cookie-parser");
 //middleware for cors
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:4173"],
+    origin: JSON.parse(`${process.env.ALLOW_ORIGIN_LIST}`),
     credentials: true,
   })
 );
