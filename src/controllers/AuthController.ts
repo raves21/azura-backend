@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import PRISMA from "../utils/constants/prismaInstance";
 import AppError from "../utils/types/errors";
 import { asyncHandler } from "../middleware/asyncHandler";
-import { deleteExpiredSessionsAndLogin } from "../utils/functions/reusablePrismaFunctions";
+import { deleteExpiredSessionsAndLogin } from "../utils/functions/sharedPrismaFunctions";
 import { SESSION_LIMIT } from "../utils/constants/auth";
 
 export default class AuthController {

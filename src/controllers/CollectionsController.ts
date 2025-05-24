@@ -7,7 +7,7 @@ import {
   areTheyFriends,
   updateExistingMedia,
   updateCollectionUpdatedAt,
-} from "../utils/functions/reusablePrismaFunctions";
+} from "../utils/functions/sharedPrismaFunctions";
 import { RequestWithSession } from "../utils/types/session";
 import {
   COLLECTION_PREVIEW_MEDIAS_INCLUDE,

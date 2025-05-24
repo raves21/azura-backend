@@ -4,9 +4,11 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import {
   areTheyFriends,
   checkResourcePrivacyAndUserOwnership,
+  postSetCollectionAttachmentIsViewableProp,
+  postsSetCollectionAttachmentIsViewableProp,
   updateExistingMedia,
   upsertNotification,
-} from "../utils/functions/reusablePrismaFunctions";
+} from "../utils/functions/sharedPrismaFunctions";
 import AppError from "../utils/types/errors";
 import { RequestWithSession } from "../utils/types/session";
 import {
@@ -127,12 +129,9 @@ export default class PostsController {
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
-    res.status(200).json({
-      message: "success",
-      page: _page,
-      perPage: _perPage,
-      totalPages,
-      data: userPosts.map((post) => ({
+    const posts = await postsSetCollectionAttachmentIsViewableProp({
+      currentUserId: session.userId,
+      posts: userPosts.map((post) => ({
         id: post.id,
         content: post.content,
         privacy: post.privacy,
@@ -158,6 +157,14 @@ export default class PostsController {
           : null,
         createdAt: post.createdAt,
       })),
+    });
+
+    res.status(200).json({
+      message: "success",
+      page: _page,
+      perPage: _perPage,
+      totalPages,
+      data: posts,
     });
   });
 
@@ -197,36 +204,39 @@ export default class PostsController {
       },
     });
 
-    const successData = {
-      id: foundPost.id,
-      content: foundPost.content,
-      privacy: foundPost.privacy,
-      totalLikes: foundPost._count.likes,
-      totalComments: foundPost._count.comments,
-      isLikedByCurrentUser: foundPost.likes
-        .map((like) => like.userId)
-        .includes(session.userId),
-      owner: foundPost.owner,
-      media: foundPost.media,
-      postFirstLikers:
-        postFirstLikers && postFirstLikers.likes.length !== 0
-          ? postFirstLikers.likes.map((liker) => liker.user)
+    const successData = await postSetCollectionAttachmentIsViewableProp({
+      currentUserId: session.userId,
+      post: {
+        id: foundPost.id,
+        content: foundPost.content,
+        privacy: foundPost.privacy,
+        totalLikes: foundPost._count.likes,
+        totalComments: foundPost._count.comments,
+        isLikedByCurrentUser: foundPost.likes
+          .map((like) => like.userId)
+          .includes(session.userId),
+        owner: foundPost.owner,
+        media: foundPost.media,
+        postFirstLikers:
+          postFirstLikers && postFirstLikers.likes.length !== 0
+            ? postFirstLikers.likes.map((liker) => liker.user)
+            : null,
+        collection: foundPost.collection
+          ? {
+              id: foundPost.collection.id,
+              photo: foundPost.collection.photo,
+              name: foundPost.collection.name,
+              description: foundPost.collection.description,
+              owner: foundPost.collection.owner,
+              privacy: foundPost.collection.privacy,
+              previewMedias: foundPost.collection.collectionItems.map(
+                (collectionItem) => collectionItem.media
+              ),
+            }
           : null,
-      collection: foundPost.collection
-        ? {
-            id: foundPost.collection.id,
-            photo: foundPost.collection.photo,
-            name: foundPost.collection.name,
-            description: foundPost.collection.description,
-            owner: foundPost.collection.owner,
-            privacy: foundPost.collection.privacy,
-            previewMedias: foundPost.collection.collectionItems.map(
-              (collectionItem) => collectionItem.media
-            ),
-          }
-        : null,
-      createdAt: foundPost.createdAt,
-    };
+        createdAt: foundPost.createdAt,
+      },
+    });
 
     await checkResourcePrivacyAndUserOwnership({
       currentUserId: session.userId,

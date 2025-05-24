@@ -1,11 +1,13 @@
-import { Media } from "@prisma/client";
+import { Media, Privacy } from "@prisma/client";
 import AppError from "../types/errors";
 import bcrypt from "bcrypt";
 import {
   CheckResourcePrivacyAndUserRelationshipArgs,
   DeleteExpiredSessionsAndLoginArgs,
+  PostSetCollectionAttachmentIsViewablePropArgs,
+  PostsSetCollectionAttachmentIsViewablePropArgs,
   UpsertNotificationArgs,
-} from "../types/prisma";
+} from "../types/sharedPrismaFunctions";
 import { TOKEN_COOKIE_MAXAGE, TOKEN_EXPIRY_DATE } from "../constants/auth";
 import PRISMA from "../constants/prismaInstance";
 import * as crypto from "crypto";
@@ -278,4 +280,118 @@ export const updateCollectionUpdatedAt = async (collectionId: string) => {
       updatedAt: new Date(),
     },
   });
+};
+
+export const postsSetCollectionAttachmentIsViewableProp = async ({
+  currentUserId,
+  posts,
+}: PostsSetCollectionAttachmentIsViewablePropArgs) => {
+  const postsWithIsCollectionAttachmentViewableProp = [];
+
+  for (let i = 0; i < posts.length; i++) {
+    const post = posts[i];
+    if (post.collection) {
+      if (post.collection.owner.id === currentUserId) {
+        postsWithIsCollectionAttachmentViewableProp.push({
+          ...post,
+          isCollectionAttachmentViewable: true,
+        });
+      } else {
+        //if collection privacy is friends only
+        if (post.privacy === Privacy.FRIENDS_ONLY) {
+          //check if current user friends with collection owner
+          const isCurrentUserFriendsWithCollectionOwner = await areTheyFriends(
+            currentUserId,
+            post.collection.owner.id
+          );
+
+          if (isCurrentUserFriendsWithCollectionOwner) {
+            postsWithIsCollectionAttachmentViewableProp.push({
+              ...post,
+              isCollectionAttachmentViewable: true,
+            });
+          } else {
+            postsWithIsCollectionAttachmentViewableProp.push({
+              ...post,
+              collection: {},
+              isCollectionAttachmentViewable: false,
+            });
+          }
+          //if collection privacy is only me
+        } else if (post.privacy === Privacy.ONLY_ME) {
+          postsWithIsCollectionAttachmentViewableProp.push({
+            ...post,
+            collection: {},
+            isCollectionAttachmentViewable: false,
+          });
+          //if collection privacy is public
+        } else {
+          postsWithIsCollectionAttachmentViewableProp.push({
+            ...post,
+            isCollectionAttachmentViewable: true,
+          });
+        }
+      }
+      //if post does not have collection attachment
+    } else {
+      postsWithIsCollectionAttachmentViewableProp.push(post);
+    }
+  }
+
+  console.log("POSTSWITHSC", postsWithIsCollectionAttachmentViewableProp);
+  return postsWithIsCollectionAttachmentViewableProp;
+};
+
+export const postSetCollectionAttachmentIsViewableProp = async ({
+  currentUserId,
+  post,
+}: PostSetCollectionAttachmentIsViewablePropArgs) => {
+  let _post = post;
+
+  if (_post.collection) {
+    if (post.collection.owner.id === currentUserId) {
+      return {
+        ...post,
+        isCollectionAttachmentViewable: true,
+      };
+    } else {
+      //if collection privacy is friends only
+      if (post.privacy === Privacy.FRIENDS_ONLY) {
+        //check if current user friends with collection owner
+        const isCurrentUserFriendsWithCollectionOwner = await areTheyFriends(
+          currentUserId,
+          post.collection.owner.id
+        );
+
+        if (isCurrentUserFriendsWithCollectionOwner) {
+          return {
+            ...post,
+            isCollectionAttachmentViewable: true,
+          };
+        } else {
+          return {
+            ...post,
+            collection: {},
+            isCollectionAttachmentViewable: false,
+          };
+        }
+        //if collection privacy is only me
+      } else if (post.privacy === Privacy.ONLY_ME) {
+        return {
+          ...post,
+          collection: {},
+          isCollectionAttachmentViewable: false,
+        };
+        //if collection privacy is public
+      } else {
+        return {
+          ...post,
+          isCollectionAttachmentViewable: true,
+        };
+      }
+    }
+    //if post does not have collection attachment
+  } else {
+    return _post;
+  }
 };

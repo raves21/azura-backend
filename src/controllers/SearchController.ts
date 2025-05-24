@@ -9,6 +9,7 @@ import {
   POSTS_INCLUDE,
 } from "../utils/constants/queries";
 import { getPaginationParameters } from "../utils/functions/shared";
+import { postsSetCollectionAttachmentIsViewableProp } from "../utils/functions/sharedPrismaFunctions";
 
 export default class SearchController {
   public searchPosts = asyncHandler(async (_: Request, res: Response) => {
@@ -170,12 +171,9 @@ export default class SearchController {
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
-    res.status(200).json({
-      message: "success",
-      page: _page,
-      perPage: _perPage,
-      totalPages,
-      data: searchPosts.map((post) => ({
+    const posts = await postsSetCollectionAttachmentIsViewableProp({
+      currentUserId: session.userId,
+      posts: searchPosts.map((post) => ({
         id: post.id,
         content: post.content,
         privacy: post.privacy,
@@ -200,6 +198,14 @@ export default class SearchController {
             }
           : null,
       })),
+    });
+
+    res.status(200).json({
+      message: "success",
+      page: _page,
+      perPage: _perPage,
+      totalPages,
+      data: posts,
     });
   });
 

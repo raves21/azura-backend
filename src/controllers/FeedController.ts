@@ -4,6 +4,7 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import { RequestWithSession } from "../utils/types/session";
 import { POSTS_INCLUDE } from "../utils/constants/queries";
 import { getPaginationParameters } from "../utils/functions/shared";
+import { postsSetCollectionAttachmentIsViewableProp } from "../utils/functions/sharedPrismaFunctions";
 
 export default class FeedController {
   public getForYouPosts = asyncHandler(async (_: Request, res: Response) => {
@@ -87,12 +88,9 @@ export default class FeedController {
     });
     const totalPages = Math.ceil(totalItems / _perPage);
 
-    res.status(200).json({
-      message: "success",
-      page: _page,
-      perPage: _perPage,
-      totalPages,
-      data: forYouPosts.map((post) => ({
+    const posts = await postsSetCollectionAttachmentIsViewableProp({
+      currentUserId: session.userId,
+      posts: forYouPosts.map((post) => ({
         id: post.id,
         content: post.content,
         privacy: post.privacy,
@@ -118,6 +116,14 @@ export default class FeedController {
           : null,
         createdAt: post.createdAt,
       })),
+    });
+
+    res.status(200).json({
+      message: "success",
+      page: _page,
+      perPage: _perPage,
+      totalPages,
+      data: posts,
     });
   });
 
@@ -205,12 +211,9 @@ export default class FeedController {
 
     const totalPages = Math.ceil(totalItems / _perPage);
 
-    res.status(200).json({
-      message: "success",
-      page: _page,
-      perPage: _perPage,
-      totalPages,
-      data: followingPosts.map((post) => ({
+    const posts = await postsSetCollectionAttachmentIsViewableProp({
+      currentUserId: session.userId,
+      posts: followingPosts.map((post) => ({
         id: post.id,
         content: post.content,
         privacy: post.privacy,
@@ -236,6 +239,14 @@ export default class FeedController {
           : null,
         createdAt: post.createdAt,
       })),
+    });
+
+    res.status(200).json({
+      message: "success",
+      page: _page,
+      perPage: _perPage,
+      totalPages,
+      data: posts,
     });
   });
 }

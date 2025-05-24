@@ -38,3 +38,13 @@ export type DeleteExpiredSessionsAndLoginArgs = {
   currentDate: Date;
   res: Response;
 };
+
+export type PostsSetCollectionAttachmentIsViewablePropArgs = {
+  currentUserId: string;
+  posts: any[];
+};
+
+export type PostSetCollectionAttachmentIsViewablePropArgs = {
+  currentUserId: string;
+  post: any;
+};
