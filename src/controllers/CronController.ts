@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/asyncHandler";
 import PRISMA from "../utils/constants/prismaInstance";
+import { RequestWithSession } from "../utils/types/session";
+import { sub } from "date-fns";
 
 export default class CronController {
   public clearUnusedMedia = asyncHandler(
@@ -48,9 +50,18 @@ export default class CronController {
 
       await PRISMA.oTC.deleteMany({
         where: {
-          expiresAt: {
-            lt: oneHourAgo, //otcs that are less than one hour ago
-          },
+          OR: [
+            {
+              expiresAt: {
+                lt: new Date(), // expired OTCs
+              },
+            },
+            {
+              createdAt: {
+                lt: oneHourAgo, // more than 1 hour old
+              },
+            },
+          ],
         },
       });
       res.status(200).json({
@@ -59,9 +70,21 @@ export default class CronController {
     }
   );
 
-  //todo CLEAR READ NOTIFICATIONS THAT ARE >= ONE WEEK
+  public clearOldNotifications = asyncHandler(
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithSession;
+      const session = req.session;
 
-  //todo CLEAR UNREAD NOTIFICATIONS THAT ARE >= TWO WEEKS
+      await PRISMA.notification.deleteMany({
+        where: {
+          recipientId: session.userId,
+          createdAt: {
+            gte: sub(new Date(), { weeks: 2 }),
+          },
+        },
+      });
 
-  //todo CLEAR expires OTCs
+      res.json({ message: "Success. Cleared old notifications." });
+    }
+  );
 }
