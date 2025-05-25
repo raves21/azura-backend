@@ -159,6 +159,8 @@ export default class AuthController {
         httpOnly: true,
         sameSite: "none",
         secure: !!Number(process.env.IS_PROD),
+        path: '/',
+        domain: process.env.DOMAIN
       });
       res.status(200).json("Found user session. Successfully logged out.");
     }
