@@ -162,6 +162,7 @@ export default class AccountController {
 
     res.clearCookie("sessionToken", {
       httpOnly: true,
+      sameSite: "none",
       secure: !!Number(process.env.IS_PROD),
     });
 

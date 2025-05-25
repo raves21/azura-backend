@@ -157,6 +157,7 @@ export default class AuthController {
       //and also clear the cookie
       res.clearCookie("sessionToken", {
         httpOnly: true,
+        sameSite: "none",
         secure: !!Number(process.env.IS_PROD),
       });
       res.status(200).json("Found user session. Successfully logged out.");
