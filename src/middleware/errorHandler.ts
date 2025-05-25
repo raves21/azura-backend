@@ -18,7 +18,7 @@ export const errorHandler = (
   next: NextFunction
 ) => {
   //log the error
-  console.error(error);
+  console.error("Error datetime:", new Date() ,error);
 
   //default error configuration
   let response: ErrorResponse = {
