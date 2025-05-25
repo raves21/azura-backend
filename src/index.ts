@@ -17,7 +17,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import cors from "cors";
 
 const app: Express = express();
-const port = 8080;
+const port = process.env.PORT;
 const cookieParser = require("cookie-parser");
 
 //middleware for cors
