@@ -248,6 +248,7 @@ export const deleteExpiredSessionsAndLogin = async ({
   res.cookie("sessionToken", sessionToken, {
     httpOnly: true,
     maxAge: TOKEN_COOKIE_MAXAGE,
+    sameSite: "none",
     secure: !!Number(process.env.IS_PROD),
   });
 
