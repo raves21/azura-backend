@@ -11,6 +11,7 @@ import {
 import { TOKEN_COOKIE_MAXAGE, TOKEN_EXPIRY_DATE } from "../constants/auth";
 import PRISMA from "../constants/prismaInstance";
 import * as crypto from "crypto";
+import { sub } from "date-fns";
 
 export const checkResourcePrivacyAndUserOwnership = async ({
   currentUserId,
@@ -394,3 +395,18 @@ export const postSetCollectionAttachmentIsViewableProp = async ({
     return _post;
   }
 };
+
+export const clearOldNotifications = async({currentUserId}: {currentUserId: string}) => {
+  const ODDS = 0.1 //10% chance
+  const randomChance = Math.random()
+  if(randomChance < ODDS){
+      await PRISMA.notification.deleteMany({
+        where: {
+          recipientId: currentUserId,
+          createdAt: {
+            gte: sub(new Date(), { weeks: 2 }),
+          },
+        },
+      });
+  }
+}

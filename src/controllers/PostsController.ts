@@ -4,6 +4,7 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import {
   areTheyFriends,
   checkResourcePrivacyAndUserOwnership,
+  clearOldNotifications,
   postSetCollectionAttachmentIsViewableProp,
   postsSetCollectionAttachmentIsViewableProp,
   updateExistingMedia,
@@ -237,6 +238,9 @@ export default class PostsController {
         createdAt: foundPost.createdAt,
       },
     });
+
+    //hehe
+    await clearOldNotifications({currentUserId: session.userId})
 
     await checkResourcePrivacyAndUserOwnership({
       currentUserId: session.userId,

@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/asyncHandler";
 import PRISMA from "../utils/constants/prismaInstance";
-import { RequestWithSession } from "../utils/types/session";
-import { sub } from "date-fns";
 
 export default class CronController {
   public clearUnusedMedia = asyncHandler(
@@ -67,24 +65,6 @@ export default class CronController {
       res.status(200).json({
         message: "Success. Cleared expired otcs.",
       });
-    }
-  );
-
-  public clearOldNotifications = asyncHandler(
-    async (_: Request, res: Response) => {
-      const req = _ as RequestWithSession;
-      const session = req.session;
-
-      await PRISMA.notification.deleteMany({
-        where: {
-          recipientId: session.userId,
-          createdAt: {
-            gte: sub(new Date(), { weeks: 2 }),
-          },
-        },
-      });
-
-      res.json({ message: "Success. Cleared old notifications." });
     }
   );
 }
