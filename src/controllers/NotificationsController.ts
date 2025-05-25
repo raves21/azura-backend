@@ -4,6 +4,7 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import AppError from "../utils/types/errors";
 import { RequestWithSession } from "../utils/types/session";
 import { getPaginationParameters } from "../utils/functions/shared";
+import { clearOldNotifications } from "../utils/functions/sharedPrismaFunctions";
 
 export default class NotificationsController {
   public getNotifications = asyncHandler(async (_: Request, res: Response) => {
@@ -12,6 +13,9 @@ export default class NotificationsController {
 
     const { _page, _perPage, skip } = getPaginationParameters(req);
 
+    //clear old notifs
+    await clearOldNotifications({currentUserId: session.userId})
+    
     const notifications = await PRISMA.notification.findMany({
       skip,
       take: _perPage,
