@@ -7,7 +7,7 @@ export default class TrendingController {
   public getTrendingPosts = asyncHandler(
     async (req: Request, res: Response) => {
       const daysInterval = 7; //weekly trending
-      const timeFilter = Prisma.sql`AND p."createdAt" >= (NOW() AT TIME ZONE 'UTC') - INTERVAL '${daysInterval} days'`;
+      const timeFilter = Prisma.sql`AND p."createdAt" >= (NOW() AT TIME ZONE 'UTC') - INTERVAL '${Prisma.raw(`${daysInterval} days`)}'`;
 
       // Get trending hashtags
       const trendingHashtags = await PRISMA.$queryRaw<
