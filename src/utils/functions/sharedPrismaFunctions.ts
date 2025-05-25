@@ -298,7 +298,7 @@ export const postsSetCollectionAttachmentIsViewableProp = async ({
         });
       } else {
         //if collection privacy is friends only
-        if (post.privacy === Privacy.FRIENDS_ONLY) {
+        if (post.collection.privacy === Privacy.FRIENDS_ONLY) {
           //check if current user friends with collection owner
           const isCurrentUserFriendsWithCollectionOwner = await areTheyFriends(
             currentUserId,
@@ -318,7 +318,7 @@ export const postsSetCollectionAttachmentIsViewableProp = async ({
             });
           }
           //if collection privacy is only me
-        } else if (post.privacy === Privacy.ONLY_ME) {
+        } else if (post.collection.privacy === Privacy.ONLY_ME) {
           postsWithIsCollectionAttachmentViewableProp.push({
             ...post,
             collection: {},
@@ -355,7 +355,7 @@ export const postSetCollectionAttachmentIsViewableProp = async ({
       };
     } else {
       //if collection privacy is friends only
-      if (post.privacy === Privacy.FRIENDS_ONLY) {
+      if (post.collection.privacy === Privacy.FRIENDS_ONLY) {
         //check if current user friends with collection owner
         const isCurrentUserFriendsWithCollectionOwner = await areTheyFriends(
           currentUserId,
@@ -375,7 +375,7 @@ export const postSetCollectionAttachmentIsViewableProp = async ({
           };
         }
         //if collection privacy is only me
-      } else if (post.privacy === Privacy.ONLY_ME) {
+      } else if (post.collection.privacy === Privacy.ONLY_ME) {
         return {
           ...post,
           collection: {},
