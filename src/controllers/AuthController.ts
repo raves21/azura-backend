@@ -158,7 +158,7 @@ export default class AuthController {
       res.clearCookie("sessionToken", {
         httpOnly: true,
         sameSite: "none",
-        secure: !!Number(process.env.IS_PROD),
+        // secure: !!Number(process.env.IS_PROD),
         path: '/',
         domain: process.env.DOMAIN
       });
