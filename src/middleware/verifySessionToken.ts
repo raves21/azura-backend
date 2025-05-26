@@ -10,7 +10,7 @@ export const verifySessionToken = asyncHandler(
     const cookies = req.cookies;
 
     if (!cookies?.sessionToken) {
-      console.log('cookies', cookies);
+      console.log('cookies', cookies ? {...cookies} : 'req.cookies is undefined');
       throw new AppError(401, "Unauthenticated", true);
     }
 
