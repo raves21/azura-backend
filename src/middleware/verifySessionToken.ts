@@ -10,6 +10,7 @@ export const verifySessionToken = asyncHandler(
     const cookies = req.cookies;
 
     if (!cookies?.sessionToken) {
+      console.log('cookies', cookies);
       throw new AppError(401, "Unauthenticated", true);
     }
 
