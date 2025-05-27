@@ -31,7 +31,7 @@ export const verifySessionToken = asyncHandler(
         sameSite: "none",
         secure: !!Number(process.env.IS_PROD),
         path: '/',
-        domain: process.env.DOMAIN
+        // domain: process.env.DOMAIN
       });
       throw new AppError(401, "Unauthenticated", true);
     }

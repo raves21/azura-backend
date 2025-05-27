@@ -251,7 +251,7 @@ export const deleteExpiredSessionsAndLogin = async ({
     sameSite: "none",
     secure: !!Number(process.env.IS_PROD),
     path: '/',
-    domain: process.env.DOMAIN
+    // domain: process.env.DOMAIN
   });
 
   res.status(200).json({
