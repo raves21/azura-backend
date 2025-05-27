@@ -162,7 +162,7 @@ export default class AccountController {
 
     res.clearCookie("sessionToken", {
       httpOnly: true,
-      sameSite: "none",
+      sameSite: !!Number(process.env.IS_PROD) ? "none" : "lax",
       secure: !!Number(process.env.IS_PROD),
       path: '/',
       // domain: process.env.DOMAIN
