@@ -46,7 +46,7 @@ export default class PostsController {
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
-      const posts = postsSetCollectionAttachmentIsViewableProp({
+      const posts = await postsSetCollectionAttachmentIsViewableProp({
         currentUserId: session.userId,
         posts: currentUserPosts.map((post) => ({
           id: post.id,
@@ -73,8 +73,8 @@ export default class PostsController {
               }
             : null,
           createdAt: post.createdAt,
-        }))
-      })
+        })),
+      });
 
       res.status(200).json({
         message: "success",
@@ -245,7 +245,7 @@ export default class PostsController {
     });
 
     //hehe
-    await clearOldNotifications({currentUserId: session.userId})
+    await clearOldNotifications({ currentUserId: session.userId });
 
     await checkResourcePrivacyAndUserOwnership({
       currentUserId: session.userId,
