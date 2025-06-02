@@ -46,12 +46,9 @@ export default class PostsController {
       });
       const totalPages = Math.ceil(totalItems / _perPage);
 
-      res.status(200).json({
-        message: "success",
-        page: _page,
-        perPage: _perPage,
-        totalPages,
-        data: currentUserPosts.map((post) => ({
+      const posts = postsSetCollectionAttachmentIsViewableProp({
+        currentUserId: session.userId,
+        posts: currentUserPosts.map((post) => ({
           id: post.id,
           content: post.content,
           privacy: post.privacy,
@@ -76,7 +73,15 @@ export default class PostsController {
               }
             : null,
           createdAt: post.createdAt,
-        })),
+        }))
+      })
+
+      res.status(200).json({
+        message: "success",
+        page: _page,
+        perPage: _perPage,
+        totalPages,
+        data: posts,
       });
     }
   );
