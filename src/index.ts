@@ -36,7 +36,7 @@ app.use(express.json());
 
 // Entry route
 app.get("/", (req, res) => {
-  res.json("SKRRT SKRRT");
+  res.json("HELLO FROM DOCKERRRRRR");
 });
 
 // Auth route
