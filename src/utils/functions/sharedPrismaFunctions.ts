@@ -398,18 +398,3 @@ export const postSetCollectionAttachmentIsViewableProp = async ({
     return _post;
   }
 };
-
-export const clearOldNotifications = async({currentUserId}: {currentUserId: string}) => {
-  const ODDS = 0.1 //10% chance
-  const randomChance = Math.random()
-  if(randomChance < ODDS){
-      await PRISMA.notification.deleteMany({
-        where: {
-          recipientId: currentUserId,
-          createdAt: {
-            gte: sub(new Date(), { weeks: 2 }),
-          },
-        },
-      });
-  }
-}
