@@ -93,4 +93,4 @@ app.listen(port, () => {
   console.log(`app now running on port localhost:${port}`);
 });
 
-export default app
+export default app;
