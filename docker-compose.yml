@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:17.5
-    container_name: azura-db
+    container_name: azura_db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -10,9 +10,15 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   backend:
-    container_name: azura-backend
+    container_name: azura_backend
     build:
       context: .
       args:
@@ -20,10 +26,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-    volumes:
-      - .:/app
-      - /app/node_modules
+      postgres:
+        condition: service_healthy
     environment:
       DATABASE_URL: ${DATABASE_URL}
       OTC_EMAIL: ${OTC_EMAIL}
@@ -31,6 +35,8 @@ services:
       IS_PROD: ${IS_PROD}
       ALLOW_ORIGIN_LIST: ${ALLOW_ORIGIN_LIST}
       PORT: 8000
-    command: npm run start
+    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy && npm run start"
+
 volumes:
   postgres_data:

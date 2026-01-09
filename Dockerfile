@@ -2,9 +2,9 @@ FROM node:23
 
 WORKDIR /app
 
-COPY prisma ./prisma
-
 COPY package*.json ./
+
+COPY prisma ./prisma
 
 RUN npm install
 
