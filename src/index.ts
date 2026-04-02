@@ -1,4 +1,4 @@
-import express, { Express } from "express";
+import express, { Express, Request } from "express";
 import usersRouter from "./routes/users";
 import authRouter from "./routes/auth";
 import sessionsRouter from "./routes/sessions";
@@ -15,6 +15,8 @@ import discoverPeopleRouter from "./routes/discoverPeople";
 import { verifySessionToken } from "./middleware/verifySessionToken";
 import { errorHandler } from "./middleware/errorHandler";
 import cors from "cors";
+import axios from "axios";
+import AppError from "./utils/types/errors";
 
 const app: Express = express();
 const port = process.env.PORT;
@@ -25,7 +27,7 @@ app.use(
   cors({
     origin: JSON.parse(`${process.env.ALLOW_ORIGIN_LIST}`),
     credentials: true,
-  })
+  }),
 );
 
 //middleware for cookies
@@ -54,6 +56,51 @@ app.use(verifySessionToken);
 // Route for checking token validity in the frontend
 app.get("/api/check-token", (_, res) => {
   res.status(200).json("token valid");
+});
+
+//zencloud
+app.get("/api/zencloud_episodes", async (req, res) => {
+  const { anilistId, episode, page } = req.query;
+  if (!anilistId) {
+    res.status(400).json({
+      message: "anilistId is required.",
+    });
+    return;
+  }
+
+  if (episode) {
+    try {
+      const { data } = await axios.get("https://zencloudz.cc/videos/raw", {
+        params: {
+          anilist_id: anilistId,
+          episode,
+        },
+      });
+      res.status(200).json(data);
+      return;
+    } catch (error) {
+      res.status(500).json({
+        message: "There was an error fetching zencloud episodes.",
+      });
+      return;
+    }
+  } else {
+    try {
+      const { data } = await axios.get("https://zencloudz.cc/videos/raw", {
+        params: {
+          anilist_id: anilistId,
+          page,
+        },
+      });
+      res.status(200).json(data);
+      return;
+    } catch (error) {
+      res.status(500).json({
+        message: "There was an error fetching zencloud episodes.",
+      });
+      return;
+    }
+  }
 });
 
 // Users route
