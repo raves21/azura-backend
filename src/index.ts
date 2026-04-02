@@ -70,7 +70,7 @@ app.get("/api/zencloud_episodes", async (req, res) => {
 
   if (episode) {
     try {
-      const { data } = await axios.get("https://zencloudz.cc/videos/raw", {
+      const { data } = await axios.get(`${process.env.ZENCLOUD_URL}`, {
         params: {
           anilist_id: anilistId,
           episode,
@@ -86,7 +86,7 @@ app.get("/api/zencloud_episodes", async (req, res) => {
     }
   } else {
     try {
-      const { data } = await axios.get("https://zencloudz.cc/videos/raw", {
+      const { data } = await axios.get(`${process.env.ZENCLOUD_URL}`, {
         params: {
           anilist_id: anilistId,
           page,
