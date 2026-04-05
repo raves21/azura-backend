@@ -67,7 +67,7 @@ export default class PostsController {
                 owner: post.collection.owner,
                 privacy: post.collection.privacy,
                 previewMedias: post.collection.collectionItems.map(
-                  (collectionItem) => collectionItem.media
+                  (collectionItem) => collectionItem.media,
                 ),
               }
             : null,
@@ -82,7 +82,7 @@ export default class PostsController {
         totalPages,
         data: posts,
       });
-    }
+    },
   );
 
   public getUserPosts = asyncHandler(async (_: Request, res: Response) => {
@@ -101,7 +101,7 @@ export default class PostsController {
     //check if currentUser is friends with owner
     const isCurrentUserFriendsWithOwner = await areTheyFriends(
       session.userId,
-      foundOwner.id
+      foundOwner.id,
     );
 
     //retrieve posts that have privacy FRIENDS_ONLY and PUBLIC
@@ -156,7 +156,7 @@ export default class PostsController {
               owner: post.collection.owner,
               privacy: post.collection.privacy,
               previewMedias: post.collection.collectionItems.map(
-                (collectionItem) => collectionItem.media
+                (collectionItem) => collectionItem.media,
               ),
             }
           : null,
@@ -235,7 +235,7 @@ export default class PostsController {
               owner: foundPost.collection.owner,
               privacy: foundPost.collection.privacy,
               previewMedias: foundPost.collection.collectionItems.map(
-                (collectionItem) => collectionItem.media
+                (collectionItem) => collectionItem.media,
               ),
             }
           : null,
@@ -347,7 +347,7 @@ export default class PostsController {
                 privacy: newPostWithCollection.collection.privacy,
                 previewMedias:
                   newPostWithCollection.collection.collectionItems.map(
-                    (collectionItem) => collectionItem.media
+                    (collectionItem) => collectionItem.media,
                   ),
               }
             : null,
@@ -626,15 +626,34 @@ export default class PostsController {
       },
     });
 
+    const foundComment = await PRISMA.comment.findFirst({
+      where: {
+        id: commentId,
+      },
+      select: {
+        authorId: true,
+      },
+    });
+
+    if (!foundComment) {
+      throw new AppError(404, "Comment not found.", true);
+    }
+
     if (!foundPostOwner) {
       throw new AppError(404, "Post not found.", true);
     }
 
-    if (foundPostOwner.ownerId !== session.userId) {
+    const commentBelongsToCurrentUser =
+      foundComment.authorId === session.userId;
+
+    if (
+      !commentBelongsToCurrentUser &&
+      foundPostOwner.ownerId !== session.userId
+    ) {
       throw new AppError(
         403,
         "You cannot delete a comment from a post you do not own.",
-        true
+        true,
       );
     }
 
