@@ -12,9 +12,9 @@ export default class AuthController {
 
     if (!email || !password) {
       throw new AppError(
-        422,
+        400,
         "Login Invalid. Please provide all needed credentials.",
-        true
+        true,
       );
     }
 
@@ -104,7 +104,7 @@ export default class AuthController {
       throw new AppError(
         422,
         "Signup invalid. Please provide all the needed credentials.",
-        true
+        true,
       );
     }
 
@@ -163,7 +163,7 @@ export default class AuthController {
         // domain: process.env.DOMAIN
       });
       res.status(200).json("Found user session. Successfully logged out.");
-    }
+    },
   );
 
   public logoutSession = asyncHandler(async (req: Request, res: Response) => {
@@ -197,20 +197,20 @@ export default class AuthController {
       if (foundHandleDupe) {
         throw new AppError(
           409,
-          "This handle is already associated with another account.",
-          true
+          "This username is already associated with another account.",
+          true,
         );
       }
 
       res.status(200).json({
         message: "handle is available.",
       });
-    }
+    },
   );
 
   public checkEmailAvailability = asyncHandler(
     async (req: Request, res: Response) => {
-      const { email } = req.query;
+      const { email } = req.body;
 
       if (!email) {
         throw new AppError(422, "No email provided.", true);
@@ -226,14 +226,14 @@ export default class AuthController {
         throw new AppError(
           409,
           "This email is already associated with another account.",
-          true
+          true,
         );
       }
 
       res.status(200).json({
         message: "email is available.",
       });
-    }
+    },
   );
 
   public findUserByEmail = asyncHandler(async (req: Request, res: Response) => {

@@ -6,7 +6,7 @@ const authController = new AuthController();
 
 router
   .get("/check-handle-availability", authController.checkHandleAvailabilty)
-  .get("/check-email-availability", authController.checkEmailAvailability)
+  .post("/check-email-availability", authController.checkEmailAvailability)
   .get("/forgot-password/find-user-by-email", authController.findUserByEmail)
   .post("/forgot-password/change-password", authController.updatePassword)
   .post("/login", authController.login)
