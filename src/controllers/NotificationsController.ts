@@ -81,34 +81,62 @@ export default class NotificationsController {
     });
   });
 
-  public updateNotificationIsRead = asyncHandler(
+  public markNotificationAsRead = asyncHandler(
     async (req: Request, res: Response) => {
-      const { id } = req.params;
-      const { isRead } = req.query;
+      const { notificationId } = req.body;
 
-      if (!isRead) {
-        throw new AppError(400, "No isRead query provided.", true);
+      if (!notificationId) {
+        throw new AppError(400, "No notificationId provided.", true);
       }
 
-      const _isRead = isRead == "true";
-      const updatedNotification = await PRISMA.notification.update({
+      await PRISMA.notification.update({
         where: {
-          id,
+          id: notificationId,
         },
         data: {
-          isRead: _isRead,
-        },
-        select: {
           isRead: true,
         },
       });
 
       res.status(200).json({
-        message: "isRead updated",
-        data: updatedNotification,
+        message: "marked as updated.",
       });
-    }
+    },
   );
+
+  public getUnreadNotifsCount = asyncHandler(
+    async (_: Request, res: Response) => {
+      const req = _ as RequestWithSession;
+      const session = req.session;
+
+      const unreadNotifsCount = await PRISMA.notification.count({
+        where: {
+          recipientId: session.userId,
+          isRead: false,
+        },
+      });
+
+      res.status(200).json({
+        message: "success",
+        unreadNotifsCount,
+      });
+    },
+  );
+
+  public markAllAsRead = asyncHandler(async (_: Request, res: Response) => {
+    await PRISMA.notification.updateMany({
+      where: {
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+
+    res.status(200).json({
+      message: "marked all notifs as read.",
+    });
+  });
 
   public deleteNotification = asyncHandler(
     async (req: Request, res: Response) => {
@@ -121,13 +149,13 @@ export default class NotificationsController {
       });
 
       res.status(200).json("successfully deleted notification.");
-    }
+    },
   );
 
   public deleteAllNotifications = asyncHandler(
     async (req: Request, res: Response) => {
       await PRISMA.notification.deleteMany();
       res.status(200).json("successfully deleted all notifications.");
-    }
+    },
   );
 }

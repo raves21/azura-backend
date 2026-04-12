@@ -6,8 +6,13 @@ const notificationsController = new NotificationsController();
 
 router
   .get("/", notificationsController.getNotifications)
-  .put("/:id", notificationsController.updateNotificationIsRead)
+  .get("/unread-notifications", notificationsController.getUnreadNotifsCount)
+  .post(
+    "/mark-notification-as-read",
+    notificationsController.markNotificationAsRead,
+  )
   .delete("/:id", notificationsController.deleteNotification)
-  .delete("/", notificationsController.deleteAllNotifications);
+  .delete("/", notificationsController.deleteAllNotifications)
+  .post("/mark-all-as-read", notificationsController.markAllAsRead);
 
 export default router;
