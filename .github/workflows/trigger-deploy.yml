@@ -1,0 +1,16 @@
+name: Trigger OBN Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Dispatch Event to Central CI/CD
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.OBN_CENTRAL_PAT }}
+          repository: OBN-Development/centralized-cicd
+          event-type: deploy-azura-backend
